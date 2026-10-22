@@ -1,0 +1,43 @@
+{
+  "hk_pop_roadside_share": {
+    "scenario": "hk_pop_roadside_share",
+    "conversations": [
+      {
+        "id": "hk_pop_roadside_share",
+        "turns": [
+          {
+            "query": "Assign every HK_population_1km grid cell to its nearest air-quality station by haversine distance. Return the fraction (0-1) of the total HK grid population whose nearest station is a ROADSIDE station (Mong Kok 14, Central 16, Causeway Bay 17). Round to 4 dp.",
+            "actual_response": "The fraction of Hong Kong's total grid population whose nearest air quality monitoring station is a ROADSIDE station is **0.1716** (17.16%). This represents approximately 1,285,697 people out of a total population of about 7,490,702, with their nearest stations being Mong Kok, Central, or Causeway Bay.",
+            "actual_calls": [],
+            "validation_errors": [],
+            "metrics": {
+              "steps": 2,
+              "prompt_tokens": 11837,
+              "completion_tokens": 801,
+              "total_tokens": 12638
+            },
+            "success": true,
+            "variables_not_set": false,
+            "error": null,
+            "code_snippets": [
+              "import pandas as pd\nimport numpy as np\nfrom sqlalchemy import text\n\n# First, get all air quality stations with their coordinates and types\nquery = text(\"\"\"\nSELECT id, name_en, station_type, \n       ST_Y(coordinate::geometry) as latitude, \n       ST_X(coordinate::geometry) as longitude\nFROM air_quality_station\nORDER BY id\n\"\"\")\nstations_df = pd.read_sql(query, engine)\nprint(\"All stations:\")\nprint(stations_df)\nprint(f\"\\nRoadside stations: {stations_df[stations_df['station_type']=='ROADSIDE']['name_en'].tolist()}\")\n\n# Haversine distance function\ndef haversine(lat1, lon1, lat2, lon2):\n    \"\"\"Calculate haversine distance in km between two points\"\"\"\n    R = 6371.0  # Earth radius in km\n    lat1, lon1, lat2, lon2 = map(np.radians, [lat1, lon1, lat2, lon2])\n    dlat = lat2 - lat1\n    dlon = lon2 - lon1\n    a = np.sin(dlat/2)**2 + np.cos(lat1) * np.cos(lat2) * np.sin(dlon/2)**2\n    c = 2 * np.arctan2(np.sqrt(a), np.sqrt(1-a))\n    return R * c\n\n# For each population grid cell, find nearest station\nstation_lats = stations_df['latitude'].values\nstation_lons = stations_df['longitude'].values\nstation_types = stations_df['station_type'].values\nn_stations = len(stations_df)\n\n# Process population grid cells\npop_lats = pop_df['latitude'].values\npop_lons = pop_df['longitude'].values\npop_vals = pop_df['population'].values\nn_cells = len(pop_df)\n\n# Find nearest station for each grid cell\ntotal_pop = 0.0\nroadside_pop = 0.0\n\n# Process in batches to avoid memory issues\nbatch_size = 1000\nfor i in range(0, n_cells, batch_size):\n    end = min(i + batch_size, n_cells)\n    batch_lats = pop_lats[i:end]\n    batch_lons = pop_lons[i:end]\n    batch_pop = pop_vals[i:end]\n    \n    # Calculate distances from each cell to all stations\n    for j in range(len(batch_lats)):\n        distances = haversine(batch_lats[j], batch_lons[j], station_lats, station_lons)\n        nearest_idx = np.argmin(distances)\n        cell_pop = batch_pop[j] if not np.isnan(batch_pop[j]) else 0\n        \n        total_pop += cell_pop\n        if station_types[nearest_idx] == 'ROADSIDE':\n            roadside_pop += cell_pop\n\nroadside_pop_share = round(roadside_pop / total_pop, 4)\nprint(f\"Total population: {total_pop:.0f}\")\nprint(f\"Population nearest to roadside stations: {roadside_pop:.0f}\")\nprint(f\"Roadside population share: {roadside_pop_share}\")"
+            ],
+            "runtime_variables": {
+              "roadside_pop_share": 0.1716
+            }
+          }
+        ]
+      }
+    ],
+    "metrics": {
+      "total_turns": 1,
+      "successful_turns": 1,
+      "failed_turns": 0,
+      "total_steps": 2,
+      "success_rate": 1.0,
+      "total_prompt_tokens": 11837,
+      "total_completion_tokens": 801,
+      "total_tokens": 12638
+    }
+  }
+}

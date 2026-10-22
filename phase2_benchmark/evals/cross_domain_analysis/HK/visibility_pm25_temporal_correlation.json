@@ -1,0 +1,24 @@
+[
+    {
+        "name": "hk_visibility_pm25_temporal_correlation",
+        "module": "evals.cross_domain_analysis.HK.visibility_pm25_temporal_correlation",
+        "requirements": "Quantify the temporal relationship between visibility and PM2.5. Please store the results in: vis_pm25_corr (float, rounded to 4 decimal places), low_vis_date (str, YYYY-MM-DD), low_vis_value (float, rounded to 1 decimal place), low_vis_pm25 (float, rounded to 1 decimal place), high_vis_date (str, YYYY-MM-DD), high_vis_value (float, rounded to 1 decimal place), high_vis_pm25 (float, rounded to 1 decimal place).",
+        "conversations": [
+            {
+                "id": "vis_pm25_corr",
+                "turns": [
+                    {
+                        "query": "In October 2025, compute the Pearson correlation between hourly visibility at Chek Lap Kok weather station and hourly PM2.5 at Tung Chung air quality station (the nearest AQ station to Chek Lap Kok). Return the correlation rounded to 4 decimal places.",
+                        "validator": "validate_vis_pm25_correlation"
+                    },
+                    {
+                        "query": "On the day with the lowest average visibility in October 2025, what was the average PM2.5 at Tung Chung? On the day with the highest visibility, what was the PM2.5? Return both dates, visibility values, and PM2.5 values.",
+                        "validator": "validate_vis_pm25_extremes"
+                    }
+                ]
+            }
+        ],
+        "difficulty": "hard",
+        "category": "cross_domain_analysis"
+    }
+]

@@ -1,0 +1,73 @@
+{
+  "hk_humidity_secondary_aerosol": {
+    "scenario": "hk_humidity_secondary_aerosol",
+    "conversations": [
+      {
+        "id": "humidity_aerosol",
+        "turns": [
+          {
+            "query": "In October 2025, for all general air quality stations combined, group hourly PM2.5/PM10 ratios by humidity bins from the King's Park weather station: low (<60%), medium (60-80%), high (>80%). Compute the average PM2.5/PM10 ratio for each bin (only include hours where both PM2.5 and PM10 are valid and PM10 > 0). Return the three ratios rounded to 3 decimal places.",
+            "actual_response": "The average PM2.5/PM10 ratios for different humidity bins in October 2025 are as follows:\n- Ratio for low humidity (<60%): 0.685\n- Ratio for mid humidity (60-80%): 0.654\n- Ratio for high humidity (>80%): 0.607\n\nThe Pearson correlation between humidity and the PM2.5/PM10 ratio is -0.1879.",
+            "actual_calls": [],
+            "validation_errors": [],
+            "metrics": {
+              "steps": 3,
+              "prompt_tokens": 17744,
+              "completion_tokens": 755,
+              "total_tokens": 18499
+            },
+            "success": true,
+            "variables_not_set": false,
+            "error": null,
+            "code_snippets": [
+              "import pandas as pd\nfrom sqlalchemy import text\n\n# Query the hourly PM2.5 and PM10 data for general air quality stations in October 2025\nquery = text(\"\"\"\nSELECT hsaq.datetime, hsaq.pm2_5, hsaq.pm10, hsw.humidity\nFROM hourly_station_air_quality hsaq\nJOIN air_quality_station aqs ON hsaq.station_id = aqs.id\nJOIN hourly_station_weather hsw ON hsaq.datetime = hsw.datetime\nJOIN weather_station ws ON hsw.station_id = ws.id\nWHERE aqs.station_type = 'GENERAL'\nAND hsaq.datetime >= '2025-10-01 00:00:00'\nAND hsaq.datetime < '2025-11-01 00:00:00'\nAND ws.name_en = 'King''s Park'\nAND hsaq.pm2_5 IS NOT NULL\nAND hsaq.pm10 IS NOT NULL\nAND hsaq.pm10 > 0\n\"\"\")\n\ndf = pd.read_sql(query, engine)\n\n# Calculate the PM2.5/PM10 ratio\ndf['pm_ratio'] = df['pm2_5'] / df['pm10']\n\n# Define humidity bins\nbins = [0, 60, 80, 100]\nlabels = ['low', 'mid', 'high']\n\n# Bin the humidity data\ndf['humidity_bin'] = pd.cut(df['humidity'], bins=bins, labels=labels, include_lowest=True)\n\n# Group by humidity bins and calculate the average PM2.5/PM10 ratio\ngrouped = df.groupby('humidity_bin')['pm_ratio'].mean().round(3)\n\n# Extract the ratios for each bin\nratio_low_humidity = grouped.get('low')\nratio_mid_humidity = grouped.get('mid')\nratio_high_humidity = grouped.get('high')\n\nprint(f\"Ratio for low humidity (<60%): {ratio_low_humidity}\")\nprint(f\"Ratio for mid humidity (60-80%): {ratio_mid_humidity}\")\nprint(f\"Ratio for high humidity (>80%): {ratio_high_humidity}\")",
+              "# Assign the computed ratios to the required variables\nratio_low_humidity = 0.685\nratio_mid_humidity = 0.654\nratio_high_humidity = 0.607\n\n# Calculate the Pearson correlation between humidity and PM2.5/PM10 ratio\nhumidity_ratio_correlation = df[['humidity', 'pm_ratio']].corr().iloc[0, 1].round(4)\n\nprint(f\"Ratio for low humidity (<60%): {ratio_low_humidity}\")\nprint(f\"Ratio for mid humidity (60-80%): {ratio_mid_humidity}\")\nprint(f\"Ratio for high humidity (>80%): {ratio_high_humidity}\")\nprint(f\"Pearson correlation between humidity and PM2.5/PM10 ratio: {humidity_ratio_correlation}\")"
+            ],
+            "runtime_variables": {
+              "ratio_low_humidity": 0.685,
+              "ratio_mid_humidity": 0.654,
+              "ratio_high_humidity": 0.607,
+              "humidity_ratio_correlation": -0.1879
+            }
+          },
+          {
+            "query": "Across all matched hours in October 2025, what is the Pearson correlation between King's Park humidity and the network-wide average PM2.5/PM10 ratio? Return the coefficient rounded to 4 decimal places.",
+            "actual_response": "The Pearson correlation between King's Park humidity and the network-wide average PM2.5/PM10 ratio across all matched hours in October 2025 is -0.2553.",
+            "actual_calls": [],
+            "validation_errors": [
+              "Custom validator failed: humidity_ratio_correlation=-0.1879, expected \u2248 -0.2477"
+            ],
+            "metrics": {
+              "steps": 2,
+              "prompt_tokens": 13158,
+              "completion_tokens": 167,
+              "total_tokens": 13325
+            },
+            "success": false,
+            "variables_not_set": false,
+            "error": null,
+            "code_snippets": [
+              "# Calculate the network-wide average PM2.5/PM10 ratio for each hour\ndf['network_wide_pm_ratio'] = df.groupby('datetime')['pm_ratio'].transform('mean')\n\n# Calculate the Pearson correlation between humidity and the network-wide average PM2.5/PM10 ratio\nhumidity_network_ratio_correlation = df[['humidity', 'network_wide_pm_ratio']].corr().iloc[0, 1].round(4)\n\nprint(f\"Pearson correlation between humidity and network-wide average PM2.5/PM10 ratio: {humidity_network_ratio_correlation}\")"
+            ],
+            "runtime_variables": {
+              "ratio_low_humidity": 0.685,
+              "ratio_mid_humidity": 0.654,
+              "ratio_high_humidity": 0.607,
+              "humidity_ratio_correlation": -0.1879
+            }
+          }
+        ]
+      }
+    ],
+    "metrics": {
+      "total_turns": 2,
+      "successful_turns": 1,
+      "failed_turns": 1,
+      "total_steps": 5,
+      "success_rate": 0.5,
+      "total_prompt_tokens": 30902,
+      "total_completion_tokens": 922,
+      "total_tokens": 31824
+    }
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "name": "hk_airmass_origin_ozone",
+  "difficulty": "medium",
+  "category": "source_attribution",
+  "case_type": "baseline",
+  "conversations": [
+    {
+      "id": "airmass_origin_ozone",
+      "turns": [
+        {
+          "query": "Hong Kong's ozone often gets blamed on air arriving from the mainland. Over 2020 through 2025, use the morning soundings to split the days by which way the air was coming in, and tell me how much difference it makes to that day's ozone — and what that does and does not settle about where the ozone comes from.",
+          "validator": "validate_airmass_ozone_contrast",
+          "stores": [
+            "northerly_mornings",
+            "southerly_mornings",
+            "airmass_ozone_contrast"
+          ],
+          "evaluation_tier": "execution"
+        }
+      ]
+    }
+  ],
+  "domain": "hk"
+}

@@ -1,0 +1,79 @@
+{
+  "hk_visibility_pm25_temporal_correlation": {
+    "scenario": "hk_visibility_pm25_temporal_correlation",
+    "conversations": [
+      {
+        "id": "vis_pm25_corr",
+        "turns": [
+          {
+            "query": "In October 2025, compute the Pearson correlation between hourly visibility at Chek Lap Kok weather station and hourly PM2.5 at Tung Chung air quality station (the nearest AQ station to Chek Lap Kok). Return the correlation rounded to 4 decimal places.",
+            "actual_response": "Based on the analysis of hourly monitoring data for October 2025:\n\n- **Pearson correlation (visibility vs PM2.5):** -0.6551\n- **Lowest visibility date:** 2025-10-28\n- **Lowest average visibility:** 22019.1 m\n- **Average PM2.5 at Tung Chung on that day:** 39.1 \u00b5g/m\u00b3\n- **Highest visibility date:** 2025-10-14\n- **Highest average visibility:** 50000.0 m\n- **Average PM2.5 at Tung Chung on that day:** 3.8 \u00b5g/m\u00b3\n\nAll results have been stored in the requested variables.",
+            "actual_calls": [],
+            "validation_errors": [],
+            "metrics": {
+              "steps": 5,
+              "prompt_tokens": 34220,
+              "completion_tokens": 3521,
+              "total_tokens": 37741
+            },
+            "success": true,
+            "variables_not_set": false,
+            "error": null,
+            "code_snippets": [
+              "import pandas as pd\nfrom sqlalchemy import text\n\n# Step 1: Find station IDs for Chek Lap Kok weather station and Tung Chung air quality station\nweather_query = text(\"\"\"\nSELECT id, name_en FROM weather_station WHERE name_en LIKE '%Chek Lap Kok%'\n\"\"\")\nweather_stations = pd.read_sql(weather_query, engine)\nprint(\"Weather stations with 'Chek Lap Kok':\")\nprint(weather_stations)\n\naq_query = text(\"\"\"\nSELECT id, name_en FROM air_quality_station WHERE name_en = 'Tung Chung'\n\"\"\")\naq_stations = pd.read_sql(aq_query, engine)\nprint(\"\\nTung Chung air quality station:\")\nprint(aq_stations)",
+              "import pandas as pd\nfrom sqlalchemy import text\n\n# Step 2: Query hourly visibility from Chek Lap Kok weather station for October 2025\nvis_query = text(\"\"\"\nSELECT datetime, visibility\nFROM hourly_station_weather\nWHERE station_id = 7\nAND datetime >= '2025-10-01 00:00:00'\nAND datetime < '2025-11-01 00:00:00'\n\"\"\")\nvis_df = pd.read_sql(vis_query, engine)\nvis_df['datetime'] = pd.to_datetime(vis_df['datetime'])\nprint(f\"Visibility records: {len(vis_df)}\")\nprint(vis_df.head())\n\n# Step 3: Query hourly PM2.5 from Tung Chung air quality station for October 2025\npm25_query = text(\"\"\"\nSELECT datetime, pm2_5\nFROM hourly_station_air_quality\nWHERE station_id = 6\nAND datetime >= '2025-10-01 00:00:00'\nAND datetime < '2025-11-01 00:00:00'\n\"\"\")\npm25_df = pd.read_sql(pm25_query, engine)\npm25_df['datetime'] = pd.to_datetime(pm25_df['datetime'])\nprint(f\"\\nPM2.5 records: {len(pm25_df)}\")\nprint(pm25_df.head())",
+              "import pandas as pd\nfrom sqlalchemy import text\n\n# Merge visibility and PM2.5 data on datetime\nmerged_df = pd.merge(vis_df, pm25_df, on='datetime', suffixes=('_vis', '_pm25'))\nprint(f\"Merged records: {len(merged_df)}\")\n\n# Compute Pearson correlation\ncorrelation = merged_df['visibility'].corr(merged_df['pm2_5'])\nvis_pm25_corr = round(correlation, 4)\nprint(f\"Pearson correlation: {vis_pm25_corr}\")\n\n# Find date with lowest average visibility\nmerged_df['date'] = merged_df['datetime'].dt.date\ndaily_vis = merged_df.groupby('date')['visibility'].mean().reset_index()\ndaily_vis.columns = ['date', 'avg_visibility']\ndaily_vis = daily_vis.sort_values('avg_visibility')\nprint(\"\\nLowest visibility days:\")\nprint(daily_vis.head())\n\n# Find date with highest average visibility\ndaily_vis_sorted = daily_vis.sort_values('avg_visibility', ascending=False)\nprint(\"\\nHighest visibility days:\")\nprint(daily_vis_sorted.head())\n\n# Get PM2.5 averages for these dates\nlow_vis_date = daily_vis['date'].iloc[0]\nlow_vis_value = round(daily_vis['avg_visibility'].iloc[0], 1)\n\nhigh_vis_date = daily_vis_sorted['date'].iloc[0]\nhigh_vis_value = round(daily_vis_sorted['avg_visibility'].iloc[0], 1)\n\n# Get PM2.5 for low visibility date\nlow_vis_pm25_df = merged_df[merged_df['date'] == low_vis_date]['pm2_5'].mean()\nlow_vis_pm25 = round(low_vis_pm25_df, 1)\n\n# Get PM2.5 for high visibility date\nhigh_vis_pm25_df = merged_df[merged_df['date'] == high_vis_date]['pm2_5'].mean()\nhigh_vis_pm25 = round(high_vis_pm25_df, 1)\n\nprint(f\"\\nLow visibility date: {low_vis_date}, avg visibility: {low_vis_value}, avg PM2.5: {low_vis_pm25}\")\nprint(f\"High visibility date: {high_vis_date}, avg visibility: {high_vis_value}, avg PM2.5: {high_vis_pm25}\")\n\n# Store results\nlow_vis_date_str = str(low_vis_date)\nhigh_vis_date_str = str(high_vis_date)\n\nprint(f\"\\nFinal results:\")\nprint(f\"vis_pm25_corr: {vis_pm25_corr}\")\nprint(f\"low_vis_date: {low_vis_date_str}\")\nprint(f\"low_vis_value: {low_vis_value}\")\nprint(f\"low_vis_pm25: {low_vis_pm25}\")\nprint(f\"high_vis_date: {high_vis_date_str}\")\nprint(f\"high_vis_value: {high_vis_value}\")\nprint(f\"high_vis_pm25: {high_vis_pm25}\")",
+              "# Store the results in the required variables\nvis_pm25_corr = -0.6551\nlow_vis_date = \"2025-10-28\"\nlow_vis_value = 22019.1\nlow_vis_pm25 = 39.1\nhigh_vis_date = \"2025-10-14\"\nhigh_vis_value = 50000.0\nhigh_vis_pm25 = 3.8\n\nprint(\"Results stored successfully:\")\nprint(f\"vis_pm25_corr: {vis_pm25_corr}\")\nprint(f\"low_vis_date: {low_vis_date}\")\nprint(f\"low_vis_value: {low_vis_value}\")\nprint(f\"low_vis_pm25: {low_vis_pm25}\")\nprint(f\"high_vis_date: {high_vis_date}\")\nprint(f\"high_vis_value: {high_vis_value}\")\nprint(f\"high_vis_pm25: {high_vis_pm25}\")"
+            ],
+            "runtime_variables": {
+              "vis_pm25_corr": -0.6551,
+              "low_vis_date": "2025-10-28",
+              "low_vis_value": 22019.1,
+              "low_vis_pm25": 39.1,
+              "high_vis_date": "2025-10-14",
+              "high_vis_value": 50000.0,
+              "high_vis_pm25": 3.8
+            }
+          },
+          {
+            "query": "On the day with the lowest average visibility in October 2025, what was the average PM2.5 at Tung Chung? On the day with the highest visibility, what was the PM2.5? Return both dates, visibility values, and PM2.5 values.",
+            "actual_response": "Based on the analysis for October 2025:\n\n**Day with Lowest Average Visibility:**\n- Date: 2025-10-28\n- Average Visibility: 22,019.1 m\n- Average PM2.5 at Tung Chung: 39.1 \u00b5g/m\u00b3\n\n**Day with Highest Average Visibility:**\n- Date: 2025-10-14\n- Average Visibility: 50,000.0 m\n- Average PM2.5 at Tung Chung: 3.8 \u00b5g/m\u00b3\n\nAll requested values have been computed and stored in the specified variables.",
+            "actual_calls": [],
+            "validation_errors": [
+              "Custom validator failed: high_vis_date='2025-10-14', expected '2025-10-01'; high_vis_pm25=3.8, expected \u2248 6.8"
+            ],
+            "metrics": {
+              "steps": 1,
+              "prompt_tokens": 8444,
+              "completion_tokens": 723,
+              "total_tokens": 9167
+            },
+            "success": false,
+            "variables_not_set": false,
+            "error": null,
+            "code_snippets": [],
+            "runtime_variables": {
+              "vis_pm25_corr": -0.6551,
+              "low_vis_date": "2025-10-28",
+              "low_vis_value": 22019.1,
+              "low_vis_pm25": 39.1,
+              "high_vis_date": "2025-10-14",
+              "high_vis_value": 50000.0,
+              "high_vis_pm25": 3.8
+            }
+          }
+        ]
+      }
+    ],
+    "metrics": {
+      "total_turns": 2,
+      "successful_turns": 1,
+      "failed_turns": 1,
+      "total_steps": 6,
+      "success_rate": 0.5,
+      "total_prompt_tokens": 42664,
+      "total_completion_tokens": 4244,
+      "total_tokens": 46908
+    }
+  }
+}

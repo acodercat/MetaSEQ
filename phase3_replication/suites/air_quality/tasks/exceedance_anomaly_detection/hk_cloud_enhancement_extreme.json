@@ -1,0 +1,24 @@
+{
+  "name": "hk_cloud_enhancement_extreme",
+  "difficulty": "medium",
+  "category": "exceedance_anomaly_detection",
+  "case_type": "trap",
+  "conversations": [
+    {
+      "id": "cloud_enhancement_extreme",
+      "turns": [
+        {
+          "query": "Find Hong Kong's highest sampled global solar radiation in 2025, its date, and how many sampled readings exceed 1361 W/m². A colleague calls every above-constant reading an instrument error. Does that conclusion follow, and how should the desk investigate the extreme?",
+          "validator": "validate_evidence_and_conclusion_full_review",
+          "stores": [
+            "max_global_radiation_wm2",
+            "max_global_radiation_date",
+            "hours_above_solar_constant",
+            "above_constant_is_error"
+          ]
+        }
+      ]
+    }
+  ],
+  "domain": "hk"
+}

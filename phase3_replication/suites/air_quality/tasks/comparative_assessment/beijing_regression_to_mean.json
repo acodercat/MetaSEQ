@@ -1,0 +1,29 @@
+{
+  "name": "beijing_regression_to_mean",
+  "difficulty": "hard",
+  "category": "comparative_assessment",
+  "case_type": "trap",
+  "conversations": [
+    {
+      "id": "regression_to_mean",
+      "turns": [
+        {
+          "query": "Take the twenty days of 2022 with the highest daily PM2.5 in Beijing. How did the same calendar dates fare in 2023?",
+          "validator": "validate_worst_days_change",
+          "stores": [
+            "worst_days_change_pct"
+          ]
+        },
+        {
+          "query": "Now put that beside the change in the annual mean PM2.5 from 2022 to 2023. Reconcile the two figures: what does each actually say about whether Beijing's air improved?",
+          "validator": "validate_annual_change",
+          "stores": [
+            "annual_change_pct",
+            "air_improved"
+          ]
+        }
+      ]
+    }
+  ],
+  "domain": "beijing"
+}

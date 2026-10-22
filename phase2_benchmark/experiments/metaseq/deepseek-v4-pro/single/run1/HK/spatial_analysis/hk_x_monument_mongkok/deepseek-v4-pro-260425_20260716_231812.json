@@ -1,0 +1,44 @@
+{
+  "hk_x_monument_mongkok": {
+    "scenario": "hk_x_monument_mongkok",
+    "conversations": [
+      {
+        "id": "hk_x_monument_mongkok",
+        "turns": [
+          {
+            "query": "Which sensitive area of category 'DECLARED_MONUMENT' lies closest to the Mong Kok air-quality station (station_id 14), measuring distance from the monument polygon's centroid to the station coordinate? Return the monument's name exactly as stored, and the distance in metres.",
+            "actual_response": "The nearest DECLARED_MONUMENT to the Mong Kok air quality station (station 14) is **Lui Seng Chun**, located **414.29 metres** away, measured from the monument polygon's centroid to the station coordinates.",
+            "actual_calls": [],
+            "validation_errors": [],
+            "metrics": {
+              "steps": 2,
+              "prompt_tokens": 11141,
+              "completion_tokens": 388,
+              "total_tokens": 11529
+            },
+            "success": true,
+            "variables_not_set": false,
+            "error": null,
+            "code_snippets": [
+              "import pandas as pd\nfrom sqlalchemy import text\n\n# Get station 14 (Mong Kok) coordinates\nstation_query = text(\"\"\"\nSELECT id, name_en, ST_X(coordinate::geometry) as lon, ST_Y(coordinate::geometry) as lat\nFROM air_quality_station\nWHERE id = 14\n\"\"\")\nstation_df = pd.read_sql(station_query, engine)\nstation_lon = station_df['lon'].values[0]\nstation_lat = station_df['lat'].values[0]\nprint(f\"Station 14 ({station_df['name_en'].values[0]}): lon={station_lon}, lat={station_lat}\")\n\n# Find nearest DECLARED_MONUMENT by centroid distance\nmonument_query = text(f\"\"\"\nSELECT \n    name,\n    ST_Distance(\n        ST_Centroid(geometry)::geography,\n        ST_SetSRID(ST_MakePoint({station_lon}, {station_lat}), 4326)::geography\n    ) as dist_m\nFROM sensitive_area\nWHERE category = 'DECLARED_MONUMENT'\nORDER BY dist_m\nLIMIT 1\n\"\"\")\nmonument_df = pd.read_sql(monument_query, engine)\nprint(f\"Nearest monument: {monument_df['name'].values[0]}\")\nprint(f\"Distance: {monument_df['dist_m'].values[0]:.2f} m\")\n\nnearest_monument = monument_df['name'].values[0]\nmonument_dist_m = float(monument_df['dist_m'].values[0])"
+            ],
+            "runtime_variables": {
+              "nearest_monument": "Lui Seng Chun",
+              "monument_dist_m": 414.28824249
+            }
+          }
+        ]
+      }
+    ],
+    "metrics": {
+      "total_turns": 1,
+      "successful_turns": 1,
+      "failed_turns": 0,
+      "total_steps": 2,
+      "success_rate": 1.0,
+      "total_prompt_tokens": 11141,
+      "total_completion_tokens": 388,
+      "total_tokens": 11529
+    }
+  }
+}

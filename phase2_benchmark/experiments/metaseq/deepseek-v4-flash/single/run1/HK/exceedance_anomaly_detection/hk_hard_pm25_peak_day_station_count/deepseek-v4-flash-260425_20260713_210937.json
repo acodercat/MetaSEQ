@@ -1,0 +1,46 @@
+{
+  "hk_hard_pm25_peak_day_station_count": {
+    "scenario": "hk_hard_pm25_peak_day_station_count",
+    "conversations": [
+      {
+        "id": "hk_hard_pm25_peak_day_station_count",
+        "turns": [
+          {
+            "query": "For each station_type separately (GENERAL and ROADSIDE), during June 2025 inclusive, first compute each station's daily maximum PM2.5 over non-NULL hourly pm2_5 values for each calendar date. Then, for each station, count the number of dates with daily maximum PM2.5 >= 35.0. Finally, for each station_type compute the average of these station-level counts, giving each station equal weight. Return roadside_avg_peak_days, general_avg_peak_days, and roadside_minus_general rounded to 6 decimals. Do not average station-day indicators over all station-day rows unless it yields the same station weighting, and do not count hourly exceedance rows.",
+            "actual_response": "The computation is complete. All required variables are correctly assigned.\n\n**Final Results:**\n\n- **roadside_avg_peak_days** = 4.666667  \n  Average across the 3 ROADSIDE stations (Mong Kok: 1, Central: 11, Causeway Bay: 2) of the number of June 2025 dates with daily max PM2.5 \u2265 35.0.\n\n- **general_avg_peak_days** = 0.4  \n  Average across the 15 GENERAL stations of the number of June 2025 dates with daily max PM2.5 \u2265 35.0.\n\n- **roadside_minus_general** = 4.266667  \n  The difference (roadside minus general), rounded to 6 decimals.",
+            "actual_calls": [],
+            "validation_errors": [],
+            "metrics": {
+              "steps": 3,
+              "prompt_tokens": 20281,
+              "completion_tokens": 1215,
+              "total_tokens": 21496
+            },
+            "success": true,
+            "variables_not_set": false,
+            "error": null,
+            "code_snippets": [
+              "import pandas as pd\nfrom sqlalchemy import text\n\n# Step 1: Get all stations with their station_type\nquery_stations = text(\"\"\"\nSELECT id, name_en, station_type\nFROM air_quality_station\nWHERE station_type IN ('GENERAL', 'ROADSIDE')\nORDER BY id\n\"\"\")\nstations_df = pd.read_sql(query_stations, engine)\nprint(\"Stations:\")\nprint(stations_df)\nprint()\n\n# Step 2: Query hourly PM2.5 for June 2025 for all stations\nquery = text(\"\"\"\nSELECT station_id, datetime, pm2_5\nFROM hourly_station_air_quality\nWHERE datetime >= '2025-06-01 00:00:00'\n  AND datetime < '2025-07-01 00:00:00'\n  AND pm2_5 IS NOT NULL\nORDER BY station_id, datetime\n\"\"\")\nhourly_df = pd.read_sql(query, engine)\nprint(f\"Total hourly non-NULL PM2.5 rows: {len(hourly_df)}\")\nprint(hourly_df.head())\nprint()\n\n# Step 3: Compute daily max PM2.5 per station per date\nhourly_df['date'] = pd.to_datetime(hourly_df['datetime']).dt.date\ndaily_max = hourly_df.groupby(['station_id', 'date'])['pm2_5'].max().reset_index()\ndaily_max.rename(columns={'pm2_5': 'daily_max_pm25'}, inplace=True)\nprint(\"Daily max PM2.5 sample:\")\nprint(daily_max.head())\nprint()\n\n# Step 4: Count dates with daily max >= 35.0 for each station\npeak_counts = daily_max[daily_max['daily_max_pm25'] >= 35.0].groupby('station_id').size().reset_index(name='peak_days')\nprint(\"Peak day counts per station:\")\nprint(peak_counts)\nprint()\n\n# Step 5: Merge with station_type\nmerged = stations_df.merge(peak_counts, on='id', how='left')\nmerged['peak_days'] = merged['peak_days'].fillna(0).astype(int)\nprint(\"Merged with station_type:\")\nprint(merged)\nprint()\n\n# Step 6: Compute average per station_type (each station equal weight)\nroadside = merged[merged['station_type'] == 'ROADSIDE']\ngeneral = merged[merged['station_type'] == 'GENERAL']\n\nroadside_avg_peak_days = round(roadside['peak_days'].mean(), 6)\ngeneral_avg_peak_days = round(general['peak_days'].mean(), 6)\nroadside_minus_general = round(roadside_avg_peak_days - general_avg_peak_days, 6)\n\nprint(f\"ROADSIDE stations: {roadside[['name_en', 'peak_days']].values}\")\nprint(f\"GENERAL stations: {general[['name_en', 'peak_days']].values}\")\nprint(f\"roadside_avg_peak_days = {roadside_avg_peak_days}\")\nprint(f\"general_avg_peak_days = {general_avg_peak_days}\")\nprint(f\"roadside_minus_general = {roadside_minus_general}\")",
+              "# Fix: merge on correct column names\nmerged = stations_df.merge(peak_counts, left_on='id', right_on='station_id', how='left')\nmerged['peak_days'] = merged['peak_days'].fillna(0).astype(int)\nprint(\"Merged with station_type:\")\nprint(merged[['name_en', 'station_type', 'peak_days']])\nprint()\n\n# Compute average per station_type (each station equal weight)\nroadside = merged[merged['station_type'] == 'ROADSIDE']\ngeneral = merged[merged['station_type'] == 'GENERAL']\n\nroadside_avg_peak_days = round(roadside['peak_days'].mean(), 6)\ngeneral_avg_peak_days = round(general['peak_days'].mean(), 6)\nroadside_minus_general = round(roadside_avg_peak_days - general_avg_peak_days, 6)\n\nprint(f\"ROADSIDE stations peak_days: {roadside['peak_days'].values}\")\nprint(f\"GENERAL stations peak_days: {general['peak_days'].values}\")\nprint(f\"roadside_avg_peak_days = {roadside_avg_peak_days}\")\nprint(f\"general_avg_peak_days = {general_avg_peak_days}\")\nprint(f\"roadside_minus_general = {roadside_minus_general}\")"
+            ],
+            "runtime_variables": {
+              "roadside_avg_peak_days": 4.666667,
+              "general_avg_peak_days": 0.4,
+              "roadside_minus_general": 4.266667
+            }
+          }
+        ]
+      }
+    ],
+    "metrics": {
+      "total_turns": 1,
+      "successful_turns": 1,
+      "failed_turns": 0,
+      "total_steps": 3,
+      "success_rate": 1.0,
+      "total_prompt_tokens": 20281,
+      "total_completion_tokens": 1215,
+      "total_tokens": 21496
+    }
+  }
+}

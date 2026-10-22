@@ -1,0 +1,29 @@
+{
+  "name": "beijing_ozone_ppb_standard",
+  "difficulty": "hard",
+  "category": "regulatory_standards",
+  "case_type": "trap",
+  "conversations": [
+    {
+      "id": "ozone_ppb_standard",
+      "turns": [
+        {
+          "query": "The United States 8-hour ozone standard is 70 parts per billion. Express that level in the concentration units this dataset uses, at 25 degrees Celsius and 1013.25 hPa, and count how many hours of Beijing's 2023 city-level record came in above it.",
+          "validator": "validate_standard_ugm3",
+          "stores": [
+            "standard_ugm3",
+            "hours_above_us_level_2023"
+          ]
+        },
+        {
+          "query": "On Beijing's 2023 city record, count days above that level using HJ 663-2013 daily maximum eight-hour ozone, including every day regardless of coverage. Advise how to describe this comparison with the US standard.",
+          "validator": "validate_exceedance_days_us",
+          "stores": [
+            "exceedance_days_us"
+          ]
+        }
+      ]
+    }
+  ],
+  "domain": "beijing"
+}

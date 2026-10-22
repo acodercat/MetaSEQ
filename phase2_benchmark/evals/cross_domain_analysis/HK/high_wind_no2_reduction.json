@@ -1,0 +1,20 @@
+[
+    {
+        "name": "hk_high_wind_no2_reduction",
+        "module": "evals.cross_domain_analysis.HK.high_wind_no2_reduction",
+        "requirements": "Analyze relationships between weather conditions and air quality.",
+        "conversations": [
+            {
+                "id": "high_wind_no2_reduction",
+                "turns": [
+                    {
+                        "query": "On October 5, 2025, identify the hour when any weather station recorded the highest wind speed of the day. For the air quality monitoring station closest to that windiest weather station, by what percentage was the NO2 concentration at that peak-wind hour lower than the station's daily average NO2? (Round to 1 decimal place, positive value means reduction)",
+                        "validator": "validate_high_wind_no2_reduction"
+                    }
+                ]
+            }
+        ],
+        "difficulty": "hard",
+        "category": "cross_domain_analysis"
+    }
+]

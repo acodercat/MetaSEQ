@@ -1,0 +1,43 @@
+{
+  "hk_cov_schools_roadside5km": {
+    "scenario": "hk_cov_schools_roadside5km",
+    "conversations": [
+      {
+        "id": "hk_cov_schools_roadside5km",
+        "turns": [
+          {
+            "query": "How many distinct 'EDUCATIONAL_INSTITUTION' sensitive areas have their polygon centroid within 5000 metres of at least one roadside air-quality station (station_id 14, 16, or 17)? The three stations are close together and their catchments overlap heavily; count each institution only once. Return the count.",
+            "actual_response": "1598",
+            "actual_calls": [],
+            "validation_errors": [],
+            "metrics": {
+              "steps": 2,
+              "prompt_tokens": 10275,
+              "completion_tokens": 327,
+              "total_tokens": 10602
+            },
+            "success": true,
+            "variables_not_set": false,
+            "error": null,
+            "code_snippets": [
+              "import pandas as pd\nfrom sqlalchemy import text\n\nquery = text(\"\"\"\nSELECT COUNT(DISTINCT sa.id)::int AS count\nFROM sensitive_area sa\nJOIN air_quality_station aqs\n  ON aqs.id IN (14, 16, 17)\n AND ST_DWithin(ST_Centroid(sa.geometry)::geography, aqs.coordinate, 5000)\nWHERE sa.category = 'EDUCATIONAL_INSTITUTION'\n\"\"\")\nschools_roadside_5km = int(pd.read_sql(query, engine)[\"count\"].iloc[0])\nprint(f\"Distinct educational institutions within 5000 m of at least one specified roadside station: {schools_roadside_5km}\")"
+            ],
+            "runtime_variables": {
+              "schools_roadside_5km": 1598
+            }
+          }
+        ]
+      }
+    ],
+    "metrics": {
+      "total_turns": 1,
+      "successful_turns": 1,
+      "failed_turns": 0,
+      "total_steps": 2,
+      "success_rate": 1.0,
+      "total_prompt_tokens": 10275,
+      "total_completion_tokens": 327,
+      "total_tokens": 10602
+    }
+  }
+}

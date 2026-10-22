@@ -1,0 +1,44 @@
+{
+  "hk_mt_hottest_general_o3": {
+    "scenario": "hk_mt_hottest_general_o3",
+    "conversations": [
+      {
+        "id": "hk_mt_hottest_general_o3",
+        "turns": [
+          {
+            "query": "For each GENERAL-type air-quality station, find its geographically nearest weather station (weather stations use a separate id space; match by coordinate proximity). Using June 2025, compute each general station's nearest-weather mean temperature, and identify the general station whose nearest weather station is the hottest. Return that air-quality station's name and its own June mean O3 (non-NULL hourly, 1 dp).",
+            "actual_response": "Tung Chung \u2014 53.9 \u00b5g/m\u00b3",
+            "actual_calls": [],
+            "validation_errors": [],
+            "metrics": {
+              "steps": 2,
+              "prompt_tokens": 10990,
+              "completion_tokens": 1259,
+              "total_tokens": 12249
+            },
+            "success": true,
+            "variables_not_set": false,
+            "error": null,
+            "code_snippets": [
+              "import pandas as pd\nfrom sqlalchemy import text\n\nstart, end = \"2025-06-01\", \"2025-07-01\"\n\ncounts = pd.read_sql(text(\"\"\"\nSELECT 'general_air_quality_stations' AS metric, COUNT(*)::int AS n\nFROM air_quality_station\nWHERE station_type = 'GENERAL'\nUNION ALL\nSELECT 'june_weather_temperature_nonnull_hours', COUNT(*)::int\nFROM hourly_station_weather\nWHERE datetime >= :start AND datetime < :end AND temperature IS NOT NULL\nUNION ALL\nSELECT 'june_air_quality_o3_nonnull_hours', COUNT(*)::int\nFROM hourly_station_air_quality\nWHERE datetime >= :start AND datetime < :end AND o3 IS NOT NULL\n\"\"\"), engine, params={\"start\": start, \"end\": end})\nprint(counts.to_string(index=False))\n\nresult = pd.read_sql(text(\"\"\"\nWITH general_stations AS (\n    SELECT id, name_en, coordinate\n    FROM air_quality_station\n    WHERE station_type = 'GENERAL'\n),\nnearest_weather AS (\n    SELECT\n        g.id AS aq_station_id,\n        g.name_en AS aq_station_name,\n        w.id AS weather_station_id\n    FROM general_stations g\n    CROSS JOIN LATERAL (\n        SELECT id\n        FROM weather_station w\n        ORDER BY ST_Distance(g.coordinate, w.coordinate)\n        LIMIT 1\n    ) w\n),\nweather_june AS (\n    SELECT station_id, AVG(temperature) AS mean_temp, COUNT(temperature) AS temp_hours\n    FROM hourly_station_weather\n    WHERE datetime >= :start AND datetime < :end AND temperature IS NOT NULL\n    GROUP BY station_id\n),\no3_june AS (\n    SELECT station_id, AVG(o3) AS mean_o3, COUNT(o3) AS o3_hours\n    FROM hourly_station_air_quality\n    WHERE datetime >= :start AND datetime < :end AND o3 IS NOT NULL\n    GROUP BY station_id\n),\nranked AS (\n    SELECT\n        nw.aq_station_name,\n        wj.mean_temp,\n        oj.mean_o3,\n        wj.temp_hours,\n        oj.o3_hours\n    FROM nearest_weather nw\n    JOIN weather_june wj ON wj.station_id = nw.weather_station_id\n    JOIN o3_june oj ON oj.station_id = nw.aq_station_id\n)\nSELECT aq_station_name, ROUND(mean_temp::numeric, 3)::float AS nearest_weather_june_mean_temp,\n       ROUND(mean_o3::numeric, 1)::float AS june_mean_o3,\n       temp_hours::int, o3_hours::int\nFROM ranked\nORDER BY mean_temp DESC, aq_station_name\nLIMIT 1\n\"\"\"), engine, params={\"start\": start, \"end\": end})\n\nhottest_gen_station = str(result.loc[0, \"aq_station_name\"])\nhottest_gen_o3 = float(result.loc[0, \"june_mean_o3\"])\n\nprint(f\"hottest_general_station={hottest_gen_station}\")\nprint(f\"nearest_weather_june_mean_temperature={result.loc[0, 'nearest_weather_june_mean_temp']:.3f}\")\nprint(f\"june_mean_o3={hottest_gen_o3:.1f}\")\nprint(f\"temperature_hours_used={int(result.loc[0, 'temp_hours'])}, o3_hours_used={int(result.loc[0, 'o3_hours'])}\")"
+            ],
+            "runtime_variables": {
+              "hottest_gen_station": "Tung Chung",
+              "hottest_gen_o3": 53.9
+            }
+          }
+        ]
+      }
+    ],
+    "metrics": {
+      "total_turns": 1,
+      "successful_turns": 1,
+      "failed_turns": 0,
+      "total_steps": 2,
+      "success_rate": 1.0,
+      "total_prompt_tokens": 10990,
+      "total_completion_tokens": 1259,
+      "total_tokens": 12249
+    }
+  }
+}

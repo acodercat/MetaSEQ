@@ -1,0 +1,51 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+# Framework: code and archived results are tracked; secrets, caches, and
+# local env stay out. Real credentials live only in phase2_benchmark/.env and
+# phase2_benchmark/models.toml (see the .example files).
+phase2_benchmark/.env
+phase2_benchmark/models.toml
+phase2_benchmark/.venv/
+phase2_benchmark/gis_cache/
+phase2_benchmark/.pytest_cache/
+phase2_benchmark/.ruff_cache/
+phase2_benchmark/.claude/
+
+# Figures and tables the scripts write; only the archived atlas they read is tracked
+manuscript/*
+!manuscript/figures/
+manuscript/figures/*
+!manuscript/figures/archive_sources/
+manuscript/figures/archive_sources/*
+!manuscript/figures/archive_sources/supp_atlas.pdf
+
+# Deployment execution logs: available from the corresponding author on request
+phase1_evaluation/logs_to_eval/
+
+# Local notes and submission material
+CLAUDE.md
+
+# Submission materials
+submission/
+*.zip
+cover_letter*.docx
+
+# Regenerable figure intermediates (scripts recreate them; see README)
+scripts/*.png
+scripts/gis/layers_out/
+scripts/gis/hongkong_*/
+
+# Local assistant working data (plans, memory)
+.claude/
+
+# any copied variants of render outputs
+scripts/gis/layers_out*/

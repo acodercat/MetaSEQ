@@ -1,0 +1,37 @@
+{
+  "name": "hk_roadside_index_compression",
+  "difficulty": "medium",
+  "category": "comparative_assessment",
+  "case_type": "baseline",
+  "conversations": [
+    {
+      "id": "roadside_index_compression",
+      "turns": [
+        {
+          "query": "Hong Kong's register classifies each air quality station as roadside or general. Over 2020 through 2025, how much more nitrogen dioxide does a roadside location carry than a general one?",
+          "validator": "validate_roadside_no2_ratio",
+          "stores": [
+            "roadside_no2_ratio"
+          ],
+          "evaluation_tier": "execution"
+        },
+        {
+          "query": "Now ask the same of the total added health risk each station-hour carries — the sum of its four per-pollutant added-risk terms.",
+          "validator": "validate_roadside_risk_ratio",
+          "stores": [
+            "roadside_added_risk_ratio"
+          ],
+          "evaluation_tier": "execution"
+        },
+        {
+          "query": "Over the same complete station-hours, do roadside and general stations have different median published AQHI bands? Explain what that comparison establishes about the concentration and health-risk differences you found.",
+          "validator": "validate_index_separation",
+          "stores": [
+            "index_separates_the_two_classes"
+          ]
+        }
+      ]
+    }
+  ],
+  "domain": "hk"
+}

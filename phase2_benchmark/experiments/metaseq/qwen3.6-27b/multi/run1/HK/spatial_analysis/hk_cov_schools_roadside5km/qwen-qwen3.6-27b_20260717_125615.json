@@ -1,0 +1,50 @@
+{
+  "hk_cov_schools_roadside5km": {
+    "scenario": "hk_cov_schools_roadside5km",
+    "conversations": [
+      {
+        "id": "hk_cov_schools_roadside5km",
+        "turns": [
+          {
+            "query": "How many distinct 'EDUCATIONAL_INSTITUTION' sensitive areas have their polygon centroid within 5000 metres of at least one roadside air-quality station (station_id 14, 16, or 17)? The three stations are close together and their catchments overlap heavily; count each institution only once. Return the count.",
+            "actual_response": "The verification is complete. The count of distinct 'EDUCATIONAL_INSTITUTION' sensitive areas with their centroid within 5000 metres of at least one roadside air-quality station (station_id 14, 16, or 17) is **1598**.\n\n**Final Answer:** 1598",
+            "actual_calls": [],
+            "validation_errors": [],
+            "metrics": {
+              "steps": 12,
+              "prompt_tokens": 85080,
+              "completion_tokens": 3805,
+              "total_tokens": 88885
+            },
+            "success": true,
+            "variables_not_set": false,
+            "error": null,
+            "code_snippets": [
+              "import pandas as pd\nfrom sqlalchemy import text\nimport numpy as np\n\n# Fetch EDUCATIONAL_INSTITUTION sensitive areas with their centroids\nquery_schools = text(\"\"\"\nSELECT \n    id,\n    name,\n    ST_Centroid(geometry) as centroid,\n    ST_X(ST_Centroid(geometry)) as centroid_lon,\n    ST_Y(ST_Centroid(geometry)) as centroid_lat\nFROM sensitive_area\nWHERE category = 'EDUCATIONAL_INSTITUTION'\n\"\"\")\nschools_df = pd.read_sql(query_schools, engine)\nprint(f\"Number of educational institutions: {len(schools_df)}\")\nprint(schools_df.head())\n\n# Fetch roadside air quality stations with station_id 14, 16, or 17\nquery_stations = text(\"\"\"\nSELECT \n    id,\n    name_en,\n    ST_X(coordinate::geometry) as lon,\n    ST_Y(coordinate::geometry) as lat\nFROM air_quality_station\nWHERE station_type = 'ROADSIDE'\nAND id IN (14, 16, 17)\n\"\"\")\nstations_df = pd.read_sql(query_stations, engine)\nprint(f\"\\nNumber of roadside stations (14, 16, 17): {len(stations_df)}\")\nprint(stations_df)",
+              "from math import radians, sin, cos, sqrt, atan2\n\ndef haversine_distance(lon1, lat1, lon2, lat2):\n    \"\"\"Calculate the great circle distance in meters between two points.\"\"\"\n    R = 6371000  # Earth radius in meters\n    lon1, lat1, lon2, lat2 = map(radians, [lon1, lat1, lon2, lat2])\n    dlon = lon2 - lon1\n    dlat = lat2 - lat1\n    a = sin(dlat/2)**2 + cos(lat1) * cos(lat2) * sin(dlon/2)**2\n    c = 2 * atan2(sqrt(a), sqrt(1-a))\n    return R * c\n\n# Get station coordinates\nstations = stations_df[['id', 'lon', 'lat']].values.tolist()\n\n# Calculate minimum distance from each school to any of the three stations\nmin_distances = []\nfor _, school in schools_df.iterrows():\n    school_lon = school['centroid_lon']\n    school_lat = school['centroid_lat']\n    min_dist = float('inf')\n    for station_id, st_lon, st_lat in stations:\n        dist = haversine_distance(school_lon, school_lat, st_lon, st_lat)\n        if dist < min_dist:\n            min_dist = dist\n    min_distances.append(min_dist)\n\nschools_df['min_distance_to_roadside'] = min_distances\n\n# Count schools within 5000m\nschools_within_5km = schools_df[schools_df['min_distance_to_roadside'] <= 5000]\nschools_roadside_5km = len(schools_within_5km)\n\nprint(f\"Schools within 5000m of at least one roadside station: {schools_roadside_5km}\")\nprint(f\"Total schools: {len(schools_df)}\")\nprint(f\"Percentage: {schools_roadside_5km / len(schools_df) * 100:.2f}%\")",
+              "import pandas as pd\nfrom sqlalchemy import text\nimport numpy as np\n\n# Get the coordinates of the three roadside stations (14, 16, 17)\nquery_stations = text(\"\"\"\nSELECT id, name_en, ST_X(coordinate::geometry) as lon, ST_Y(coordinate::geometry) as lat\nFROM air_quality_station\nWHERE id IN (14, 16, 17)\n\"\"\")\nstations_df = pd.read_sql(query_stations, engine)\nprint(\"Roadside stations:\")\nprint(stations_df)\n\n# Get educational institutions from sensitive_area table\nquery_schools = text(\"\"\"\nSELECT id, name, ST_X(geometry::geometry) as lon, ST_Y(geometry::geometry) as lat\nFROM sensitive_area\nWHERE category = 'EDUCATIONAL_INSTITUTION'\n\"\"\")\nschools_df = pd.read_sql(query_schools, engine)\nprint(f\"\\nTotal educational institutions: {len(schools_df)}\")\nprint(schools_df.head())",
+              "import numpy as np\n\n# Extract station coordinates\nstation_coords = stations_df[['id', 'lon', 'lat']].values\nprint(f\"Station coordinates: {station_coords}\")\n\n# Compute distances for each school to each station\n# Using Euclidean distance on lat/lon (as specified in the task)\nschools_lon = schools_df['lon'].values\nschools_lat = schools_df['lat'].values\n\n# Calculate minimum distance to any of the three stations for each school\nmin_distances = []\nfor i in range(len(schools_df)):\n    s_lon = schools_lon[i]\n    s_lat = schools_lat[i]\n    dists = []\n    for st_id, st_lon, st_lat in station_coords:\n        dist = np.sqrt((s_lon - st_lon)**2 + (s_lat - st_lat)**2)\n        dists.append(dist)\n    min_distances.append(min(dists))\n\nschools_df['min_dist'] = min_distances\n\n# Convert degrees to approximate meters (1 degree \u2248 111,000 meters at this latitude)\n# But since we're using Euclidean distance on lat/lon, we need to convert to meters\n# At ~22.3\u00b0N, 1\u00b0 lat \u2248 111,000 m, 1\u00b0 lon \u2248 111,000 * cos(22.3\u00b0) \u2248 102,700 m\n# For simplicity, use average: 1 degree \u2248 106,000 m\n# Actually, let's use a more precise conversion\nlat_rad = np.radians(schools_lat)\navg_lat = np.mean(lat_rad)\nm_per_deg_lat = 111000\nm_per_deg_lon = 111000 * np.cos(avg_lat)\n\n# Recalculate distances in meters\nmin_distances_m = []\nfor i in range(len(schools_df)):\n    s_lon = schools_lon[i]\n    s_lat = schools_lat[i]\n    dists = []\n    for st_id, st_lon, st_lat in station_coords:\n        dlat = (s_lat - st_lat) * m_per_deg_lat\n        dlon = (s_lon - st_lon) * m_per_deg_lon\n        dist = np.sqrt(dlat**2 + dlon**2)\n        dists.append(dist)\n    min_distances_m.append(min(dists))\n\nschools_df['min_dist_m'] = min_distances_m\n\n# Filter schools within 5000m\nschools_within_5km = schools_df[schools_df['min_dist_m'] <= 5000]\nprint(f\"\\nSchools within 5000m of any roadside station: {len(schools_within_5km)}\")\nprint(f\"Total schools: {len(schools_df)}\")\n\n# Count distinct schools\nschools_roadside_5km = len(schools_within_5km)\nprint(f\"\\nschools_roadside_5km = {schools_roadside_5km}\")",
+              "# Check what's already in the runtime\nprint(\"schools_roadside_5km:\", schools_roadside_5km)\nprint(\"Type:\", type(schools_roadside_5km))\nprint()\n\n# Check schools_df\nprint(\"schools_df shape:\", schools_df.shape)\nprint(\"schools_df columns:\", schools_df.columns.tolist())\nprint(schools_df.head())\nprint()\n\n# Check stations_df\nprint(\"stations_df shape:\", stations_df.shape)\nprint(\"stations_df columns:\", stations_df.columns.tolist())\nprint(stations_df.head())\nprint()\n\n# Check schools_within_5km\nprint(\"schools_within_5km shape:\", schools_within_5km.shape)\nprint(\"schools_within_5km columns:\", schools_within_5km.columns.tolist())\nprint(schools_within_5km.head())\nprint()\n\n# Check min_distances\nprint(\"min_distances length:\", len(min_distances))\nprint(\"min_distances[:5]:\", min_distances[:5])\nprint()\n\n# Check min_distances_m\nprint(\"min_distances_m length:\", len(min_distances_m))\nprint(\"min_distances_m[:5]:\", min_distances_m[:5])",
+              "# Verify the count\ncount = len(schools_within_5km)\nprint(f\"Number of schools within 5km of roadside stations: {count}\")\n\n# Verify max distance is within 5000m\nmax_dist = schools_within_5km['min_dist_m'].max()\nprint(f\"Maximum distance in schools_within_5km: {max_dist} m\")\n\n# Confirm the final variable\nschools_roadside_5km = int(count)\nprint(f\"Final schools_roadside_5km: {schools_roadside_5km}\")\nprint(f\"Type: {type(schools_roadside_5km)}\")",
+              "import pandas as pd\nfrom sqlalchemy import text\nimport numpy as np\n\n# First, verify the roadside stations exist and get their coordinates\nquery_stations = text(\"\"\"\nSELECT id, name_en, station_type, ST_X(coordinate::geometry) as lon, ST_Y(coordinate::geometry) as lat\nFROM air_quality_station\nWHERE id IN (14, 16, 17)\n\"\"\")\nstations_df = pd.read_sql(query_stations, engine)\nprint(\"Roadside stations:\")\nprint(stations_df)\n\n# Count total EDUCATIONAL_INSTITUTION sensitive areas\nquery_count_total = text(\"\"\"\nSELECT COUNT(*) as total_count\nFROM sensitive_area\nWHERE category = 'EDUCATIONAL_INSTITUTION'\n\"\"\")\ntotal_schools = pd.read_sql(query_count_total, engine)\nprint(f\"\\nTotal EDUCATIONAL_INSTITUTION sensitive areas: {total_schools['total_count'].values[0]}\")\n\n# Now compute the count using PostGIS spatial query\nquery_schools_near = text(\"\"\"\nSELECT COUNT(DISTINCT sa.id) as count\nFROM sensitive_area sa\nJOIN air_quality_station aqs ON ST_DWithin(\n    ST_Centroid(sa.geometry)::geography,\n    aqs.coordinate::geography,\n    5000\n)\nWHERE sa.category = 'EDUCATIONAL_INSTITUTION'\nAND aqs.id IN (14, 16, 17)\n\"\"\")\nresult = pd.read_sql(query_schools_near, engine)\nprint(f\"\\nSchools within 5km of roadside stations (14,16,17): {result['count'].values[0]}\")",
+              "schools_roadside_5km = 1598\nprint(f\"schools_roadside_5km = {schools_roadside_5km}\")"
+            ],
+            "runtime_variables": {
+              "schools_roadside_5km": 1598
+            }
+          }
+        ]
+      }
+    ],
+    "metrics": {
+      "total_turns": 1,
+      "successful_turns": 1,
+      "failed_turns": 0,
+      "total_steps": 12,
+      "success_rate": 1.0,
+      "total_prompt_tokens": 85080,
+      "total_completion_tokens": 3805,
+      "total_tokens": 88885
+    }
+  }
+}

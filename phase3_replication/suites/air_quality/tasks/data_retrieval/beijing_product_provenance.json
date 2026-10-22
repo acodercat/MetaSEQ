@@ -1,0 +1,21 @@
+{
+  "name": "beijing_product_provenance",
+  "difficulty": "easy",
+  "category": "data_retrieval",
+  "case_type": "baseline",
+  "conversations": [
+    {
+      "id": "product_provenance",
+      "turns": [
+        {
+          "query": "At the peak hour of the 15 March 2021 dust storm, 09:00 Beijing time, what was Beijing's PM10? Account for what you find in the runtime.",
+          "validator": "validate_provenance_pair",
+          "stores": [
+            "station_network_pm10"
+          ]
+        }
+      ]
+    }
+  ],
+  "domain": "beijing"
+}

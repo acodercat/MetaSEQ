@@ -1,0 +1,46 @@
+{
+  "hk_mt_mongkok_profile": {
+    "scenario": "hk_mt_mongkok_profile",
+    "conversations": [
+      {
+        "id": "hk_mt_mongkok_profile",
+        "turns": [
+          {
+            "query": "Build an integrated roadside profile for Mong Kok air-quality station (station_id 14) over June 2025 (2025-06-01 to 2025-06-30). Report: (1) its mean NO2 (non-NULL hourly, 1 dp); (2) the mean traffic congestion_index during rush hours 08 and 09 across the road segments whose geometry lies within 500 metres of the station (non-NULL, 2 dp); (3) the number of 'EDUCATIONAL_INSTITUTION' sensitive areas whose polygon centroid is within 500 metres of the station; (4) the land_use_zone land_category with the largest total intersection area with the 500-metre buffer around the station.",
+            "actual_response": "For Mong Kok station in June 2025:\n\n1. Mean NO\u2082: 53.0 \u00b5g/m\u00b3  \n2. Mean rush-hour congestion index: 1.06  \n3. Educational institutions within 500 m: 26  \n4. Dominant land use within 500 m: Major Road",
+            "actual_calls": [],
+            "validation_errors": [],
+            "metrics": {
+              "steps": 2,
+              "prompt_tokens": 11552,
+              "completion_tokens": 1506,
+              "total_tokens": 13058
+            },
+            "success": true,
+            "variables_not_set": false,
+            "error": null,
+            "code_snippets": [
+              "import pandas as pd\nfrom sqlalchemy import text\n\nstart, end = \"2025-06-01 00:00:00\", \"2025-07-01 00:00:00\"\n\n# Step 1: mandatory scoped counts before aggregating the traffic data\ncount_sql = text(\"\"\"\nWITH s AS (\n  SELECT coordinate::geography AS geog FROM air_quality_station WHERE id = 14\n),\nr AS (\n  SELECT rs.id\n  FROM road_segment rs, s\n  WHERE ST_DWithin(rs.geometry::geography, s.geog, 500)\n)\nSELECT\n  (SELECT COUNT(*) FROM r) AS n_nearby_segments,\n  (SELECT COUNT(*)\n   FROM hourly_road_segment_traffic t\n   JOIN r ON t.road_segment_id = r.id\n   WHERE t.datetime >= :start AND t.datetime < :end\n     AND EXTRACT(HOUR FROM t.datetime) IN (8,9)\n     AND t.congestion_index IS NOT NULL) AS n_rush_traffic_records\n\"\"\")\ncounts = pd.read_sql(count_sql, engine, params={\"start\": start, \"end\": end})\n\n# Step 2: aggregate all required profile measures and assign required variables\nprofile_sql = text(\"\"\"\nWITH\ns AS (\n  SELECT coordinate::geography AS geog,\n         ST_Buffer(coordinate::geography, 500)::geometry AS buf\n  FROM air_quality_station\n  WHERE id = 14\n),\nnear_roads AS (\n  SELECT rs.id\n  FROM road_segment rs, s\n  WHERE ST_DWithin(rs.geometry::geography, s.geog, 500)\n),\nland AS (\n  SELECT luz.land_category::text AS land_category,\n         SUM(ST_Area(ST_Intersection(luz.geometry, s.buf)::geography)) AS inter_area_m2\n  FROM land_use_zone luz, s\n  WHERE ST_Intersects(luz.geometry, s.buf)\n  GROUP BY luz.land_category\n  ORDER BY inter_area_m2 DESC\n  LIMIT 1\n)\nSELECT\n  ROUND((SELECT AVG(no2)::numeric\n         FROM hourly_station_air_quality\n         WHERE station_id = 14\n           AND datetime >= :start AND datetime < :end\n           AND no2 IS NOT NULL), 1)::float AS mean_no2,\n  ROUND((SELECT AVG(t.congestion_index)::numeric\n         FROM hourly_road_segment_traffic t\n         JOIN near_roads nr ON t.road_segment_id = nr.id\n         WHERE t.datetime >= :start AND t.datetime < :end\n           AND EXTRACT(HOUR FROM t.datetime) IN (8,9)\n           AND t.congestion_index IS NOT NULL), 2)::float AS rush_ci,\n  (SELECT COUNT(*)::int\n   FROM sensitive_area sa, s\n   WHERE sa.category = 'EDUCATIONAL_INSTITUTION'\n     AND ST_DWithin(ST_Centroid(sa.geometry)::geography, s.geog, 500)) AS schools,\n  (SELECT land_category FROM land) AS dom_landuse,\n  (SELECT COUNT(no2)::int\n   FROM hourly_station_air_quality\n   WHERE station_id = 14\n     AND datetime >= :start AND datetime < :end\n     AND no2 IS NOT NULL) AS n_no2_records\n\"\"\")\nprofile = pd.read_sql(profile_sql, engine, params={\"start\": start, \"end\": end}).iloc[0]\n\nmk_no2 = float(profile[\"mean_no2\"]) if pd.notna(profile[\"mean_no2\"]) else None\nmk_rush_ci = float(profile[\"rush_ci\"]) if pd.notna(profile[\"rush_ci\"]) else None\nmk_schools = int(profile[\"schools\"])\nmk_dom_landuse = str(profile[\"dom_landuse\"]) if pd.notna(profile[\"dom_landuse\"]) else None\n\nprint({\n    \"n_non_null_no2_hours\": int(profile[\"n_no2_records\"]),\n    \"n_nearby_road_segments\": int(counts.loc[0, \"n_nearby_segments\"]),\n    \"n_non_null_rush_traffic_records\": int(counts.loc[0, \"n_rush_traffic_records\"]),\n    \"mk_no2\": mk_no2,\n    \"mk_rush_ci\": mk_rush_ci,\n    \"mk_schools\": mk_schools,\n    \"mk_dom_landuse\": mk_dom_landuse\n})"
+            ],
+            "runtime_variables": {
+              "mk_no2": 53.0,
+              "mk_rush_ci": 1.06,
+              "mk_schools": 26,
+              "mk_dom_landuse": "Major Road"
+            }
+          }
+        ]
+      }
+    ],
+    "metrics": {
+      "total_turns": 1,
+      "successful_turns": 1,
+      "failed_turns": 0,
+      "total_steps": 2,
+      "success_rate": 1.0,
+      "total_prompt_tokens": 11552,
+      "total_completion_tokens": 1506,
+      "total_tokens": 13058
+    }
+  }
+}

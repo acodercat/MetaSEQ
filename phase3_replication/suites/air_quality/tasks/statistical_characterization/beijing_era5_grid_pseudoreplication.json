@@ -1,0 +1,30 @@
+{
+  "name": "beijing_era5_grid_pseudoreplication",
+  "difficulty": "hard",
+  "category": "statistical_characterization",
+  "case_type": "trap",
+  "conversations": [
+    {
+      "id": "era5_pseudoreplication",
+      "turns": [
+        {
+          "query": "Beijing's twelve monitoring stations each carry a full hourly reanalysis meteorology record for 2023. A study wants to treat them as twelve samples of the city's meteorology. Are they?",
+          "validator": "validate_series_count",
+          "stores": [
+            "independent_met_series_2023",
+            "largest_shared_series_stations",
+            "twelve_independent_samples"
+          ]
+        },
+        {
+          "query": "The study also builds a citywide daily ventilation coefficient for 2023 by averaging the twelve records. Advise them.",
+          "validator": "validate_weighting_gap",
+          "stores": [
+            "weighting_changes_the_figure_materially"
+          ]
+        }
+      ]
+    }
+  ],
+  "domain": "beijing"
+}

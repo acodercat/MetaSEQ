@@ -1,0 +1,23 @@
+{
+  "name": "hk_weather_variable_coverage",
+  "difficulty": "easy",
+  "category": "data_retrieval",
+  "case_type": "baseline",
+  "conversations": [
+    {
+      "id": "weather_variable_coverage",
+      "turns": [
+        {
+          "query": "For 2025, count weather stations in the record, those reporting visibility, and those reporting both visibility and humidity. What geographic scope can these data support for a visibility-humidity study?",
+          "validator": "validate_coverage_counts",
+          "stores": [
+            "weather_stations_total",
+            "stations_reporting_visibility",
+            "stations_reporting_visibility_and_humidity"
+          ]
+        }
+      ]
+    }
+  ],
+  "domain": "hk"
+}

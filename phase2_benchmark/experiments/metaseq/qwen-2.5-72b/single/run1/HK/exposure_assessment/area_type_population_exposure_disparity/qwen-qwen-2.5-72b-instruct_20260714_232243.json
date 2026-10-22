@@ -1,0 +1,80 @@
+{
+  "hk_area_type_population_exposure_disparity": {
+    "scenario": "hk_area_type_population_exposure_disparity",
+    "conversations": [
+      {
+        "id": "area_type_disparity",
+        "turns": [
+          {
+            "query": "In October 2025, compute the average PM2.5 for stations grouped by area type (urban, new town, rural). Return the three values rounded to 1 decimal place.",
+            "actual_response": "The average PM2.5 exposure for each area type in October 2025 is as follows:\n- Urban: 13.5 \u00b5g/m\u00b3\n- New Town: 14.0 \u00b5g/m\u00b3\n- Rural: 12.0 \u00b5g/m\u00b3\n\nThe area type with the highest average PM2.5 exposure is New Town.",
+            "actual_calls": [],
+            "validation_errors": [],
+            "metrics": {
+              "steps": 3,
+              "prompt_tokens": 17198,
+              "completion_tokens": 472,
+              "total_tokens": 17670
+            },
+            "success": true,
+            "variables_not_set": false,
+            "error": null,
+            "code_snippets": [
+              "import pandas as pd\nfrom sqlalchemy import text\n\n# Query the average PM2.5 for each area type in October 2025\nquery = text(\"\"\"\nSELECT area_type, AVG(pm2_5) AS avg_pm2_5\nFROM hourly_station_air_quality hsaq\nJOIN air_quality_station aqs ON hsaq.station_id = aqs.id\nWHERE hsaq.datetime >= '2025-10-01 00:00:00' AND hsaq.datetime < '2025-11-01 00:00:00'\nGROUP BY area_type\n\"\"\")\n\n# Execute the query and load the results into a DataFrame\ndf = pd.read_sql(query, engine)\n\n# Print the results\nprint(df)",
+              "# Assign the average PM2.5 values to the respective variables\nurban_pm25 = df.loc[df['area_type'] == 'URBAN', 'avg_pm2_5'].values[0].round(1)\nnew_town_pm25 = df.loc[df['area_type'] == 'NEW_TOWN', 'avg_pm2_5'].values[0].round(1)\nrural_pm25 = df.loc[df['area_type'] == 'RURAL', 'avg_pm2_5'].values[0].round(1)\n\n# Determine the area type with the highest average PM2.5\nhighest_exposure_type = df.loc[df['avg_pm2_5'].idxmax(), 'area_type']\n\n# Print the results\nprint(f\"Urban PM2.5: {urban_pm25}\")\nprint(f\"New Town PM2.5: {new_town_pm25}\")\nprint(f\"Rural PM2.5: {rural_pm25}\")\nprint(f\"Highest Exposure Type: {highest_exposure_type}\")"
+            ],
+            "runtime_variables": {
+              "urban_pm25": 13.5,
+              "new_town_pm25": 14.0,
+              "rural_pm25": 12.0,
+              "urban_pop": null,
+              "new_town_pop": null,
+              "rural_pop": null,
+              "highest_exposure_type": "NEW_TOWN"
+            }
+          },
+          {
+            "query": "Compute the total population within 3km (from pop_df using haversine distance) of all urban stations combined, all new town stations combined, and the rural station. Which area type has the highest average PM2.5? Return the three population counts and the area type name.",
+            "actual_response": "The total population within 3km of all urban stations combined, all new town stations combined, and the rural station is as follows:\n- Urban Population: 6,402,304\n- New Town Population: 1,450,868\n- Rural Population: 1,230\n\nThe area type with the highest average PM2.5 is New Town.",
+            "actual_calls": [],
+            "validation_errors": [
+              "Custom validator failed: urban_pop=6402304, expected ~3804554"
+            ],
+            "metrics": {
+              "steps": 3,
+              "prompt_tokens": 20359,
+              "completion_tokens": 1125,
+              "total_tokens": 21484
+            },
+            "success": false,
+            "variables_not_set": false,
+            "error": null,
+            "code_snippets": [
+              "import pandas as pd\nfrom sqlalchemy import text\nfrom haversine import haversine, Unit\n\n# Function to calculate the population within 3km of a given station\ndef calculate_population_within_3km(station_coords, pop_df):\n    pop_df['distance'] = pop_df.apply(\n        lambda row: haversine((row['latitude'], row['longitude']), station_coords, unit=Unit.KILOMETERS),\n        axis=1\n    )\n    return pop_df[pop_df['distance'] <= 3]['population'].sum()\n\n# Query the coordinates of all urban, new town, and rural stations\nquery = text(\"\"\"\nSELECT id, area_type, ST_X(coordinate::geometry) AS longitude, ST_Y(coordinate::geometry) AS latitude\nFROM air_quality_station\n\"\"\")\n\nstations_df = pd.read_sql(query, engine)\n\n# Group stations by area type\nurban_stations = stations_df[stations_df['area_type'] == 'URBAN']\nnew_town_stations = stations_df[stations_df['area_type'] == 'NEW_TOWN']\nrural_stations = stations_df[stations_df['area_type'] == 'RURAL']\n\n# Calculate the total population within 3km of all urban stations combined\nurban_pop = sum(calculate_population_within_3km((station['latitude'], station['longitude']), pop_df) for _, station in urban_stations.iterrows())\n\n# Calculate the total population within 3km of all new town stations combined\nnew_town_pop = sum(calculate_population_within_3km((station['latitude'], station['longitude']), pop_df) for _, station in new_town_stations.iterrows())\n\n# Calculate the total population within 3km of the rural station\nrural_pop = sum(calculate_population_within_3km((station['latitude'], station['longitude']), pop_df) for _, station in rural_stations.iterrows())\n\n# Print the results\nprint(f\"Urban Population: {urban_pop}\")\nprint(f\"New Town Population: {new_town_pop}\")\nprint(f\"Rural Population: {rural_pop}\")",
+              "import pandas as pd\nfrom sqlalchemy import text\nfrom math import radians, sin, cos, sqrt, atan2\n\n# Function to calculate the haversine distance between two points\ndef haversine_distance(lat1, lon1, lat2, lon2):\n    R = 6371.0  # Radius of the Earth in kilometers\n    lat1_rad = radians(lat1)\n    lon1_rad = radians(lon1)\n    lat2_rad = radians(lat2)\n    lon2_rad = radians(lon2)\n    \n    dlon = lon2_rad - lon1_rad\n    dlat = lat2_rad - lat1_rad\n    \n    a = sin(dlat / 2)**2 + cos(lat1_rad) * cos(lat2_rad) * sin(dlon / 2)**2\n    c = 2 * atan2(sqrt(a), sqrt(1 - a))\n    \n    distance = R * c\n    return distance\n\n# Function to calculate the population within 3km of a given station\ndef calculate_population_within_3km(station_coords, pop_df):\n    pop_df['distance'] = pop_df.apply(\n        lambda row: haversine_distance(row['latitude'], row['longitude'], station_coords[0], station_coords[1]),\n        axis=1\n    )\n    return pop_df[pop_df['distance'] <= 3]['population'].sum()\n\n# Query the coordinates of all urban, new town, and rural stations\nquery = text(\"\"\"\nSELECT id, area_type, ST_X(coordinate::geometry) AS longitude, ST_Y(coordinate::geometry) AS latitude\nFROM air_quality_station\n\"\"\")\n\nstations_df = pd.read_sql(query, engine)\n\n# Group stations by area type\nurban_stations = stations_df[stations_df['area_type'] == 'URBAN']\nnew_town_stations = stations_df[stations_df['area_type'] == 'NEW_TOWN']\nrural_stations = stations_df[stations_df['area_type'] == 'RURAL']\n\n# Calculate the total population within 3km of all urban stations combined\nurban_pop = sum(calculate_population_within_3km((station['latitude'], station['longitude']), pop_df) for _, station in urban_stations.iterrows())\n\n# Calculate the total population within 3km of all new town stations combined\nnew_town_pop = sum(calculate_population_within_3km((station['latitude'], station['longitude']), pop_df) for _, station in new_town_stations.iterrows())\n\n# Calculate the total population within 3km of the rural station\nrural_pop = sum(calculate_population_within_3km((station['latitude'], station['longitude']), pop_df) for _, station in rural_stations.iterrows())\n\n# Print the results\nprint(f\"Urban Population: {urban_pop}\")\nprint(f\"New Town Population: {new_town_pop}\")\nprint(f\"Rural Population: {rural_pop}\")"
+            ],
+            "runtime_variables": {
+              "urban_pm25": 13.5,
+              "new_town_pm25": 14.0,
+              "rural_pm25": 12.0,
+              "urban_pop": "np.int64(6402304)",
+              "new_town_pop": "np.int64(1450868)",
+              "rural_pop": "np.int64(1230)",
+              "highest_exposure_type": "NEW_TOWN"
+            }
+          }
+        ]
+      }
+    ],
+    "metrics": {
+      "total_turns": 2,
+      "successful_turns": 1,
+      "failed_turns": 1,
+      "total_steps": 6,
+      "success_rate": 0.5,
+      "total_prompt_tokens": 37557,
+      "total_completion_tokens": 1597,
+      "total_tokens": 39154
+    }
+  }
+}

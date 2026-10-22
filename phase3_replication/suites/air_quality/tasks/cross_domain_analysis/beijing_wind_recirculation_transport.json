@@ -1,0 +1,26 @@
+{
+  "name": "beijing_wind_recirculation_transport",
+  "difficulty": "hard",
+  "category": "cross_domain_analysis",
+  "case_type": "baseline",
+  "conversations": [
+    {
+      "id": "beijing_wind_recirculation_transport",
+      "turns": [
+        {
+          "query": "At Dongsi in 2025, identify the day with the greatest Allwine-Whiteman recirculation factor. Report the factor, wind run, resultant displacement and complete-day count. Would a large wind run alone justify calling that day well ventilated?",
+          "validator": "validate_evidence",
+          "stores": [
+            "most_recirculating_day",
+            "recirculation_factor",
+            "wind_run_km",
+            "resultant_displacement_km",
+            "complete_wind_days"
+          ],
+          "evaluation_tier": "execution"
+        }
+      ]
+    }
+  ],
+  "domain": "beijing"
+}

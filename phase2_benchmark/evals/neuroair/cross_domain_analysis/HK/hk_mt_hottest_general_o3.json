@@ -1,0 +1,25 @@
+[
+  {
+    "name": "hk_mt_hottest_general_o3",
+    "module": "evals.neuroair.cross_domain_analysis.HK.hk_mt_hottest_general_o3",
+    "requirements": "General station whose nearest weather station has highest June mean temp -> name + its O3. Store hottest_gen_station (str), hottest_gen_o3 (float,1dp).",
+    "conversations": [
+      {
+        "id": "hk_mt_hottest_general_o3",
+        "turns": [
+          {
+            "query": "For each GENERAL-type air-quality station, find its geographically nearest weather station (weather stations use a separate id space; match by coordinate proximity). Using June 2025, compute each general station's nearest-weather mean temperature, and identify the general station whose nearest weather station is the hottest. Return that air-quality station's name and its own June mean O3 (non-NULL hourly, 1 dp).",
+            "validator": "validate_hk_mt_hottest_general_o3"
+          }
+        ]
+      }
+    ],
+    "difficulty": "hard",
+    "category": "cross_domain_analysis",
+    "_source": {
+      "benchmark": "hk-multitable-hard",
+      "original_query_id": "hk_mt_hottest_general_o3",
+      "verbatim": false
+    }
+  }
+]

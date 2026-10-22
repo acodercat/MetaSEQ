@@ -1,0 +1,22 @@
+{
+  "name": "beijing_lockdown_paradox",
+  "difficulty": "hard",
+  "category": "comparative_assessment",
+  "case_type": "baseline",
+  "conversations": [
+    {
+      "id": "lockdown_paradox",
+      "turns": [
+        {
+          "query": "Compare Beijing's air quality between January 1-22, 2020 and January 25 to February 29, 2020: report the percentage change in mean NO2 and in mean PM2.5 from the first window to the second. Then say what the two figures, taken together, tell you about what happened to Beijing's air in that period.",
+          "validator": "validate_lockdown_changes",
+          "stores": [
+            "no2_lockdown_change_pct",
+            "pm25_lockdown_change_pct"
+          ]
+        }
+      ]
+    }
+  ],
+  "domain": "beijing"
+}

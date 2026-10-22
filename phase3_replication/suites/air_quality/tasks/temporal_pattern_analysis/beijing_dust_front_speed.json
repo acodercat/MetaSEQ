@@ -1,0 +1,29 @@
+{
+  "name": "beijing_dust_front_speed",
+  "difficulty": "hard",
+  "category": "temporal_pattern_analysis",
+  "case_type": "baseline",
+  "conversations": [
+    {
+      "id": "dust_front_speed",
+      "turns": [
+        {
+          "query": "For the 15 March 2021 dust event, use the hourly city records to locate Beijing's and Shijiazhuang's PM10 peaks and report their time lag. What timing evidence do those peaks provide?",
+          "validator": "validate_plume_lag",
+          "stores": [
+            "plume_lag_hours"
+          ]
+        },
+        {
+          "query": "Treat the two peaks as one translating structure and use the cities' great-circle separation to estimate its apparent propagation speed. Report the speed and assess the physical plausibility and limitations of this approximation.",
+          "validator": "validate_plume_speed",
+          "stores": [
+            "plume_speed_kmh"
+          ],
+          "evaluation_tier": "execution"
+        }
+      ]
+    }
+  ],
+  "domain": "beijing"
+}

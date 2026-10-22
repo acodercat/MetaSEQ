@@ -1,0 +1,25 @@
+[
+  {
+    "name": "hk_hard_same_hour_area_correlations",
+    "module": "evals.neuroair.statistical_characterization.HK.hk_hard_same_hour_area_correlations",
+    "requirements": "Store no2_pair_count int, no2_corr float rounded to 6 decimals, pm10_pair_count int, and pm10_corr float rounded to 6 decimals.",
+    "conversations": [
+      {
+        "id": "hk_hard_same_hour_area_correlations",
+        "turns": [
+          {
+            "query": "For June 2025 inclusive, compute two same-hour Pearson correlations using area-type hourly means. For each datetime, compute the mean NO2 over non-NULL GENERAL URBAN station rows and the mean NO2 over non-NULL ROADSIDE URBAN station rows. Use only datetimes where both means exist, and compute corr(urban_general_mean_no2, urban_roadside_mean_no2). Separately, compute the same correlation for PM10 using hourly mean PM10. Return no2_pair_count, no2_corr, pm10_pair_count, and pm10_corr, with correlations rounded to 6 decimals. Do not correlate station-level monthly means or unaligned hourly series.",
+            "validator": "validate_hk_hard_same_hour_area_correlations"
+          }
+        ]
+      }
+    ],
+    "difficulty": "hard",
+    "category": "statistical_characterization",
+    "_source": {
+      "benchmark": "gpt55-hardened",
+      "original_query_id": "hk_hard_same_hour_area_correlations",
+      "verbatim": false
+    }
+  }
+]

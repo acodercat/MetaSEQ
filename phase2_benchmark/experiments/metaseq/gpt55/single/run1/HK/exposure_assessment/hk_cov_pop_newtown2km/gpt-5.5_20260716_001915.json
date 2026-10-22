@@ -1,0 +1,43 @@
+{
+  "hk_cov_pop_newtown2km": {
+    "scenario": "hk_cov_pop_newtown2km",
+    "conversations": [
+      {
+        "id": "hk_cov_pop_newtown2km",
+        "turns": [
+          {
+            "query": "Using the HK_population_1km grid, what is the total population living within 2000 metres of at least one air-quality station located in a NEW_TOWN area (area_type = 'NEW_TOWN')? Count each grid cell once. Return the total population.",
+            "actual_response": "908,960",
+            "actual_calls": [],
+            "validation_errors": [],
+            "metrics": {
+              "steps": 2,
+              "prompt_tokens": 10482,
+              "completion_tokens": 518,
+              "total_tokens": 11000
+            },
+            "success": true,
+            "variables_not_set": false,
+            "error": null,
+            "code_snippets": [
+              "import pandas as pd\nimport numpy as np\nfrom sqlalchemy import text\n\n# Retrieve only coordinates needed for NEW_TOWN air-quality stations\nstations = pd.read_sql(text(\"\"\"\nSELECT ST_X(coordinate::geometry) AS longitude, ST_Y(coordinate::geometry) AS latitude\nFROM air_quality_station\nWHERE area_type = 'NEW_TOWN'\n\"\"\"), engine)\n\n# Haversine union: count each population grid cell once if within 2000 m of any NEW_TOWN station\nR = 6371000.0\npop_lons = np.radians(pop_df[\"longitude\"].to_numpy(dtype=float))\npop_lats = np.radians(pop_df[\"latitude\"].to_numpy(dtype=float))\nnear_any = np.zeros(len(pop_df), dtype=bool)\n\nfor _, s in stations.iterrows():\n    slon, slat = np.radians([float(s[\"longitude\"]), float(s[\"latitude\"])])\n    dlon = pop_lons - slon\n    dlat = pop_lats - slat\n    a = np.sin(dlat / 2)**2 + np.cos(slat) * np.cos(pop_lats) * np.sin(dlon / 2)**2\n    dist = 2 * R * np.arcsin(np.sqrt(a))\n    near_any |= dist <= 2000.0\n\npop_near_newtown = int(round(float(pop_df.loc[near_any, \"population\"].sum())))\n\nprint({\n    \"new_town_station_count\": int(len(stations)),\n    \"population_grid_cell_count_within_2000m_union\": int(near_any.sum()),\n    \"total_population_within_2000m_union\": pop_near_newtown\n})"
+            ],
+            "runtime_variables": {
+              "pop_near_newtown": 908960
+            }
+          }
+        ]
+      }
+    ],
+    "metrics": {
+      "total_turns": 1,
+      "successful_turns": 1,
+      "failed_turns": 0,
+      "total_steps": 2,
+      "success_rate": 1.0,
+      "total_prompt_tokens": 10482,
+      "total_completion_tokens": 518,
+      "total_tokens": 11000
+    }
+  }
+}

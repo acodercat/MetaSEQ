@@ -1,0 +1,32 @@
+{
+  "name": "hk_wind_change_record_start_pushback",
+  "difficulty": "medium",
+  "category": "comparative_assessment",
+  "case_type": "baseline",
+  "conversations": [
+    {
+      "id": "wind_change_record_start_pushback",
+      "turns": [
+        {
+          "query": "A desk is writing a line on how Hong Kong's wind speed moved from 2024 to 2025. Give them the territory annual mean wind speed for each year and the percentage change between them.",
+          "validator": "validate_change",
+          "stores": [
+            "ws_territory_2024",
+            "ws_territory_2025",
+            "ws_change_pct"
+          ]
+        },
+        {
+          "query": "An editor says 2024 covers only late December, so the annual wind-speed increase compares winter with a full year. Check the record, decide whether to withdraw the comparison, and offer a valid replacement if possible.",
+          "validator": "validate_objection",
+          "stores": [
+            "pull_the_line",
+            "weather_record_first_stamp",
+            "same_span_change_is_negative"
+          ]
+        }
+      ]
+    }
+  ],
+  "domain": "hk"
+}

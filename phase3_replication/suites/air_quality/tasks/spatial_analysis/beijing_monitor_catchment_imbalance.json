@@ -1,0 +1,24 @@
+{
+  "name": "beijing_monitor_catchment_imbalance",
+  "difficulty": "medium",
+  "category": "spatial_analysis",
+  "case_type": "baseline",
+  "conversations": [
+    {
+      "id": "catchment_imbalance",
+      "turns": [
+        {
+          "query": "Assign Beijing's residents to their nearest monitoring station and say how unevenly the network carries the city — which station carries the most people, which the fewest, how far the average resident lives from a monitor — and which part of the network, if any, a coverage review should look at.",
+          "validator": "validate_catchment_imbalance",
+          "stores": [
+            "largest_catchment_population_share_pct",
+            "largest_catchment_station",
+            "smallest_catchment_station",
+            "mean_distance_to_monitor_km"
+          ]
+        }
+      ]
+    }
+  ],
+  "domain": "beijing"
+}

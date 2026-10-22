@@ -1,0 +1,25 @@
+[
+  {
+    "name": "hk_pop_roadside_share",
+    "module": "evals.neuroair.exposure_assessment.HK.hk_pop_roadside_share",
+    "requirements": "Fraction of population whose nearest station is ROADSIDE. Store roadside_pop_share (float,4dp).",
+    "conversations": [
+      {
+        "id": "hk_pop_roadside_share",
+        "turns": [
+          {
+            "query": "Assign every HK_population_1km grid cell to its nearest air-quality station by haversine distance. Return the fraction (0-1) of the total HK grid population whose nearest station is a ROADSIDE station (Mong Kok 14, Central 16, Causeway Bay 17). Round to 4 dp.",
+            "validator": "validate_hk_pop_roadside_share"
+          }
+        ]
+      }
+    ],
+    "difficulty": "hard",
+    "category": "exposure_assessment",
+    "_source": {
+      "benchmark": "hk-pop-hard",
+      "original_query_id": "hk_pop_roadside_share",
+      "verbatim": false
+    }
+  }
+]

@@ -1,0 +1,29 @@
+{
+  "name": "hk_roadside_oxidant_titration",
+  "difficulty": "hard",
+  "category": "comparative_assessment",
+  "case_type": "baseline",
+  "conversations": [
+    {
+      "id": "roadside_oxidant_titration",
+      "turns": [
+        {
+          "query": "Hong Kong's network classifies each station as roadside or general. Over 2025, how much ozone does a roadside lose to the road, against the general stations nearest to it?",
+          "validator": "validate_ozone_deficit",
+          "stores": [
+            "roadside_ozone_deficit"
+          ]
+        },
+        {
+          "query": "Now look at the oxidant — ozone plus nitrogen dioxide — over the same hours and pairs. Is the air beside a road less oxidising, how far does the data carry that reading, and do the three pairs agree?",
+          "validator": "validate_oxidant_reading",
+          "stores": [
+            "roadside_air_less_oxidising",
+            "pairs_agree_on_oxidant_sign"
+          ]
+        }
+      ]
+    }
+  ],
+  "domain": "hk"
+}

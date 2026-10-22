@@ -1,0 +1,43 @@
+{
+  "hk_x_who_station_days": {
+    "scenario": "hk_x_who_station_days",
+    "conversations": [
+      {
+        "id": "hk_x_who_station_days",
+        "turns": [
+          {
+            "query": "Over June 2025 (2025-06-01 to 2025-06-30), across all 18 air-quality stations, compute each station-day's daily mean PM2.5 (average of that station's non-NULL hourly PM2.5 values on that calendar date). How many station-days STRICTLY exceeded the World Health Organization 2021 Air Quality Guideline value for 24-hour mean PM2.5? Return the count.",
+            "actual_response": "In June 2025, across all 18 air quality monitoring stations, there were **35 station-days** where the daily mean PM2.5 strictly exceeded the WHO 2021 24-hour Air Quality Guideline of 15 \u00b5g/m\u00b3.\n\nThe total number of station-days with data was 540 (18 stations \u00d7 30 days). The highest daily mean PM2.5 was observed at station 16 (Central) on June 9, 2025, reaching 44.44 \u00b5g/m\u00b3.",
+            "actual_calls": [],
+            "validation_errors": [],
+            "metrics": {
+              "steps": 2,
+              "prompt_tokens": 11707,
+              "completion_tokens": 542,
+              "total_tokens": 12249
+            },
+            "success": true,
+            "variables_not_set": false,
+            "error": null,
+            "code_snippets": [
+              "import pandas as pd\nfrom sqlalchemy import text\n\n# WHO 2021 24-hour AQG for PM2.5 = 15 \u00b5g/m\u00b3\nwho_guideline = 15.0\n\n# Query: compute daily mean PM2.5 per station for June 2025\nquery = text(\"\"\"\nSELECT \n    station_id,\n    DATE(datetime) as day,\n    AVG(pm2_5) as daily_mean_pm25\nFROM hourly_station_air_quality\nWHERE datetime >= '2025-06-01 00:00:00'\n  AND datetime < '2025-07-01 00:00:00'\n  AND pm2_5 IS NOT NULL\nGROUP BY station_id, DATE(datetime)\n\"\"\")\n\ndf = pd.read_sql(query, engine)\n\n# Count station-days where daily mean PM2.5 > 15\nexceeding = df[df['daily_mean_pm25'] > who_guideline]\nwho_exceed_station_days = int(len(exceeding))\n\nprint(f\"Total station-days with data: {len(df)}\")\nprint(f\"Station-days exceeding WHO 2021 24h AQG ({who_guideline} \u00b5g/m\u00b3): {who_exceed_station_days}\")\nprint(f\"\\nSample of exceeding station-days:\")\nprint(exceeding.sort_values('daily_mean_pm25', ascending=False).head(10))"
+            ],
+            "runtime_variables": {
+              "who_exceed_station_days": 35
+            }
+          }
+        ]
+      }
+    ],
+    "metrics": {
+      "total_turns": 1,
+      "successful_turns": 1,
+      "failed_turns": 0,
+      "total_steps": 2,
+      "success_rate": 1.0,
+      "total_prompt_tokens": 11707,
+      "total_completion_tokens": 542,
+      "total_tokens": 12249
+    }
+  }
+}

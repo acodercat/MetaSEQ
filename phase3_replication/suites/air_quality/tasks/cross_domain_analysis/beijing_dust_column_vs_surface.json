@@ -1,0 +1,23 @@
+{
+  "name": "beijing_dust_column_vs_surface",
+  "difficulty": "hard",
+  "category": "cross_domain_analysis",
+  "case_type": "trap",
+  "conversations": [
+    {
+      "id": "dust_column_vs_surface",
+      "turns": [
+        {
+          "query": "Over 2020-01-01 to 2025-12-31, which day was Beijing's most severe surface dust intrusion? A colleague suggests that the reanalysis dust product in the runtime could be used to find such days in future — would it have found this one?",
+          "validator": "validate_dust_event_date",
+          "stores": [
+            "dust_event_date",
+            "surface_peak_in_column_top_ten",
+            "column_peak_in_surface_top_ten"
+          ]
+        }
+      ]
+    }
+  ],
+  "domain": "beijing"
+}

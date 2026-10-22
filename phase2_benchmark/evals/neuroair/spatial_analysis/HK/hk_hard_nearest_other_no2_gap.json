@@ -1,0 +1,25 @@
+[
+  {
+    "name": "hk_hard_nearest_other_no2_gap",
+    "module": "evals.neuroair.spatial_analysis.HK.hk_hard_nearest_other_no2_gap",
+    "requirements": "Store base_station_id int, nearest_station_id int, and max_no2_gap float rounded to 6 decimals.",
+    "conversations": [
+      {
+        "id": "hk_hard_nearest_other_no2_gap",
+        "turns": [
+          {
+            "query": "For every GENERAL air-quality station except station 8, find its nearest OTHER GENERAL air-quality station by geodesic distance in meters, explicitly excluding itself and excluding roadside stations. For June 2025 inclusive, compute each station's mean NO2 over non-NULL hourly rows and its nearest-other GENERAL station's mean NO2 over non-NULL hourly rows. For each base station compute base_mean_no2 - nearest_other_mean_no2. Return the base station_id with the largest positive difference, the nearest_station_id, and the difference rounded to 6 decimals. Break ties by smaller base station_id, though the expected winner is unique with a non-tiny margin.",
+            "validator": "validate_hk_hard_nearest_other_no2_gap"
+          }
+        ]
+      }
+    ],
+    "difficulty": "hard",
+    "category": "spatial_analysis",
+    "_source": {
+      "benchmark": "gpt55-hardened",
+      "original_query_id": "hk_hard_nearest_other_no2_gap",
+      "verbatim": false
+    }
+  }
+]

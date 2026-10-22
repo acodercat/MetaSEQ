@@ -1,0 +1,37 @@
+{
+  "name": "hk_aqo_station_level_compliance",
+  "difficulty": "medium",
+  "category": "regulatory_standards",
+  "case_type": "trap",
+  "conversations": [
+    {
+      "id": "aqo_station_level_compliance",
+      "turns": [
+        {
+          "query": "Across 2020 through 2025, what was the highest single hourly nitrogen dioxide reading anywhere in Hong Kong's air quality monitoring network, and where and when was it recorded?",
+          "validator": "validate_peak_no2",
+          "stores": [
+            "peak_no2",
+            "peak_no2_station",
+            "peak_no2_datetime"
+          ]
+        },
+        {
+          "query": "Hong Kong's Air Quality Objective for nitrogen dioxide sets an hourly limit of 200 ug/m3 and permits 18 exceedances of it in a calendar year. Over those same six years, how many of them did Hong Kong not meet that objective?",
+          "validator": "validate_failing_years",
+          "stores": [
+            "failing_years"
+          ]
+        },
+        {
+          "query": "The desk wants to write that Hong Kong's nitrogen dioxide problem is city-wide. Is it, and what would have to change for it to go away?",
+          "validator": "validate_problem_location",
+          "stores": [
+            "failures_are_roadside_only"
+          ]
+        }
+      ]
+    }
+  ],
+  "domain": "hk"
+}

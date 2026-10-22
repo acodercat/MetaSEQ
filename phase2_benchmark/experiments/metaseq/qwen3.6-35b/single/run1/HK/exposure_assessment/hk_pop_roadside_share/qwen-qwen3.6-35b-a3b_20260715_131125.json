@@ -1,0 +1,44 @@
+{
+  "hk_pop_roadside_share": {
+    "scenario": "hk_pop_roadside_share",
+    "conversations": [
+      {
+        "id": "hk_pop_roadside_share",
+        "turns": [
+          {
+            "query": "Assign every HK_population_1km grid cell to its nearest air-quality station by haversine distance. Return the fraction (0-1) of the total HK grid population whose nearest station is a ROADSIDE station (Mong Kok 14, Central 16, Causeway Bay 17). Round to 4 dp.",
+            "actual_response": "The fraction of the total Hong Kong population whose nearest air quality monitoring station is a ROADSIDE station is **0.1716**.\n\nThis means approximately 17.16% of the population (about 1.29 million people out of 7.49 million) live closest to one of the three roadside monitoring stations: Causeway Bay, Central, or Mong Kok.",
+            "actual_calls": [],
+            "validation_errors": [],
+            "metrics": {
+              "steps": 3,
+              "prompt_tokens": 20057,
+              "completion_tokens": 1883,
+              "total_tokens": 21940
+            },
+            "success": true,
+            "variables_not_set": false,
+            "error": null,
+            "code_snippets": [
+              "import pandas as pd\nimport numpy as np\nfrom sqlalchemy import text\n\n# Get all air quality stations with their coordinates\nquery = \"\"\"\nSELECT id, name_en, station_type, ST_X(coordinate::geometry) as lng, ST_Y(coordinate::geometry) as lat\nFROM air_quality_station\n\"\"\"\nstations_df = pd.read_sql(query, engine)\nprint(\"Stations:\")\nprint(stations_df)\n\n# Identify ROADSIDE stations\nroadside_stations = stations_df[stations_df['station_type'] == 'ROADSIDE']\nprint(f\"\\nRoadside stations: {roadside_stations['name_en'].tolist()}\")\nprint(f\"Roadside station IDs: {roadside_stations['id'].tolist()}\")\n\n# Calculate haversine distance from each population grid cell to each station\n# and assign each cell to its nearest station\ndef haversine_distance(lat1, lon1, lat2, lon2):\n    \"\"\"Calculate haversine distance in km between two points\"\"\"\n    R = 6371  # Earth radius in km\n    lat1, lon1, lat2, lon2 = map(np.radians, [lat1, lon1, lat2, lon2])\n    dlat = lat2 - lat1\n    dlon = lon2 - lon1\n    a = np.sin(dlat/2)**2 + np.cos(lat1) * np.cos(lat2) * np.sin(dlon/2)**2\n    c = 2 * np.arcsin(np.sqrt(a))\n    return R * c\n\n# Get population data\npop_df['lat'] = pop_df['latitude']\npop_df['lng'] = pop_df['longitude']\n\n# Calculate distances to all stations and find nearest\nstation_lats = roadside_stations['lat'].values\nstation_lngs = roadside_stations['lng'].values\nstation_ids = roadside_stations['id'].values\n\n# For efficiency, calculate distances to all stations\nall_station_lats = stations_df['lat'].values\nall_station_lngs = stations_df['lng'].values\nall_station_ids = stations_df['id'].values\n\n# Calculate distances from each grid cell to all stations\nn_cells = len(pop_df)\nn_stations = len(stations_df)\n\n# Use vectorized calculation\nmin_distances = np.full(n_cells, np.inf)\nnearest_station_ids = np.full(n_cells, -1, dtype=int)\n\nfor i in range(n_stations):\n    dist = haversine_distance(pop_df['lat'].values, pop_df['lng'].values, \n                              all_station_lats[i], all_station_lngs[i])\n    mask = dist < min_distances\n    min_distances[mask] = dist[mask]\n    nearest_station_ids[mask] = all_station_ids[i]\n\n# Create a mapping from station_id to whether it's roadside\nis_roadside = stations_df.set_index('id')['station_type'] == 'ROADSIDE'\nnearest_is_roadside = nearest_station_ids.apply(lambda x: is_roadside.get(x, False))\n\n# Calculate population-weighted fraction\npop_df['nearest_station_id'] = nearest_station_ids\npop_df['is_roadside'] = nearest_is_roadside\n\ntotal_pop = pop_df['population'].sum()\nroadside_pop = pop_df.loc[pop_df['is_roadside'], 'population'].sum()\nroadside_pop_share = roadside_pop / total_pop\n\nprint(f\"\\nTotal population: {total_pop}\")\nprint(f\"Population nearest to roadside stations: {roadside_pop}\")\nprint(f\"Fraction: {roadside_pop_share}\")\nprint(f\"Roadside population share (4dp): {round(roadside_pop_share, 4)}\")\n\n# Store result\nroadside_pop_share = round(roadside_pop_share, 4)",
+              "import pandas as pd\nimport numpy as np\nfrom sqlalchemy import text\n\n# Reuse stations_df from previous execution\n# Identify ROADSIDE stations\nroadside_stations = stations_df[stations_df['station_type'] == 'ROADSIDE']\nprint(f\"Roadside stations: {roadside_stations['name_en'].tolist()}\")\n\n# Calculate haversine distance from each population grid cell to each station\ndef haversine_distance(lat1, lon1, lat2, lon2):\n    R = 6371\n    lat1, lon1, lat2, lon2 = map(np.radians, [lat1, lon1, lat2, lon2])\n    dlat = lat2 - lat1\n    dlon = lon2 - lon1\n    a = np.sin(dlat/2)**2 + np.cos(lat1) * np.cos(lat2) * np.sin(dlon/2)**2\n    c = 2 * np.arcsin(np.sqrt(a))\n    return R * c\n\n# Get population data\npop_df['lat'] = pop_df['latitude']\npop_df['lng'] = pop_df['longitude']\n\nall_station_lats = stations_df['lat'].values\nall_station_lngs = stations_df['lng'].values\nall_station_ids = stations_df['id'].values\n\nn_cells = len(pop_df)\nn_stations = len(stations_df)\n\nmin_distances = np.full(n_cells, np.inf)\nnearest_station_ids = np.full(n_cells, -1, dtype=int)\n\nfor i in range(n_stations):\n    dist = haversine_distance(pop_df['lat'].values, pop_df['lng'].values, \n                              all_station_lats[i], all_station_lngs[i])\n    mask = dist < min_distances\n    min_distances[mask] = dist[mask]\n    nearest_station_ids[mask] = all_station_ids[i]\n\n# Create a mapping from station_id to whether it's roadside\nis_roadside_map = dict(zip(stations_df['id'], stations_df['station_type'] == 'ROADSIDE'))\nnearest_is_roadside = np.array([is_roadside_map.get(sid, False) for sid in nearest_station_ids])\n\n# Calculate population-weighted fraction\ntotal_pop = pop_df['population'].sum()\nroadside_pop = pop_df.loc[nearest_is_roadside, 'population'].sum()\nroadside_pop_share = roadside_pop / total_pop\n\nprint(f\"\\nTotal population: {total_pop}\")\nprint(f\"Population nearest to roadside stations: {roadside_pop}\")\nprint(f\"Fraction: {roadside_pop_share}\")\nprint(f\"Roadside population share (4dp): {round(roadside_pop_share, 4)}\")\n\n# Store result\nroadside_pop_share = round(roadside_pop_share, 4)"
+            ],
+            "runtime_variables": {
+              "roadside_pop_share": 0.1716
+            }
+          }
+        ]
+      }
+    ],
+    "metrics": {
+      "total_turns": 1,
+      "successful_turns": 1,
+      "failed_turns": 0,
+      "total_steps": 3,
+      "success_rate": 1.0,
+      "total_prompt_tokens": 20057,
+      "total_completion_tokens": 1883,
+      "total_tokens": 21940
+    }
+  }
+}

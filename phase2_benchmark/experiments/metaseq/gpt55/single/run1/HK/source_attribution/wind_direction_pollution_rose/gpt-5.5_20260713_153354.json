@@ -1,0 +1,47 @@
+{
+  "hk_wind_direction_pollution_rose": {
+    "scenario": "hk_wind_direction_pollution_rose",
+    "conversations": [
+      {
+        "id": "pollution_rose",
+        "turns": [
+          {
+            "query": "In October 2025, for the Tuen Mun station, compute the average NO2 concentration for each wind direction (using matched weather station data, only when wind speed exceeds 1 m/s to exclude calm conditions). Which wind direction is associated with the highest average NO2 and which with the lowest? Tuen Mun is located in northwestern New Territories \u2014 the highest-NO2 wind direction reveals the dominant pollution source region. Return the highest and lowest wind directions with their NO2 values, and the average NO2 when wind is from the north.",
+            "actual_response": "Highest NO2 direction: NW, 56.2 \u00b5g/m\u00b3\n\nLowest NO2 direction: E, 23.7 \u00b5g/m\u00b3\n\nAverage NO2 from the north: 43.2 \u00b5g/m\u00b3\n\nThe dominant high-NO2 source direction for Tuen Mun in October 2025 was therefore from the northwest.",
+            "actual_calls": [],
+            "validation_errors": [],
+            "metrics": {
+              "steps": 2,
+              "prompt_tokens": 11481,
+              "completion_tokens": 1087,
+              "total_tokens": 12568
+            },
+            "success": true,
+            "variables_not_set": false,
+            "error": null,
+            "code_snippets": [
+              "import pandas as pd\nfrom sqlalchemy import text\n\n# Identify matched weather station as the nearest weather station to Tuen Mun air-quality station, then aggregate October 2025 hourly matched records.\nnearest_q = text(\"\"\"\nSELECT ws.id AS weather_station_id, ws.name_en,\n       ST_Distance(ws.coordinate, aqs.coordinate) AS distance_m\nFROM weather_station ws\nJOIN air_quality_station aqs ON aqs.id = 5\nORDER BY ws.coordinate <-> aqs.coordinate\nLIMIT 1\n\"\"\")\nnearest_weather = pd.read_sql(nearest_q, engine)\nweather_station_id = int(nearest_weather.loc[0, \"weather_station_id\"])\nweather_station_name = nearest_weather.loc[0, \"name_en\"]\nweather_station_distance_m = float(nearest_weather.loc[0, \"distance_m\"])\n\ncount_q = text(\"\"\"\nSELECT COUNT(*) AS n\nFROM hourly_station_air_quality aq\nJOIN hourly_station_weather w ON w.datetime = aq.datetime\nWHERE aq.station_id = 5\n  AND w.station_id = :wsid\n  AND aq.datetime >= TIMESTAMP '2025-10-01 00:00:00'\n  AND aq.datetime <  TIMESTAMP '2025-11-01 00:00:00'\n  AND aq.no2 IS NOT NULL\n  AND w.wind_direction IS NOT NULL\n  AND w.wind_speed > 1\n\"\"\")\nmatch_count = int(pd.read_sql(count_q, engine, params={\"wsid\": weather_station_id}).loc[0, \"n\"])\n\nagg_q = text(\"\"\"\nSELECT w.wind_direction::text AS direction,\n       COUNT(*) AS hours,\n       AVG(aq.no2) AS avg_no2\nFROM hourly_station_air_quality aq\nJOIN hourly_station_weather w ON w.datetime = aq.datetime\nWHERE aq.station_id = 5\n  AND w.station_id = :wsid\n  AND aq.datetime >= TIMESTAMP '2025-10-01 00:00:00'\n  AND aq.datetime <  TIMESTAMP '2025-11-01 00:00:00'\n  AND aq.no2 IS NOT NULL\n  AND w.wind_direction IS NOT NULL\n  AND w.wind_speed > 1\nGROUP BY w.wind_direction\nORDER BY avg_no2 DESC\n\"\"\")\nrose = pd.read_sql(agg_q, engine, params={\"wsid\": weather_station_id})\n\nif rose.empty:\n    raise ValueError(\"No matched October 2025 records with wind speed > 1 m/s and valid NO2/wind direction.\")\n\nhigh = rose.loc[rose[\"avg_no2\"].idxmax()]\nlow = rose.loc[rose[\"avg_no2\"].idxmin()]\nnorth_rows = rose[rose[\"direction\"] == \"N\"]\nif north_rows.empty:\n    raise ValueError(\"No valid north-wind records after filtering.\")\n\nhighest_no2_direction = str(high[\"direction\"])\nhighest_no2_value = round(float(high[\"avg_no2\"]), 1)\nlowest_no2_direction = str(low[\"direction\"])\nlowest_no2_value = round(float(low[\"avg_no2\"]), 1)\nnorth_sector_no2 = round(float(north_rows.iloc[0][\"avg_no2\"]), 1)\n\nprint({\n    \"matched_weather_station\": weather_station_name,\n    \"weather_station_distance_m\": round(weather_station_distance_m, 0),\n    \"matched_hours_after_filter\": match_count,\n    \"direction_count\": int(len(rose)),\n    \"highest_no2_direction\": highest_no2_direction,\n    \"highest_no2_value\": highest_no2_value,\n    \"lowest_no2_direction\": lowest_no2_direction,\n    \"lowest_no2_value\": lowest_no2_value,\n    \"north_sector_no2\": north_sector_no2\n})\nprint(rose.assign(avg_no2=rose[\"avg_no2\"].round(1)).to_string(index=False))"
+            ],
+            "runtime_variables": {
+              "highest_no2_direction": "NW",
+              "highest_no2_value": 56.2,
+              "lowest_no2_direction": "E",
+              "lowest_no2_value": 23.7,
+              "north_sector_no2": 43.2
+            }
+          }
+        ]
+      }
+    ],
+    "metrics": {
+      "total_turns": 1,
+      "successful_turns": 1,
+      "failed_turns": 0,
+      "total_steps": 2,
+      "success_rate": 1.0,
+      "total_prompt_tokens": 11481,
+      "total_completion_tokens": 1087,
+      "total_tokens": 12568
+    }
+  }
+}

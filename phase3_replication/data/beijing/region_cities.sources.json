@@ -1,0 +1,94 @@
+{
+  "dataset_version": "1.0.0",
+  "created_at": "2026-07-25",
+  "scope": "Hourly city-level observations for 31 cities of the Beijing-Tianjin-Hebei air-pollution transmission channel, 2020-01-01 onward. Produced by scripts/ingest/fetch_cnemc_cities.py.",
+  "files": {
+    "Beijing_region_cities.csv": "One row per city-hour: PM2.5, PM10, SO2, NO2, CO (mg/m3), O3, O3_8h, AQI, plus city-centre coordinates."
+  },
+  "sources": [
+    {
+      "id": "cnemc_city_mirror",
+      "authority": "China National Environmental Monitoring Centre (published hourly release), mirrored by quotsoft.net",
+      "title": "china_cities_YYYYMMDD.csv city-level hourly observations",
+      "url": "https://quotsoft.net/air/",
+      "accessed": "2026-07-25",
+      "supports": [
+        "PM2.5",
+        "PM10",
+        "SO2",
+        "NO2",
+        "CO_mg_m3",
+        "O3",
+        "O3_8h",
+        "AQI"
+      ],
+      "notes": "Raw operational publication, not re-quality-controlled. 2390 daily files fetched with zero failures and zero gaps over 2020-01-01..2026-07-20."
+    }
+  ],
+  "city_selection": {
+    "rationale": "The officially designated Beijing-Tianjin-Hebei and surrounding air-pollution transmission channel ('2+26' cities), plus Qinhuangdao, Zhangjiakou and Chengde, which bound the region upwind under northerly flow.",
+    "count": 31,
+    "groups": {
+      "municipalities": [
+        "北京",
+        "天津"
+      ],
+      "hebei": [
+        "石家庄",
+        "唐山",
+        "廊坊",
+        "保定",
+        "沧州",
+        "衡水",
+        "邢台",
+        "邯郸",
+        "秦皇岛",
+        "张家口",
+        "承德"
+      ],
+      "shanxi": [
+        "太原",
+        "阳泉",
+        "长治",
+        "晋城"
+      ],
+      "shandong": [
+        "济南",
+        "淄博",
+        "济宁",
+        "德州",
+        "聊城",
+        "滨州",
+        "菏泽"
+      ],
+      "henan": [
+        "郑州",
+        "开封",
+        "安阳",
+        "鹤壁",
+        "新乡",
+        "焦作",
+        "濮阳"
+      ]
+    }
+  },
+  "units": {
+    "CO_mg_m3": "Kept in the published unit mg/m3 and named accordingly, because the station table datasets/Beijing.csv stores CO in ug/m3. The distinct column name prevents the two from being combined without an explicit conversion.",
+    "others": "ug/m3, except AQI which is dimensionless."
+  },
+  "coordinates": {
+    "source": "Approximate city-centre coordinates hard-coded in the ingest script.",
+    "purpose": "Bearing and distance relative to Beijing, so transport questions can be posed geometrically.",
+    "caveat": "These locate the city, not the monitoring stations that produced the values; a city value is a network aggregate over stations distributed across the municipality."
+  },
+  "validation": {
+    "distance_decay": "Daily-mean PM2.5 correlation with Beijing decays monotonically with distance: Langfang 0.89 (adjacent), Tangshan 0.83, Baoding 0.79, falling to 0.35-0.37 for the Henan and southern Shandong cities 400-600 km away. This is the expected regional-transport signature and is the basis for treating the dataset as usable for transport analysis."
+  },
+  "known_limitations": [
+    "City values are municipality-wide network aggregates. They are NOT comparable to an individual station reading in datasets/Beijing.csv, and the number and siting of stations behind each city value is not published here.",
+    "Correlation between two cities' concentrations is not evidence of transport between them: cities in the same region share synoptic weather, so a common meteorological driver produces correlation without any air moving from one to the other. Wind-direction conditioning is required before any transport claim.",
+    "CO is mg/m3 here and ug/m3 in the station table; the column names differ deliberately.",
+    "The publication is raw operational output without independent quality control; the record contains no explicit data-validity flags.",
+    "Neither the station composition nor the PROCESSING behind each city value is disclosed: whether HJ 663-2013 A.2 aggregation, the 6.1 validity screens and the 6.3 rounding were applied upstream cannot be determined from the file. City-level figures computed from this record are therefore reproducible FROM THE RECORD but not verifiable AGAINST CNEMC's own publication, and the two can differ: beijing_attainment_days computes 269 attainment days for 2023 where Beijing officially reported 271, a gap that case documents as unresolved and probes rather than explains. Cases built on this file must describe what they compute as a figure derived from the city record, never as a reproduction of an official statistic. Cases needing station-level control should use air_quality.csv, where the aggregation is ours and A.2 is applied explicitly."
+  ]
+}

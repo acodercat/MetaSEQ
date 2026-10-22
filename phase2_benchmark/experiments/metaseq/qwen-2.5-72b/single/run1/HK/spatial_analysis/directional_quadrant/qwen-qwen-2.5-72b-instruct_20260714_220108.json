@@ -1,0 +1,51 @@
+{
+  "hk_directional_quadrant": {
+    "scenario": "hk_directional_quadrant",
+    "conversations": [
+      {
+        "id": "quadrant_from_central",
+        "turns": [
+          {
+            "query": "From the Central air quality monitoring station, classify all other air quality monitoring stations into four quadrants (NE/NW/SE/SW) based on their relative latitude and longitude. How many stations fall into each quadrant?",
+            "actual_response": "The number of air quality monitoring stations in each quadrant relative to the Central station is as follows:\n\n- NE quadrant: 8\n- NW quadrant: 2\n- SE quadrant: 7\n- SW quadrant: 0",
+            "actual_calls": [],
+            "validation_errors": [
+              "Custom validator failed: nw_count=2, expected 7; se_count=7, expected 2"
+            ],
+            "metrics": {
+              "steps": 5,
+              "prompt_tokens": 32690,
+              "completion_tokens": 1475,
+              "total_tokens": 34165
+            },
+            "success": false,
+            "variables_not_set": false,
+            "error": null,
+            "code_snippets": [
+              "import pandas as pd\nfrom sqlalchemy import text\n\n# Query the coordinates of the Central station\nquery_central = text(\"\"\"\nSELECT coordinate\nFROM air_quality_station\nWHERE name_en = 'Central'\n\"\"\")\ncentral_station = pd.read_sql(query_central, engine)\ncentral_coords = central_station.iloc[0]['coordinate']\n\n# Extract the latitude and longitude of the Central station\ncentral_lat, central_lon = central_coords['coordinates'][1], central_coords['coordinates'][0]\n\n# Query the coordinates of all other stations\nquery_other_stations = text(\"\"\"\nSELECT name_en, coordinate\nFROM air_quality_station\nWHERE name_en != 'Central'\n\"\"\")\nother_stations = pd.read_sql(query_other_stations, engine)\n\n# Classify stations into quadrants\nne_count = 0\nnw_count = 0\nse_count = 0\nsw_count = 0\n\nfor index, row in other_stations.iterrows():\n    station_lat, station_lon = row['coordinate']['coordinates'][1], row['coordinate']['coordinates'][0]\n    if station_lat > central_lat and station_lon > central_lon:\n        ne_count += 1\n    elif station_lat > central_lat and station_lon < central_lon:\n        nw_count += 1\n    elif station_lat < central_lat and station_lon > central_lon:\n        se_count += 1\n    elif station_lat < central_lat and station_lon < central_lon:\n        sw_count += 1\n\n# Print the counts\nprint(f\"NE quadrant: {ne_count}\")\nprint(f\"NW quadrant: {nw_count}\")\nprint(f\"SE quadrant: {se_count}\")\nprint(f\"SW quadrant: {sw_count}\")\n\n# Store the results\nne_count, nw_count, se_count, sw_count",
+              "import pandas as pd\nfrom sqlalchemy import text\nimport re\n\n# Query the coordinates of the Central station\nquery_central = text(\"\"\"\nSELECT coordinate\nFROM air_quality_station\nWHERE name_en = 'Central'\n\"\"\")\ncentral_station = pd.read_sql(query_central, engine)\ncentral_coords = central_station.iloc[0]['coordinate']\n\n# Extract the latitude and longitude of the Central station\ncentral_lat, central_lon = map(float, re.findall(r'\\d+\\.\\d+', central_coords))\n\n# Query the coordinates of all other stations\nquery_other_stations = text(\"\"\"\nSELECT name_en, coordinate\nFROM air_quality_station\nWHERE name_en != 'Central'\n\"\"\")\nother_stations = pd.read_sql(query_other_stations, engine)\n\n# Classify stations into quadrants\nne_count = 0\nnw_count = 0\nse_count = 0\nsw_count = 0\n\nfor index, row in other_stations.iterrows():\n    station_coords = row['coordinate']\n    station_lat, station_lon = map(float, re.findall(r'\\d+\\.\\d+', station_coords))\n    if station_lat > central_lat and station_lon > central_lon:\n        ne_count += 1\n    elif station_lat > central_lat and station_lon < central_lon:\n        nw_count += 1\n    elif station_lat < central_lat and station_lon > central_lon:\n        se_count += 1\n    elif station_lat < central_lat and station_lon < central_lon:\n        sw_count += 1\n\n# Print the counts\nprint(f\"NE quadrant: {ne_count}\")\nprint(f\"NW quadrant: {nw_count}\")\nprint(f\"SE quadrant: {se_count}\")\nprint(f\"SW quadrant: {sw_count}\")\n\n# Store the results\nne_count, nw_count, se_count, sw_count",
+              "import pandas as pd\nfrom sqlalchemy import text\nimport re\n\n# Query the coordinates of the Central station\nquery_central = text(\"\"\"\nSELECT coordinate\nFROM air_quality_station\nWHERE name_en = 'Central'\n\"\"\")\ncentral_station = pd.read_sql(query_central, engine)\ncentral_coords = central_station.iloc[0]['coordinate']\n\n# Inspect the format of the coordinate\nprint(f\"Central station coordinates: {central_coords}\")\n\n# Query the coordinates of all other stations\nquery_other_stations = text(\"\"\"\nSELECT name_en, coordinate\nFROM air_quality_station\nWHERE name_en != 'Central'\n\"\"\")\nother_stations = pd.read_sql(query_other_stations, engine)\n\n# Inspect the format of the coordinates of other stations\nprint(f\"Other stations coordinates: {other_stations['coordinate']}\")",
+              "import pandas as pd\nfrom sqlalchemy import text\nimport re\n\n# Query the coordinates of the Central station in a readable format\nquery_central = text(\"\"\"\nSELECT ST_AsText(coordinate) as coordinate\nFROM air_quality_station\nWHERE name_en = 'Central'\n\"\"\")\ncentral_station = pd.read_sql(query_central, engine)\ncentral_coords = central_station.iloc[0]['coordinate']\n\n# Extract the latitude and longitude of the Central station\ncentral_lat, central_lon = map(float, re.findall(r'(\\d+\\.\\d+)', central_coords))\n\n# Query the coordinates of all other stations in a readable format\nquery_other_stations = text(\"\"\"\nSELECT name_en, ST_AsText(coordinate) as coordinate\nFROM air_quality_station\nWHERE name_en != 'Central'\n\"\"\")\nother_stations = pd.read_sql(query_other_stations, engine)\n\n# Classify stations into quadrants\nne_count = 0\nnw_count = 0\nse_count = 0\nsw_count = 0\n\nfor index, row in other_stations.iterrows():\n    station_coords = row['coordinate']\n    station_lat, station_lon = map(float, re.findall(r'(\\d+\\.\\d+)', station_coords))\n    if station_lat > central_lat and station_lon > central_lon:\n        ne_count += 1\n    elif station_lat > central_lat and station_lon < central_lon:\n        nw_count += 1\n    elif station_lat < central_lat and station_lon > central_lon:\n        se_count += 1\n    elif station_lat < central_lat and station_lon < central_lon:\n        sw_count += 1\n\n# Print the counts\nprint(f\"NE quadrant: {ne_count}\")\nprint(f\"NW quadrant: {nw_count}\")\nprint(f\"SE quadrant: {se_count}\")\nprint(f\"SW quadrant: {sw_count}\")\n\n# Store the results\nne_count, nw_count, se_count, sw_count"
+            ],
+            "runtime_variables": {
+              "ne_count": 8,
+              "nw_count": 2,
+              "se_count": 7,
+              "sw_count": 0
+            }
+          }
+        ]
+      }
+    ],
+    "metrics": {
+      "total_turns": 1,
+      "successful_turns": 0,
+      "failed_turns": 1,
+      "total_steps": 5,
+      "success_rate": 0.0,
+      "total_prompt_tokens": 32690,
+      "total_completion_tokens": 1475,
+      "total_tokens": 34165
+    }
+  }
+}

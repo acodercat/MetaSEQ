@@ -1,0 +1,30 @@
+{
+  "name": "beijing_cams_dust_regime_validation",
+  "difficulty": "hard",
+  "category": "cross_domain_analysis",
+  "case_type": "baseline",
+  "conversations": [
+    {
+      "id": "cams_dust_regime",
+      "turns": [
+        {
+          "query": "A colleague wants to use the modelled PM2.5 field over Beijing in place of the monitoring network. Characterise how the two differ in 2023, and say whether the field can substitute for the network.",
+          "validator": "validate_year_error",
+          "stores": [
+            "model_reads_higher",
+            "cams_pm25_bias_nearest_10",
+            "field_can_substitute"
+          ]
+        },
+        {
+          "query": "Now use the whole record, 2020 to 2025. Does how well the field agrees with the network depend on the aerosol regime the product itself diagnoses? Advise accordingly.",
+          "validator": "validate_dust_skill",
+          "stores": [
+            "agreement_worse_where_model_sees_dust"
+          ]
+        }
+      ]
+    }
+  ],
+  "domain": "beijing"
+}

@@ -1,0 +1,28 @@
+{
+  "name": "hk_traffic_no2_diurnal_confounding",
+  "difficulty": "hard",
+  "category": "temporal_pattern_analysis",
+  "case_type": "baseline",
+  "conversations": [
+    {
+      "id": "traffic_no2_diurnal_confounding",
+      "turns": [
+        {
+          "query": "For Hong Kong in July-December 2025, compare congestion-NO2 association across clock-hour means, paired hours and after clock or month-clock adjustment. Report the correlations and paired sample size. Do these comparisons establish how much NO2 would fall if congestion were reduced?",
+          "validator": "validate_harder_turn_1",
+          "stores": [
+            "diurnal_congestion_no2_r",
+            "paired_hours",
+            "license_the_sentence",
+            "the_day_shape_is_confounded_by_the_clock",
+            "hourly_congestion_no2_r",
+            "clock_adjusted_congestion_no2_r",
+            "month_clock_adjusted_congestion_no2_r"
+          ],
+          "evaluation_tier": "execution"
+        }
+      ]
+    }
+  ],
+  "domain": "hk"
+}

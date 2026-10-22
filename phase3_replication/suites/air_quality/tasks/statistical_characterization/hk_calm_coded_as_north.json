@@ -1,0 +1,22 @@
+{
+  "name": "hk_calm_coded_as_north",
+  "difficulty": "medium",
+  "category": "statistical_characterization",
+  "case_type": "baseline",
+  "conversations": [
+    {
+      "id": "calm_coded_as_north",
+      "turns": [
+        {
+          "query": "How many hours in December 2025 did the wind at Wetland Park blow from the north, and how much of the month was calm? Note anything a reader of the first number should know.",
+          "validator": "validate_northerly_hours",
+          "stores": [
+            "northerly_hours",
+            "calm_hours"
+          ]
+        }
+      ]
+    }
+  ],
+  "domain": "hk"
+}

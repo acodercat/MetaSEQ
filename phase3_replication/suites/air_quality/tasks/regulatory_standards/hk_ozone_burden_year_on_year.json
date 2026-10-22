@@ -1,0 +1,26 @@
+{
+  "name": "hk_ozone_burden_year_on_year",
+  "difficulty": "hard",
+  "category": "regulatory_standards",
+  "case_type": "baseline",
+  "conversations": [
+    {
+      "id": "ozone_burden_year_on_year",
+      "turns": [
+        {
+          "query": "Compare Hong Kong's 2025 and 2024 station records: report the four annual means for ozone concentration and its stored added health risk. The desk wants to publish a fall in ozone health risk. Check whether the added-risk figures have a comparable basis and advise what the record supports.",
+          "validator": "validate_evidence_and_conclusion_full_review",
+          "stores": [
+            "o3_mean_2024",
+            "o3_mean_2025",
+            "o3_added_risk_mean_2024",
+            "o3_added_risk_mean_2025",
+            "draft_can_go_out",
+            "added_risk_mapping_changed_within_2025"
+          ]
+        }
+      ]
+    }
+  ],
+  "domain": "hk"
+}

@@ -1,0 +1,45 @@
+{
+  "hk_multi_pollutant_health_risk": {
+    "scenario": "hk_multi_pollutant_health_risk",
+    "conversations": [
+      {
+        "id": "multi_pollutant_ar",
+        "turns": [
+          {
+            "query": "At 14:00 on October 5, 2025, for the air quality monitoring station nearest to the sensitive area with the largest area of category 'residential area', compute the total Added Health Risk from all pollutant components. Return the sensitive area name, the station name, and the total AR value rounded to 2 decimal places.",
+            "actual_response": "Sensitive area: Fanling, Sheung Shui and Yuen Long East Residential (Group C) (17)\n\nNearest station: Yuen Long\n\nTotal Added Health Risk: 2.49",
+            "actual_calls": [],
+            "validation_errors": [],
+            "metrics": {
+              "steps": 2,
+              "prompt_tokens": 10681,
+              "completion_tokens": 587,
+              "total_tokens": 11268
+            },
+            "success": true,
+            "variables_not_set": false,
+            "error": null,
+            "code_snippets": [
+              "import pandas as pd\nfrom sqlalchemy import text\n\nquery = text(\"\"\"\nWITH largest_residential AS (\n    SELECT id, name, geometry\n    FROM sensitive_area\n    WHERE category = 'RESIDENTIAL_AREA'\n    ORDER BY area DESC NULLS LAST\n    LIMIT 1\n),\nnearest_station AS (\n    SELECT aqs.id, aqs.name_en,\n           ST_Distance(aqs.coordinate, ST_Centroid(lr.geometry)::geography) AS distance_m\n    FROM air_quality_station aqs\n    CROSS JOIN largest_residential lr\n    ORDER BY distance_m\n    LIMIT 1\n)\nSELECT\n    lr.name AS residential_area_name,\n    ns.name_en AS station_name,\n    ROUND((COALESCE(h.no2_ar,0) + COALESCE(h.o3_ar,0) + COALESCE(h.pm_ar,0) + COALESCE(h.so2_ar,0))::numeric, 2) AS total_ar\nFROM largest_residential lr\nCROSS JOIN nearest_station ns\nJOIN hourly_station_air_quality h\n  ON h.station_id = ns.id\nWHERE h.datetime = '2025-10-05 14:00:00'\n\"\"\")\n\nresult = pd.read_sql(query, engine)\n\nif result.empty:\n    residential_area_name = None\n    station_name = None\n    total_ar = None\n    print(\"No matching hourly air-quality record found for the nearest station at the specified time.\")\nelse:\n    residential_area_name = str(result.loc[0, \"residential_area_name\"])\n    station_name = str(result.loc[0, \"station_name\"])\n    total_ar = float(result.loc[0, \"total_ar\"])\n    print(f\"Sensitive area: {residential_area_name}\")\n    print(f\"Nearest station: {station_name}\")\n    print(f\"Total Added Health Risk: {total_ar:.2f}\")"
+            ],
+            "runtime_variables": {
+              "residential_area_name": "Fanling, Sheung Shui and Yuen Long East Residential (Group C) (17)",
+              "station_name": "Yuen Long ",
+              "total_ar": 2.49
+            }
+          }
+        ]
+      }
+    ],
+    "metrics": {
+      "total_turns": 1,
+      "successful_turns": 1,
+      "failed_turns": 0,
+      "total_steps": 2,
+      "success_rate": 1.0,
+      "total_prompt_tokens": 10681,
+      "total_completion_tokens": 587,
+      "total_tokens": 11268
+    }
+  }
+}

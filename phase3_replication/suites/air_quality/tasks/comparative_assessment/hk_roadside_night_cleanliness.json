@@ -1,0 +1,26 @@
+{
+  "name": "hk_roadside_night_cleanliness",
+  "difficulty": "medium",
+  "category": "comparative_assessment",
+  "case_type": "baseline",
+  "conversations": [
+    {
+      "id": "roadside_night_cleanliness",
+      "turns": [
+        {
+          "query": "A resident takes lower roadside ozone as cleaner air at night. Using 2025 and the specified night hours, report mean ozone and NO2 for roadside and general stations. Is roadside air cleaner on these two pollutants, and what does lower ozone establish?",
+          "validator": "validate_evidence_and_conclusion_full_review",
+          "stores": [
+            "roadside_night_o3",
+            "general_night_o3",
+            "roadside_night_no2",
+            "general_night_no2",
+            "roadside_night_cleaner",
+            "lower_ozone_means_cleaner"
+          ]
+        }
+      ]
+    }
+  ],
+  "domain": "hk"
+}

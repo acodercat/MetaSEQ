@@ -1,0 +1,48 @@
+{
+  "hk_consecutive_exceedance": {
+    "scenario": "hk_consecutive_exceedance",
+    "conversations": [
+      {
+        "id": "consecutive_exceedance",
+        "turns": [
+          {
+            "query": "In October 2025, find the longest consecutive sequence of hours where any single air quality monitoring station recorded PM2.5 > 50 \u00b5g/m\u00b3. Which station experienced this longest event, how many consecutive hours did it last, and when did it start? Return the station name, the number of consecutive hours, and the start datetime.",
+            "actual_response": "The analysis is complete. Here are the results:\n\n**Station with longest consecutive PM2.5 exceedance event:** Causeway Bay  \n**Consecutive hours:** 5 hours  \n**Event start:** 2025-10-27 18:00:00  \n\nFrom 18:00 to 22:00 on October 27, 2025, the Causeway Bay monitoring station recorded PM2.5 concentrations above 50 \u00b5g/m\u00b3 for 5 consecutive hours (52.2, 57.7, 53.1, 57.8, and 51.5 \u00b5g/m\u00b3 respectively). This was the longest such event across all stations in October 2025.",
+            "actual_calls": [],
+            "validation_errors": [],
+            "metrics": {
+              "steps": 5,
+              "prompt_tokens": 31966,
+              "completion_tokens": 980,
+              "total_tokens": 32946
+            },
+            "success": true,
+            "variables_not_set": false,
+            "error": null,
+            "code_snippets": [
+              "import pandas as pd\nfrom sqlalchemy import text\nfrom datetime import datetime\n\n# First, check the data range and count of PM2.5 > 50 readings in Oct 2025\nquery = text(\"\"\"\nSELECT COUNT(*) as total_exceedances\nFROM hourly_station_air_quality h\nJOIN air_quality_station s ON h.station_id = s.id\nWHERE h.datetime >= '2025-10-01 00:00:00'\n  AND h.datetime < '2025-11-01 00:00:00'\n  AND h.pm2_5 > 50\n\"\"\")\nresult = pd.read_sql(query, engine)\nprint(f\"Total PM2.5 > 50 readings in Oct 2025: {result['total_exceedances'].values[0]}\")",
+              "import pandas as pd\nfrom sqlalchemy import text\n\n# Get all PM2.5 > 50 readings in Oct 2025 with station info, ordered by station and time\nquery = text(\"\"\"\nSELECT s.name_en as station_name, h.datetime, h.pm2_5\nFROM hourly_station_air_quality h\nJOIN air_quality_station s ON h.station_id = s.id\nWHERE h.datetime >= '2025-10-01 00:00:00'\n  AND h.datetime < '2025-11-01 00:00:00'\n  AND h.pm2_5 > 50\nORDER BY s.name_en, h.datetime\n\"\"\")\ndf = pd.read_sql(query, engine)\ndf['datetime'] = pd.to_datetime(df['datetime'])\nprint(df.to_string())",
+              "import pandas as pd\nfrom sqlalchemy import text\n\n# Double-check: get ALL hourly readings for Causeway Bay around that period to confirm no gaps\nquery = text(\"\"\"\nSELECT h.datetime, h.pm2_5\nFROM hourly_station_air_quality h\nJOIN air_quality_station s ON h.station_id = s.id\nWHERE s.name_en = 'Causeway Bay'\n  AND h.datetime >= '2025-10-27 17:00:00'\n  AND h.datetime < '2025-10-28 16:00:00'\nORDER BY h.datetime\n\"\"\")\ndf_check = pd.read_sql(query, engine)\nprint(df_check.to_string())",
+              "station_name = \"Causeway Bay\"\nconsecutive_hours = 5\nevent_start = \"2025-10-27 18:00:00\""
+            ],
+            "runtime_variables": {
+              "station_name": "Causeway Bay",
+              "consecutive_hours": 5,
+              "event_start": "2025-10-27 18:00:00"
+            }
+          }
+        ]
+      }
+    ],
+    "metrics": {
+      "total_turns": 1,
+      "successful_turns": 1,
+      "failed_turns": 0,
+      "total_steps": 5,
+      "success_rate": 1.0,
+      "total_prompt_tokens": 31966,
+      "total_completion_tokens": 980,
+      "total_tokens": 32946
+    }
+  }
+}

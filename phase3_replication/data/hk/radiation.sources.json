@@ -1,0 +1,57 @@
+{
+  "dataset_version": "1.0.0",
+  "created_at": "2026-08-08",
+  "scope": "Daily incoming-radiation and sunshine measurements at King's Park, Kowloon, from 2020. Produced by scripts/ingest/fetch_hko_cis.py. Added because the HK database carries hourly temperature, humidity, pressure, wind and visibility but no radiation term, which photochemical ozone questions need.",
+  "files": {
+    "radiation_hko.csv": "One row per date: global solar radiation (MJ/m2), bright sunshine duration (hours), pan evaporation (mm), each with the observatory's own completeness flag."
+  },
+  "sources": [
+    {
+      "id": "hko_cis_kings_park_daily",
+      "authority": "Hong Kong Observatory (HKO)",
+      "title": "Climatological Information Service — daily element records, King's Park Meteorological Station",
+      "url": "https://data.weather.gov.hk/weatherAPI/cis/csvfile/KP/ALL/",
+      "portal": "https://data.gov.hk/en-data/dataset/hk-hko-rss-daily-global-solar-radiation",
+      "accessed": "2026-08-07",
+      "supports": [
+        "global_solar_radiation_mj_m2",
+        "bright_sunshine_h",
+        "evaporation_mm"
+      ],
+      "notes": "Element codes GSR, SUN and EVAP for station KP. The published record starts 1978-11 for radiation; this extract keeps 2020 onward to match the corpus window. Values marked *** in the source are unobserved and become NA here; the completeness column is carried through unchanged as C (complete), # (incomplete) or blank. The same endpoint pattern also serves TEMP, RH, MSLP, WSPD and RF, deliberately not taken: the database already has those hourly, and a coarser daily copy beside them would be a second source of truth for no gain."
+    }
+  ],
+  "station": {
+    "code": "KP",
+    "name_en": "King's Park",
+    "name_zh": "京士柏",
+    "longitude": 114.1728,
+    "latitude": 22.3119,
+    "elevation_m": 64.8,
+    "notes": "Coordinates and elevation are the IGRA station-list entry for HKM00045004, the radiosonde record at the same site, so radiation and the vertical profile share one location. NOT taken from the benchmark database's air_quality_station table, which this ingest cannot reach; King's Park is a meteorological station and is not one of the 18 EPD air-quality stations in any case."
+  },
+  "verification": {
+    "range": "0.67 to 28.77 MJ/m2 against a subtropical clear-sky ceiling near 30; no value out of range, none zero.",
+    "seasonal_cycle": "Monthly means run 12.3 (December) to 18.9 (July), with the May-June dip that Hong Kong's cloudy early summer produces.",
+    "internal_consistency": "Global solar radiation correlates with bright sunshine duration at r = 0.921.",
+    "sunshine_ceiling": "Longest day 12.2 h against a day length near 13.4 h at this latitude; no day exceeds it.",
+    "completeness": "2,373 consecutive days with no gap and no duplicate date.",
+    "spatial_representativeness": "Against HKO's second radiation station, Kau Sai Chau (KSC), 2,367 shared days: daily r = 0.925, median absolute difference 1.05 MJ/m2 (7% of the mean), 26% of days differing by over 20%; monthly means r = 0.970."
+  },
+  "coverage": {
+    "first_date": "2020-01-01",
+    "last_date": "2026-06-30",
+    "days": 2373,
+    "incomplete_days": {
+      "global_solar_radiation_mj_m2": 6,
+      "bright_sunshine_h": 2,
+      "evaporation_mm": 0
+    },
+    "missing_days": 0
+  },
+  "known_limits": [
+    "Daily totals only. Pairing them with hourly pollutant data forces an aggregation choice that a case must state.",
+    "One site, and its spatial reach is scale-dependent — measured against Kau Sai Chau (station KSC, 20 km east) over 2,367 overlapping days: monthly means correlate at r = 0.970, but daily totals only at r = 0.925, and on 26% of days the two stations differ by more than 20%. Treat monthly aggregates as territory-wide and a single day's total as local to Kowloon.",
+    "The HK database records begin 2024-12, so only the last ~1.7 years of this file has air-quality data to join to."
+  ]
+}

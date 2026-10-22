@@ -1,0 +1,21 @@
+{
+  "name": "beijing_wind_circular_mean",
+  "difficulty": "medium",
+  "category": "statistical_characterization",
+  "case_type": "trap",
+  "conversations": [
+    {
+      "id": "wind_circular_mean",
+      "turns": [
+        {
+          "query": "For Dongsi station over January 2023, report the mean direction the wind blew from across the month's hourly records, weighting every hour equally regardless of its wind speed, as a bearing in degrees on the compass convention (0 = north, increasing clockwise), normalised to the range 0 to 360.",
+          "validator": "validate_mean_wind_direction",
+          "stores": [
+            "mean_wind_direction_deg"
+          ]
+        }
+      ]
+    }
+  ],
+  "domain": "beijing"
+}

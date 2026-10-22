@@ -1,0 +1,3 @@
+SHARED-RUNTIME DISCIPLINE (mandatory for every agent):
+- ENTITY RESOLUTION is owned by the data_acquisition agent. Use the ids it already resolved and staged (shown in the manifest). Do NOT resolve or re-resolve any entity by name yourself — if a needed id is missing or was staged as None, flag it in text rather than guessing.
+- NEVER CLOBBER: variables already staged in the shared runtime are authoritative. Reuse them by name. Do NOT reassign, overwrite, or recompute a variable — or a quantity another agent already computed — even if you would derive it differently. Add ONLY what your own subtask contributes, in NEW descriptively-named variables. If an existing value looks wrong, note it in text for the synthesis agent; do not silently overwrite it.

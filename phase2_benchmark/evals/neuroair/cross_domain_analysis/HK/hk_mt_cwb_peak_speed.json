@@ -1,0 +1,25 @@
+[
+  {
+    "name": "hk_mt_cwb_peak_speed",
+    "module": "evals.neuroair.cross_domain_analysis.HK.hk_mt_cwb_peak_speed",
+    "requirements": "Causeway Bay peak-NO2 hour -> mean speed of <=300m segments that hour. Store cwb_peak_no2 (float,1dp), cwb_peak_speed (float,2dp).",
+    "conversations": [
+      {
+        "id": "hk_mt_cwb_peak_speed",
+        "turns": [
+          {
+            "query": "At Causeway Bay station (station_id 17) over June 2025, find the single hour timestamp with the highest NO2. Then compute the mean traffic speed (from the hourly road-segment traffic records) at that same timestamp across the road segments whose geometry lies within 300 metres of the station (non-NULL speed). Return that peak NO2 value (1 dp) and the mean speed (2 dp).",
+            "validator": "validate_hk_mt_cwb_peak_speed"
+          }
+        ]
+      }
+    ],
+    "difficulty": "hard",
+    "category": "cross_domain_analysis",
+    "_source": {
+      "benchmark": "hk-multitable-hard",
+      "original_query_id": "hk_mt_cwb_peak_speed",
+      "verbatim": false
+    }
+  }
+]

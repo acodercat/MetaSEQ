@@ -1,0 +1,48 @@
+{
+  "hk_mt_hottest_general_o3": {
+    "scenario": "hk_mt_hottest_general_o3",
+    "conversations": [
+      {
+        "id": "hk_mt_hottest_general_o3",
+        "turns": [
+          {
+            "query": "For each GENERAL-type air-quality station, find its geographically nearest weather station (weather stations use a separate id space; match by coordinate proximity). Using June 2025, compute each general station's nearest-weather mean temperature, and identify the general station whose nearest weather station is the hottest. Return that air-quality station's name and its own June mean O3 (non-NULL hourly, 1 dp).",
+            "actual_response": "The GENERAL-type air quality station whose nearest weather station had the highest June 2025 mean temperature is **Tung Chung**, whose nearest weather station is Chek Lap Kok with a mean temperature of 29.3\u00b0C. Tung Chung's own June 2025 mean O\u2083 concentration was **53.9 \u00b5g/m\u00b3**.",
+            "actual_calls": [],
+            "validation_errors": [],
+            "metrics": {
+              "steps": 6,
+              "prompt_tokens": 45456,
+              "completion_tokens": 1391,
+              "total_tokens": 46847
+            },
+            "success": true,
+            "variables_not_set": false,
+            "error": null,
+            "code_snippets": [
+              "import pandas as pd\nfrom sqlalchemy import text\nimport numpy as np\n\n# Step 1: Get all GENERAL-type air quality stations with their coordinates\nquery = text(\"\"\"\nSELECT id, name_en, ST_X(coordinate::geometry) as lon, ST_Y(coordinate::geometry) as lat\nFROM air_quality_station\nWHERE station_type = 'GENERAL'\nORDER BY id\n\"\"\")\ngen_stations = pd.read_sql(query, engine)\nprint(\"GENERAL air quality stations:\")\nprint(gen_stations)\nprint()\n\n# Step 2: Get all weather stations with their coordinates\nquery = text(\"\"\"\nSELECT id, name_en, ST_X(coordinate::geometry) as lon, ST_Y(coordinate::geometry) as lat\nFROM weather_station\nORDER BY id\n\"\"\")\nweather_stations = pd.read_sql(query, engine)\nprint(\"Weather stations:\")\nprint(weather_stations)",
+              "# Step 3: Compute nearest weather station for each general station using haversine\ndef haversine(lat1, lon1, lat2, lon2):\n    \"\"\"Calculate haversine distance in km\"\"\"\n    R = 6371.0\n    lat1, lon1, lat2, lon2 = map(np.radians, [lat1, lon1, lat2, lon2])\n    dlat = lat2 - lat1\n    dlon = lon2 - lon1\n    a = np.sin(dlat/2)**2 + np.cos(lat1) * np.cos(lat2) * np.sin(dlon/2)**2\n    c = 2 * np.arctan2(np.sqrt(a), np.sqrt(1-a))\n    return R * c\n\n# Filter out weather stations with NaN coordinates\nws_valid = weather_stations.dropna(subset=['lon', 'lat']).copy()\n\n# For each general station, find nearest weather station\nnearest_ws = []\nfor _, aq_row in gen_stations.iterrows():\n    min_dist = float('inf')\n    nearest_id = None\n    nearest_name = None\n    for _, ws_row in ws_valid.iterrows():\n        dist = haversine(aq_row['lat'], aq_row['lon'], ws_row['lat'], ws_row['lon'])\n        if dist < min_dist:\n            min_dist = dist\n            nearest_id = ws_row['id']\n            nearest_name = ws_row['name_en']\n    nearest_ws.append({\n        'aq_id': aq_row['id'],\n        'aq_name': aq_row['name_en'],\n        'ws_id': nearest_id,\n        'ws_name': nearest_name,\n        'distance_km': round(min_dist, 3)\n    })\n\nnearest_df = pd.DataFrame(nearest_ws)\nprint(\"Nearest weather station for each GENERAL air quality station:\")\nprint(nearest_df)",
+              "# Step 4: Get June 2025 mean temperature for the relevant weather stations\nws_ids = nearest_df['ws_id'].unique().tolist()\nws_ids_str = ','.join(str(x) for x in ws_ids)\n\nquery = text(f\"\"\"\nSELECT station_id, AVG(temperature) as mean_temp\nFROM hourly_station_weather\nWHERE station_id IN ({ws_ids_str})\nAND datetime >= '2025-06-01 00:00:00'\nAND datetime < '2025-07-01 00:00:00'\nAND temperature IS NOT NULL\nGROUP BY station_id\nORDER BY mean_temp DESC\n\"\"\")\nws_temps = pd.read_sql(query, engine)\nprint(\"June 2025 mean temperature by weather station:\")\nprint(ws_temps)",
+              "# Identify the general station whose nearest weather station is the hottest (ws_id=7)\nhottest_ws_id = ws_temps.iloc[0]['station_id']\nhottest_ws_temp = ws_temps.iloc[0]['mean_temp']\nhottest_aq = nearest_df[nearest_df['ws_id'] == hottest_ws_id]\nprint(\"General station with hottest nearest weather station:\")\nprint(hottest_aq)\nprint(f\"Hottest weather station mean temp: {hottest_ws_temp:.1f}\u00b0C\")\n\n# Step 5: Get June 2025 mean O3 for this general station\naq_id = hottest_aq['aq_id'].values[0]\nquery = text(f\"\"\"\nSELECT AVG(o3) as mean_o3\nFROM hourly_station_air_quality\nWHERE station_id = {aq_id}\nAND datetime >= '2025-06-01 00:00:00'\nAND datetime < '2025-07-01 00:00:00'\nAND o3 IS NOT NULL\n\"\"\")\naq_o3 = pd.read_sql(query, engine)\nprint(f\"June 2025 mean O3: {aq_o3['mean_o3'].values[0]:.1f} \u00b5g/m\u00b3\")",
+              "hottest_gen_station = \"Tung Chung\"\nhottest_gen_o3 = 53.9\nprint(f\"hottest_gen_station = '{hottest_gen_station}'\")\nprint(f\"hottest_gen_o3 = {hottest_gen_o3}\")"
+            ],
+            "runtime_variables": {
+              "hottest_gen_station": "Tung Chung",
+              "hottest_gen_o3": 53.9
+            }
+          }
+        ]
+      }
+    ],
+    "metrics": {
+      "total_turns": 1,
+      "successful_turns": 1,
+      "failed_turns": 0,
+      "total_steps": 6,
+      "success_rate": 1.0,
+      "total_prompt_tokens": 45456,
+      "total_completion_tokens": 1391,
+      "total_tokens": 46847
+    }
+  }
+}

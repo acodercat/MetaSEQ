@@ -1,0 +1,32 @@
+{
+  "name": "hk_pm25_change_coverage_pushback",
+  "difficulty": "medium",
+  "category": "comparative_assessment",
+  "case_type": "baseline",
+  "conversations": [
+    {
+      "id": "pm25_change_coverage_pushback",
+      "turns": [
+        {
+          "query": "A desk is writing a line on how Hong Kong's fine particulate matter moved from 2024 to 2025. Give them the territory annual mean PM2.5 for each year and the percentage change between them.",
+          "validator": "validate_change",
+          "stores": [
+            "pm25_territory_2024",
+            "pm25_territory_2025",
+            "pm25_change_pct"
+          ]
+        },
+        {
+          "query": "An editor attributes the 2024-2025 decline to North station missing clean spring hours in 2024. Check the objection, identify North's lowest-coverage month, and advise whether to withdraw the line.",
+          "validator": "validate_objection",
+          "stores": [
+            "pull_the_line",
+            "north_lowest_coverage_month_2024",
+            "decline_survives_zero_fill"
+          ]
+        }
+      ]
+    }
+  ],
+  "domain": "hk"
+}

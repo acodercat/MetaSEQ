@@ -1,0 +1,20 @@
+[
+    {
+        "name": "hk_directional_quadrant",
+        "module": "evals.spatial_analysis.HK.directional_quadrant",
+        "requirements": "Classify stations into quadrants relative to a reference station. Please store the results in: ne_count (int), nw_count (int), se_count (int), sw_count (int).",
+        "conversations": [
+            {
+                "id": "quadrant_from_central",
+                "turns": [
+                    {
+                        "query": "From the Central air quality monitoring station, classify all other air quality monitoring stations into four quadrants (NE/NW/SE/SW) based on their relative latitude and longitude. How many stations fall into each quadrant?",
+                        "validator": "validate_quadrants"
+                    }
+                ]
+            }
+        ],
+        "difficulty": "medium",
+        "category": "spatial_analysis"
+    }
+]

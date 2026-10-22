@@ -1,0 +1,17 @@
+name = "air_quality"
+domains = ["hk", "beijing"]
+description = ""
+
+[source]
+repository = "air-bench"
+path = "."
+registry = "benchmarks.json"
+commit = "2c694a4d73a0a775a3085650807d3d4c3765567f"
+dirty = true
+ported_at = "2026-10-08T08:57:07Z"
+tasks = 111
+
+# Patched after the port (2026-10-12; docs/deviations.md §19), the same edits made at the
+# AirBench source: the scoring bands of beijing_wind_sector_pm25, hk_sunshine_ozone_scale_reversal
+# and hk_ozone_burden_year_on_year. Queries, variables and answer keys are unchanged.
+patched = ["beijing_wind_sector_pm25", "hk_sunshine_ozone_scale_reversal", "hk_ozone_burden_year_on_year"]

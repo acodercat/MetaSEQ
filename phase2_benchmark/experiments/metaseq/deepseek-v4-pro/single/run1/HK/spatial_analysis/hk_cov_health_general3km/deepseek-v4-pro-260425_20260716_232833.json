@@ -1,0 +1,43 @@
+{
+  "hk_cov_health_general3km": {
+    "scenario": "hk_cov_health_general3km",
+    "conversations": [
+      {
+        "id": "hk_cov_health_general3km",
+        "turns": [
+          {
+            "query": "How many distinct 'HEALTH_CARE_INSTITUTION' sensitive areas have their polygon centroid within 3000 metres of at least one GENERAL-type air-quality station? Count each institution once. Return the count.",
+            "actual_response": "883 distinct HEALTH_CARE_INSTITUTION sensitive areas have their polygon centroid within 3000 metres of at least one GENERAL-type air-quality monitoring station.",
+            "actual_calls": [],
+            "validation_errors": [],
+            "metrics": {
+              "steps": 2,
+              "prompt_tokens": 10879,
+              "completion_tokens": 234,
+              "total_tokens": 11113
+            },
+            "success": true,
+            "variables_not_set": false,
+            "error": null,
+            "code_snippets": [
+              "import pandas as pd\nfrom sqlalchemy import text\n\n# Count distinct HEALTH_CARE_INSTITUTION sensitive areas whose centroid is within 3000m of any GENERAL station\nquery = text(\"\"\"\nSELECT COUNT(DISTINCT sa.id) AS health_general_3km\nFROM sensitive_area sa\nCROSS JOIN air_quality_station aqs\nWHERE sa.category = 'HEALTH_CARE_INSTITUTION'\n  AND aqs.station_type = 'GENERAL'\n  AND ST_DWithin(\n        ST_Centroid(sa.geometry)::geography,\n        aqs.coordinate::geography,\n        3000\n      )\n\"\"\")\nresult = pd.read_sql(query, engine)\nhealth_general_3km = int(result['health_general_3km'].values[0])\nprint(f\"Distinct HEALTH_CARE_INSTITUTION within 3000m of GENERAL stations: {health_general_3km}\")"
+            ],
+            "runtime_variables": {
+              "health_general_3km": 883
+            }
+          }
+        ]
+      }
+    ],
+    "metrics": {
+      "total_turns": 1,
+      "successful_turns": 1,
+      "failed_turns": 0,
+      "total_steps": 2,
+      "success_rate": 1.0,
+      "total_prompt_tokens": 10879,
+      "total_completion_tokens": 234,
+      "total_tokens": 11113
+    }
+  }
+}

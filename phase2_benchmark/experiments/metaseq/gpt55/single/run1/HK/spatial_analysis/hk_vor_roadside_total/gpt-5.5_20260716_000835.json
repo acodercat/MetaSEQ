@@ -1,0 +1,43 @@
+{
+  "hk_vor_roadside_total": {
+    "scenario": "hk_vor_roadside_total",
+    "conversations": [
+      {
+        "id": "hk_vor_roadside_total",
+        "turns": [
+          {
+            "query": "Compute the Voronoi (Thiessen) tessellation of all 18 air-quality monitoring stations and clip each cell to the axis-aligned bounding box of all station coordinates. Use geodesic area (cast to geography) in km\u00b2. Return the TOTAL area (km\u00b2, 1 dp) of the Voronoi cells belonging to the three roadside stations (station_id 14, 16, 17).",
+            "actual_response": "45.0 km\u00b2",
+            "actual_calls": [],
+            "validation_errors": [],
+            "metrics": {
+              "steps": 2,
+              "prompt_tokens": 10460,
+              "completion_tokens": 830,
+              "total_tokens": 11290
+            },
+            "success": true,
+            "variables_not_set": false,
+            "error": null,
+            "code_snippets": [
+              "import pandas as pd\nfrom sqlalchemy import text\n\nquery = text(\"\"\"\nWITH stations AS (\n    SELECT id, coordinate::geometry AS geom\n    FROM air_quality_station\n),\nbbox AS (\n    SELECT ST_SetSRID(ST_Extent(geom)::geometry, 4326) AS geom\n    FROM stations\n),\nvor_cells AS (\n    SELECT (ST_Dump(ST_VoronoiPolygons(ST_Collect(geom), 0, (SELECT geom FROM bbox)))).geom AS geom\n    FROM stations\n),\nassigned AS (\n    SELECT s.id, ST_Intersection(v.geom, b.geom) AS clipped_geom\n    FROM vor_cells v\n    CROSS JOIN bbox b\n    JOIN stations s ON ST_Covers(v.geom, s.geom)\n)\nSELECT\n    COUNT(*) AS assigned_cell_count,\n    SUM(CASE WHEN id IN (14,16,17) THEN ST_Area(clipped_geom::geography) / 1000000.0 ELSE 0 END) AS roadside_area_km2\nFROM assigned;\n\"\"\")\nres = pd.read_sql(query, engine)\nroadside_cells_km2 = float(round(res.loc[0, \"roadside_area_km2\"], 1))\nprint({\"assigned_cell_count\": int(res.loc[0, \"assigned_cell_count\"]), \"roadside_cells_km2\": roadside_cells_km2})"
+            ],
+            "runtime_variables": {
+              "roadside_cells_km2": 45.0
+            }
+          }
+        ]
+      }
+    ],
+    "metrics": {
+      "total_turns": 1,
+      "successful_turns": 1,
+      "failed_turns": 0,
+      "total_steps": 2,
+      "success_rate": 1.0,
+      "total_prompt_tokens": 10460,
+      "total_completion_tokens": 830,
+      "total_tokens": 11290
+    }
+  }
+}

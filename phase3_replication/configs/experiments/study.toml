@@ -1,0 +1,24 @@
+# Experiment 2 of the MetaSEQ paper: the single agent against the MetaSEQ topology on the
+# air_quality suite, each agent running its code through one native `python` tool call
+# (`agents/harness/`). The runs were made within a larger pre-specified study of the same
+# tasks, backbones and repeats (docs/preregistration.md); its other arms are reported
+# separately and are not part of this tree.
+name = "study"
+description = """
+The single agent and the MetaSEQ topology, without analysis rules, on DeepSeek-V4 Flash,
+qwen3.8-flash, GPT-6 Luna, Qwen3.8-27B (thinking off and on), DeepSeek-V4 Flash with thinking,
+deepseek-v4-pro-0813 and claude-sonnet-5-5 under the tool harness: the suite's tasks x 3
+repeats each.
+"""
+suite = "air_quality"
+harness = "tool"
+arms = ["single_agent_bare", "multi_agent_fixed_roles_verified"]
+models = ["deepseek-v4-flash", "qwen3.8-flash", "gpt-6-luna",
+          "qwen3.8-27b", "qwen3.8-27b-thinking",
+          "deepseek-v4-flash-thinking", "deepseek-v4-pro-0813", "claude-sonnet-5-5"]
+repeats = 3
+
+[[contrasts]]
+name = "H1 orchestration vs single"
+treatment = "multi_agent_fixed_roles_verified"
+control = "single_agent_bare"

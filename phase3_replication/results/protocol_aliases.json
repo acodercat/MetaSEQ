@@ -1,0 +1,71 @@
+{
+ "aliases": {
+  "d43d47732e6c8ac2": "0ca46a4a4cea6b40",
+  "4c487ada6a6a4fcc": "07032083e4fee920",
+  "4f4a3ba0e6c1f00b": "0ca46a4a4cea6b40",
+  "dc87ad49c10c6bfc": "07032083e4fee920",
+  "f706e8d480f8b5b2": "0ca46a4a4cea6b40",
+  "8720db542895b835": "07032083e4fee920",
+  "57629fa71391d453": "0ca46a4a4cea6b40",
+  "e4d34b3e173db994": "07032083e4fee920",
+  "1cd30908c0a052a5": "0ca46a4a4cea6b40",
+  "30d10feece3e17d9": "07032083e4fee920"
+ },
+ "checks": {
+  "date": "2026-10-12",
+  "reason": "the experiment tree was reduced to the two arms reported in the MetaSEQ paper (single_agent_bare, multi_agent_fixed_roles_verified): code paths of the other arms removed (delegate and review topologies, the verifier on the single agent and its evidence mode, the analysis rules, the convention libraries, the code harness and its model layer), and the stored arm records' removed fields are accepted only at the values whose behaviour remains (agents.arm.REMOVED_FIELDS)",
+  "old": {
+   "hk": "d43d47732e6c8ac2",
+   "beijing": "4c487ada6a6a4fcc"
+  },
+  "new": {
+   "hk": "4f4a3ba0e6c1f00b",
+   "beijing": "dc87ad49c10c6bfc"
+  },
+  "evidence": [
+   "every request the model receives (system prompt, instructions, tool specification, tool outputs) under both arms, captured with the scripted gateway on the toy suite and on all 53 Beijing tasks: 108 runs, 7,399 requests, byte-identical before and after",
+   "all 954 stored Beijing runs of both arms rescored offline with the reduced code: 1,314 turns, 0 verdicts differ (17 validator messages differ only in the trailing digits of one floating-point expected value); Hong Kong runs need the live database to rescore and were not rescored",
+   "the environment descriptions (system prompts, variables, functions) are unchanged; cave-agent 0.8.0 unchanged"
+  ]
+ },
+ "later": [
+  {
+   "date": "2026-10-14",
+   "reason": "the fixed-role arm, its topology, module, functions and prompt directory renamed (multi_agent_fixed_roles_verified, fixed_roles); no prompt text changed. The stored run records were rewritten for the new names (arm name, topology, description, coordination kind; directories); nothing else in them changed",
+   "from": {
+    "4f4a3ba0e6c1f00b": "1cd30908c0a052a5",
+    "dc87ad49c10c6bfc": "30d10feece3e17d9"
+   },
+   "evidence": "every request the model receives under both arms, captured with the scripted gateway on the toy suite and all 53 Beijing tasks: 108 runs, 7,399 requests, byte-identical before and after apart from the current-time line; 276 tests pass"
+  },
+  {
+   "date": "2026-10-14",
+   "reason": "the Qwen3.8-27B runs (thinking off and on) of both arms, made in the larger study's tree (VeriDec-lab) under its fingerprints, added to this store",
+   "from": {
+    "f706e8d480f8b5b2": "1cd30908c0a052a5",
+    "8720db542895b835": "30d10feece3e17d9",
+    "57629fa71391d453": "1cd30908c0a052a5",
+    "e4d34b3e173db994": "30d10feece3e17d9"
+   },
+   "evidence": "every request the model receives under both arms, captured with the scripted gateway on the toy suite and all 53 Beijing tasks, from the tree the runs were made with and from this tree: 108 runs, 7,399 requests, byte-identical apart from the current-time line; 7 of the runs were made before that tree gained the Messages API, under 57629fa71391d453/e4d34b3e173db994, which its own record shows byte-identical (324 runs, 19,190 requests) to f706e8d480f8b5b2/8720db542895b835"
+  },
+  {
+   "date": "2026-10-15",
+   "reason": "the Messages API (provider \"anthropic\", which claude-sonnet-5-5 needs) added to llm/: llm/tool_gateway.py and llm/registry.py taken unchanged from the larger study's tree, whose copy of them made the later backbones' runs; the anthropic and httpx2 packages added at that tree's versions; one comment in llm/__init__.py",
+   "from": {
+    "1cd30908c0a052a5": "0ca46a4a4cea6b40",
+    "30d10feece3e17d9": "07032083e4fee920"
+   },
+   "evidence": "every request the model receives under both arms, captured with the scripted gateway on the toy suite and all 53 Beijing tasks: 108 runs, 7,399 requests, byte-identical before and after; the OpenAI-compatible and Responses paths changed only by moving the message list into one method; 274 tests pass"
+  },
+  {
+   "date": "2026-10-15",
+   "reason": "the runs of both arms on DeepSeek-V4 Flash with thinking, deepseek-v4-pro-0813 and claude-sonnet-5-5 (1,998 runs), made in the larger study's tree under its fingerprints, added to this store; their run records are copied unchanged apart from the fixed-role arm's description, set to this tree's",
+   "from": {
+    "f706e8d480f8b5b2": "0ca46a4a4cea6b40",
+    "8720db542895b835": "07032083e4fee920"
+   },
+   "evidence": "the same request captures as for the Qwen3.8-27B runs (2026-10-14): the tree these runs were made with sends every request byte-identical to this tree's, apart from the current-time line"
+  }
+ ]
+}

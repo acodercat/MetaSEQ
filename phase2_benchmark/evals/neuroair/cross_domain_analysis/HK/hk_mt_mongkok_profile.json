@@ -1,0 +1,25 @@
+[
+  {
+    "name": "hk_mt_mongkok_profile",
+    "module": "evals.neuroair.cross_domain_analysis.HK.hk_mt_mongkok_profile",
+    "requirements": "Mong Kok 5-table profile: mean NO2, rush congestion of <=500m segments, #schools <=500m, dominant land_use <=500m. Store mk_no2 (float,1dp), mk_rush_ci (float,2dp), mk_schools (int), mk_dom_landuse (str).",
+    "conversations": [
+      {
+        "id": "hk_mt_mongkok_profile",
+        "turns": [
+          {
+            "query": "Build an integrated roadside profile for Mong Kok air-quality station (station_id 14) over June 2025 (2025-06-01 to 2025-06-30). Report: (1) its mean NO2 (non-NULL hourly, 1 dp); (2) the mean traffic congestion_index during rush hours 08 and 09 across the road segments whose geometry lies within 500 metres of the station (non-NULL, 2 dp); (3) the number of 'EDUCATIONAL_INSTITUTION' sensitive areas whose polygon centroid is within 500 metres of the station; (4) the land_use_zone land_category with the largest total intersection area with the 500-metre buffer around the station.",
+            "validator": "validate_hk_mt_mongkok_profile"
+          }
+        ]
+      }
+    ],
+    "difficulty": "hard",
+    "category": "cross_domain_analysis",
+    "_source": {
+      "benchmark": "hk-multitable-hard",
+      "original_query_id": "hk_mt_mongkok_profile",
+      "verbatim": false
+    }
+  }
+]

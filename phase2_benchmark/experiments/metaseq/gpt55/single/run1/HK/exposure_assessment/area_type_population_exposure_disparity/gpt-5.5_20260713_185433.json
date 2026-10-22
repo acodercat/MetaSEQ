@@ -1,0 +1,74 @@
+{
+  "hk_area_type_population_exposure_disparity": {
+    "scenario": "hk_area_type_population_exposure_disparity",
+    "conversations": [
+      {
+        "id": "area_type_disparity",
+        "turns": [
+          {
+            "query": "In October 2025, compute the average PM2.5 for stations grouped by area type (urban, new town, rural). Return the three values rounded to 1 decimal place.",
+            "actual_response": "Urban: 13.5 \u00b5g/m\u00b3  \nNew town: 14.0 \u00b5g/m\u00b3  \nRural: 12.0 \u00b5g/m\u00b3  \n\nThe highest average PM2.5 exposure in October 2025 was in new town areas.",
+            "actual_calls": [],
+            "validation_errors": [],
+            "metrics": {
+              "steps": 2,
+              "prompt_tokens": 11535,
+              "completion_tokens": 1401,
+              "total_tokens": 12936
+            },
+            "success": true,
+            "variables_not_set": false,
+            "error": null,
+            "code_snippets": [
+              "import pandas as pd, numpy as np\nfrom sqlalchemy import text\n\nstart, end = \"2025-10-01 00:00:00\", \"2025-11-01 00:00:00\"\n\ncount_q = text(\"\"\"\nSELECT COUNT(*) AS n\nFROM hourly_station_air_quality h\nJOIN air_quality_station s ON h.station_id = s.id\nWHERE h.datetime >= :start AND h.datetime < :end AND h.pm2_5 IS NOT NULL\n\"\"\")\nn_readings = int(pd.read_sql(count_q, engine, params={\"start\": start, \"end\": end})[\"n\"].iloc[0])\n\npm_q = text(\"\"\"\nSELECT s.area_type::text AS area_type, AVG(h.pm2_5) AS avg_pm25, COUNT(*) AS reading_count, COUNT(DISTINCT s.id) AS station_count\nFROM hourly_station_air_quality h\nJOIN air_quality_station s ON h.station_id = s.id\nWHERE h.datetime >= :start AND h.datetime < :end AND h.pm2_5 IS NOT NULL\nGROUP BY s.area_type\n\"\"\")\npm_df = pd.read_sql(pm_q, engine, params={\"start\": start, \"end\": end})\n\nstations_q = text(\"\"\"\nSELECT id, area_type::text AS area_type, ST_X(coordinate::geometry) AS longitude, ST_Y(coordinate::geometry) AS latitude\nFROM air_quality_station\nWHERE area_type IS NOT NULL AND coordinate IS NOT NULL\n\"\"\")\nstations = pd.read_sql(stations_q, engine)\n\ndef haversine_km(lon1, lat1, lon2, lat2):\n    R = 6371.0088\n    lon1, lat1, lon2, lat2 = map(np.radians, [lon1, lat1, lon2, lat2])\n    dlon, dlat = lon2 - lon1, lat2 - lat1\n    a = np.sin(dlat/2)**2 + np.cos(lat1) * np.cos(lat2) * np.sin(dlon/2)**2\n    return 2 * R * np.arcsin(np.sqrt(a))\n\npop_by_type = {}\nfor area in [\"URBAN\", \"NEW_TOWN\", \"RURAL\"]:\n    st = stations[stations[\"area_type\"] == area]\n    if st.empty:\n        pop_by_type[area] = 0\n        continue\n    covered = np.zeros(len(pop_df), dtype=bool)\n    for _, r in st.iterrows():\n        covered |= haversine_km(pop_df[\"longitude\"].to_numpy(), pop_df[\"latitude\"].to_numpy(), r[\"longitude\"], r[\"latitude\"]) <= 3\n    pop_by_type[area] = int(round(float(pop_df.loc[covered, \"population\"].sum())))\n\npm_map = dict(zip(pm_df[\"area_type\"], pm_df[\"avg_pm25\"]))\nurban_pm25 = round(float(pm_map[\"URBAN\"]), 1) if \"URBAN\" in pm_map else None\nnew_town_pm25 = round(float(pm_map[\"NEW_TOWN\"]), 1) if \"NEW_TOWN\" in pm_map else None\nrural_pm25 = round(float(pm_map[\"RURAL\"]), 1) if \"RURAL\" in pm_map else None\nurban_pop = pop_by_type[\"URBAN\"]\nnew_town_pop = pop_by_type[\"NEW_TOWN\"]\nrural_pop = pop_by_type[\"RURAL\"]\n\npm_values = {\"URBAN\": urban_pm25, \"NEW_TOWN\": new_town_pm25, \"RURAL\": rural_pm25}\nhighest_exposure_type = max({k: v for k, v in pm_values.items() if v is not None}, key=lambda k: pm_values[k])\n\nsummary = pd.DataFrame({\n    \"area_type\": [\"URBAN\", \"NEW_TOWN\", \"RURAL\"],\n    \"avg_pm25_ug_m3\": [urban_pm25, new_town_pm25, rural_pm25],\n    \"population_within_3km\": [urban_pop, new_town_pop, rural_pop]\n})\nprint(f\"October 2025 PM2.5 readings used: {n_readings}\")\nprint(summary.to_string(index=False))\nprint(f\"Highest average PM2.5 area type: {highest_exposure_type}\")"
+            ],
+            "runtime_variables": {
+              "urban_pm25": 13.5,
+              "new_town_pm25": 14.0,
+              "rural_pm25": 12.0,
+              "urban_pop": 3804554,
+              "new_town_pop": 1450868,
+              "rural_pop": 1230,
+              "highest_exposure_type": "NEW_TOWN"
+            }
+          },
+          {
+            "query": "Compute the total population within 3km (from pop_df using haversine distance) of all urban stations combined, all new town stations combined, and the rural station. Which area type has the highest average PM2.5? Return the three population counts and the area type name.",
+            "actual_response": "Urban population within 3 km: 3,804,554  \nNew town population within 3 km: 1,450,868  \nRural population within 3 km: 1,230  \n\nHighest average PM2.5 area type: NEW_TOWN",
+            "actual_calls": [],
+            "validation_errors": [],
+            "metrics": {
+              "steps": 1,
+              "prompt_tokens": 6408,
+              "completion_tokens": 147,
+              "total_tokens": 6555
+            },
+            "success": true,
+            "variables_not_set": false,
+            "error": null,
+            "code_snippets": [],
+            "runtime_variables": {
+              "urban_pm25": 13.5,
+              "new_town_pm25": 14.0,
+              "rural_pm25": 12.0,
+              "urban_pop": 3804554,
+              "new_town_pop": 1450868,
+              "rural_pop": 1230,
+              "highest_exposure_type": "NEW_TOWN"
+            }
+          }
+        ]
+      }
+    ],
+    "metrics": {
+      "total_turns": 2,
+      "successful_turns": 2,
+      "failed_turns": 0,
+      "total_steps": 3,
+      "success_rate": 1.0,
+      "total_prompt_tokens": 17943,
+      "total_completion_tokens": 1548,
+      "total_tokens": 19491
+    }
+  }
+}

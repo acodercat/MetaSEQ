@@ -1,0 +1,20 @@
+[
+    {
+        "name": "hk_station_isolation_ranking",
+        "module": "evals.spatial_analysis.HK.station_isolation_ranking",
+        "requirements": "Rank stations by nearest-neighbor distance to find the most isolated ones. Please store the results in: isolated_1_name (str, most isolated station), isolated_1_distance (float, meters), isolated_2_name (str, second most isolated), isolated_2_distance (float, meters), isolated_3_name (str, third most isolated), isolated_3_distance (float, meters).",
+        "conversations": [
+            {
+                "id": "isolation_ranking",
+                "turns": [
+                    {
+                        "query": "For each air quality monitoring station, compute the distance to its nearest fellow air quality monitoring station. Return the top 3 most isolated stations (largest nearest-neighbor distance) with their names and distances in meters.",
+                        "validator": "validate_isolation_ranking"
+                    }
+                ]
+            }
+        ],
+        "difficulty": "medium",
+        "category": "spatial_analysis"
+    }
+]

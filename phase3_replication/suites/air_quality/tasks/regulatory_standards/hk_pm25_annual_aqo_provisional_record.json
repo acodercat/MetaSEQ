@@ -1,0 +1,30 @@
+{
+  "name": "hk_pm25_annual_aqo_provisional_record",
+  "difficulty": "hard",
+  "category": "regulatory_standards",
+  "case_type": "baseline",
+  "conversations": [
+    {
+      "id": "pm25_annual_aqo_provisional_record",
+      "turns": [
+        {
+          "query": "Under the annual PM2.5 objective of 15 ug/m3 that came in with the April 2025 revision, did the Sham Shui Po station comply in 2025? Give its 2025 annual mean PM2.5, and alongside it its annual mean NO2 and ozone.",
+          "validator": "validate_annual_means",
+          "stores": [
+            "ssp_pm25_annual_2025",
+            "ssp_no2_annual_2025",
+            "ssp_o3_annual_2025"
+          ]
+        },
+        {
+          "query": "EPD's validated 2025 report lists Sham Shui Po PM2.5 at 15.0 and compliant; our real-time archive reads higher. Recalculate using daily means from days with at least eighteen readings. Does that resolve the discrepancy, and which finding should the desk publish?",
+          "validator": "validate_daily_construction",
+          "stores": [
+            "ssp_pm25_annual_of_daily_means_2025"
+          ]
+        }
+      ]
+    }
+  ],
+  "domain": "hk"
+}

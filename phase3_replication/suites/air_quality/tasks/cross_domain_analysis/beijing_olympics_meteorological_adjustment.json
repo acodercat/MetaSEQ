@@ -1,0 +1,26 @@
+{
+  "name": "beijing_olympics_meteorological_adjustment",
+  "difficulty": "hard",
+  "category": "cross_domain_analysis",
+  "case_type": "baseline",
+  "conversations": [
+    {
+      "id": "olympics_adjustment",
+      "turns": [
+        {
+          "query": "Compare Beijing PM2.5 during 4-20 February 2022 with the same dates in 2021. Quantify the raw difference and the adjusted window coefficient from OLS allowing for log ventilation, with its sample size. What does the remaining contrast establish about the Olympics controls?",
+          "validator": "validate_harder_turn_1",
+          "stores": [
+            "still_lower_after_the_weather_adjustment",
+            "adjusted_cut_smaller_than_raw",
+            "raw_window_difference",
+            "log_ventilation_adjusted_difference",
+            "adjustment_days"
+          ],
+          "evaluation_tier": "execution"
+        }
+      ]
+    }
+  ],
+  "domain": "beijing"
+}

@@ -1,0 +1,24 @@
+[
+    {
+        "name": "hk_area_type_population_exposure_disparity",
+        "module": "evals.exposure_assessment.HK.area_type_population_exposure_disparity",
+        "difficulty": "hard",
+        "category": "exposure_assessment",
+        "requirements": "Compare PM2.5 exposure across area types (URBAN, NEW_TOWN, RURAL) considering population distribution. Please store the results in: urban_pm25 (float, 1dp), new_town_pm25 (float, 1dp), rural_pm25 (float, 1dp), urban_pop (int), new_town_pop (int), rural_pop (int), highest_exposure_type (str).",
+        "conversations": [
+            {
+                "id": "area_type_disparity",
+                "turns": [
+                    {
+                        "query": "In October 2025, compute the average PM2.5 for stations grouped by area type (urban, new town, rural). Return the three values rounded to 1 decimal place.",
+                        "validator": "validate_t1"
+                    },
+                    {
+                        "query": "Compute the total population within 3km (from pop_df using haversine distance) of all urban stations combined, all new town stations combined, and the rural station. Which area type has the highest average PM2.5? Return the three population counts and the area type name.",
+                        "validator": "validate_t2"
+                    }
+                ]
+            }
+        ]
+    }
+]

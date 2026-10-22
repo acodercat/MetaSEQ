@@ -1,0 +1,21 @@
+{
+  "name": "beijing_o3_mda8_exceedance",
+  "difficulty": "medium",
+  "category": "exceedance_anomaly_detection",
+  "case_type": "trap",
+  "conversations": [
+    {
+      "id": "o3_mda8_exceedance",
+      "turns": [
+        {
+          "query": "At Dongsi station, count the days in June-August 2023 that exceeded China's Grade II ozone limit of 160 ug/m3, judged on the daily maximum 8-hour average as defined by HJ 663-2013. Require at least 6 valid hours per 8-hour window, and consider every day of the period, whatever number of hours it reports.",
+          "validator": "validate_exceedance_days",
+          "stores": [
+            "exceedance_days"
+          ]
+        }
+      ]
+    }
+  ],
+  "domain": "beijing"
+}

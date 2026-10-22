@@ -1,0 +1,152 @@
+{
+  "metadata_version": "1.0.0",
+  "created_at": "2026-07-22",
+  "scope": "Metadata for the 12 stations represented in the AirBench Beijing benchmark (observation grid 2013-03-01 through 2017-02-28).",
+  "sources": [
+    {
+      "id": "uci_501",
+      "authority": "UCI Machine Learning Repository",
+      "title": "Beijing Multi-Site Air Quality",
+      "url": "https://archive.ics.uci.edu/dataset/501/beijingmultisiteairqualitydata",
+      "doi": "10.24432/C5RK5G",
+      "supports": [
+        "station",
+        "observation_grid_start",
+        "observation_grid_end"
+      ],
+      "notes": "The original UCI schema contains station names but no station_code, longitude, latitude, district, or elevation fields."
+    },
+    {
+      "id": "mee_2012_network_plan",
+      "authority": "Ministry of Ecology and Environment of the People's Republic of China",
+      "title": "National Ambient Air Monitoring Network Setting Plan (2012), Table 3",
+      "url": "https://www.mee.gov.cn/gkml/hbb/bwj/201204/W020221214657415435410.pdf",
+      "sha256": "7ba069cd713f544b3c3d76d905b37bb10891d5aba2bf3ae0c611e72be0b53eb0",
+      "supports": [
+        "station_name_zh",
+        "functional_role_2013"
+      ],
+      "notes": "Lists Beijing's 12 national-network sites and identifies Dingling as the control/reference site."
+    },
+    {
+      "id": "yao_2015_station_classes",
+      "authority": "Peer-reviewed article using China Environmental Monitoring Center observations",
+      "title": "Comparison of Hourly PM2.5 Observations Between Urban and Suburban Areas in Beijing, China",
+      "url": "https://doi.org/10.3390/ijerph121012264",
+      "supports": [
+        "station_code",
+        "network_class_2013"
+      ],
+      "notes": "Table 1 gives codes 1001-1012, names, and CEMC urban/suburban categories for observations beginning in March 2013. The A suffix used in AirBench follows the national station mapping convention."
+    },
+    {
+      "id": "tang_2015_functional_roles",
+      "authority": "Peer-reviewed article using Beijing's national monitoring network",
+      "title": "Air Quality of Beijing and Impacts of the New Ambient Air Quality Standard",
+      "url": "https://doi.org/10.3390/atmos6081243",
+      "supports": [
+        "functional_role_2013",
+        "included_in_city_aggregate"
+      ],
+      "notes": "Distinguishes eight urban, three suburban, and one background station and states that Dingling is excluded from the city API calculation."
+    },
+    {
+      "id": "wang_2022_cnemc_coordinates",
+      "authority": "Peer-reviewed article supplement",
+      "title": "Circulation-regulated impacts of aerosol pollution on urban heat island in Beijing, Table S2",
+      "url": "https://acp.copernicus.org/articles/22/13341/2022/acp-22-13341-2022-supplement.pdf",
+      "doi": "10.5194/acp-22-13341-2022",
+      "supports": [
+        "station_code",
+        "registry_longitude",
+        "registry_latitude"
+      ],
+      "notes": "Table S2 lists all 12 CNEMC station IDs and coordinates, including 1012A Gucheng at 116.225 E, 39.9279 N. It is not a surveyed historical site-location record for the full benchmark period."
+    },
+    {
+      "id": "datav_2017_station_mapping",
+      "authority": "Alibaba Cloud DataV documentation (secondary corroboration)",
+      "title": "DataV Quick Start, 2017 national station coordinate mapping example",
+      "url": "https://docs-aliyun.cn-hangzhou.oss.aliyun-inc.com/pdf/DataV-Quick_Start-cn-zh-2018-07-04.pdf",
+      "sha256": "6123fd3270bcbda3c919856ed3f05597c88302bf6460dbb3527d80f5402b97c1",
+      "supports": [
+        "station_code",
+        "registry_coordinate_mapping_format"
+      ],
+      "notes": "Secondary corroboration only. The document explicitly prints the first Beijing entries rather than serving as the sole source for all 12 rows."
+    },
+    {
+      "id": "airbench_beijing_csv",
+      "authority": "AirBench repository",
+      "title": "datasets/Beijing.csv enrichment",
+      "supports": [
+        "longitude",
+        "latitude"
+      ],
+      "notes": "These are benchmark-reproduction coordinates, not fields from UCI. Gucheng longitude 116.184 conflicts with the commonly published 1012A registry longitude 116.225."
+    },
+    {
+      "id": "wu_2022_site_descriptions",
+      "authority": "Peer-reviewed article using Beijing monitoring-center observations",
+      "title": "Changing weekend effects of air pollutants in Beijing under 2020 COVID-19 lockdown controls, Table 1",
+      "url": "https://doi.org/10.1038/s42949-022-00070-0",
+      "supports": [
+        "site_district_name_zh"
+      ],
+      "notes": "Later-period station location descriptions used only to cross-check site identity (for example Dongcheng Environmental Protection Bureau and Shijingshan Environmental Protection Bureau); not evidence of unchanged 2013-2017 coordinates."
+    },
+    {
+      "id": "beijing_district_codes_2026",
+      "authority": "Beijing Municipal Civil Affairs Bureau",
+      "title": "Administrative division codes of Beijing",
+      "url": "https://mzj.beijing.gov.cn/art/2026/7/16/art_9984_692516.html",
+      "supports": [
+        "site_district_code",
+        "coordinate_district_code"
+      ]
+    },
+    {
+      "id": "datav_beijing_boundaries",
+      "authority": "Alibaba Cloud DataV (non-official boundary snapshot)",
+      "title": "Beijing district boundary GeoJSON",
+      "url": "https://geo.datav.aliyun.com/areas_v3/bound/110000_full.json",
+      "retrieved_at": "2026-07-22",
+      "sha256": "7a333e5737d1e69a7e90400874ec908d5cb5c6a8d8efead24c0f137345054d95",
+      "supports": [
+        "coordinate_district_name_zh",
+        "coordinate_district_code",
+        "district_consistency"
+      ],
+      "method": "EPSG:4326 point-in-polygon using the AirBench benchmark longitude/latitude. Derived values are a coordinate QA diagnostic, not a historical boundary claim."
+    },
+    {
+      "id": "copernicus_dem_glo30",
+      "authority": "European Space Agency / Copernicus Programme",
+      "title": "Copernicus DEM GLO-30 (Global 30 m Digital Elevation Model), COG tiles via AWS Open Data",
+      "url": "https://copernicus-dem-30m.s3.amazonaws.com/",
+      "accessed": "2026-07-25",
+      "supports": [
+        "terrain_elevation_m",
+        "terrain_elevation_status"
+      ],
+      "notes": "Anonymous 1-degree COG tiles at 30 m posting, EPSG:4326. Tiles Copernicus_DSM_COG_10_N39_00_E116_00_DEM and Copernicus_DSM_COG_10_N40_00_E116_00_DEM cover all 12 stations. Sampled with nearest-neighbour at the benchmark coordinates by scripts/ingest/fetch_dem.py. GLO-30 vertical accuracy is specified as better than 4 m LE90 over low-slope terrain."
+    }
+  ],
+  "field_semantics": {
+    "longitude_latitude": "Values already present in datasets/Beijing.csv; retained exactly so existing benchmark cases remain reproducible.",
+    "registry_longitude_latitude": "Secondary national station-registry mapping values. They are not asserted to be surveyed physical-site coordinates valid throughout 2013-2017.",
+    "site_district": "District associated with the named physical monitoring site, cross-checked against published station location descriptions and official district codes.",
+    "coordinate_district": "District produced by point-in-polygon from the benchmark coordinates against a current boundary snapshot.",
+    "benchmark_group": "AirBench-specific partition from domains/Beijing/stations.py; it is not an official station class.",
+    "observation_grid": "First and last hourly row timestamps in the benchmark, not commissioning/decommissioning dates.",
+    "terrain_elevation": "Ground-surface elevation sampled from Copernicus DEM GLO-30 at the benchmark coordinate. This is TERRAIN height, not station (sampling-inlet) elevation: it excludes the inlet height above ground (typically 3-15 m at rooftop sites) and inherits any error in the recorded coordinate, whose historical validity is unverified (see location_history_status). Suitable for terrain analysis (relief, basin effects, terrain-aware interpolation); not a metrological station elevation."
+  },
+  "known_limitations": [
+    "The UCI release does not publish codes, coordinates, addresses, instrument models, inlet heights, elevations, or relocation history.",
+    "The benchmark coordinates disagree with physical-site district identity for Wanshouxigong and Dongsi.",
+    "The AirBench Gucheng longitude (116.184) differs from the common 1012A registry mapping (116.225). Both are retained rather than silently choosing one.",
+    "No authoritative period-specific station elevation or relocation record was located; station_elevation_m is intentionally empty.",
+    "Current web maps or coordinates must not be presented as unchanged historical locations for 2013-2017.",
+    "terrain_elevation_m is a DEM-derived ground elevation at the recorded coordinate and must not be substituted for station_elevation_m, which remains unverified for 2013-2017."
+  ]
+}

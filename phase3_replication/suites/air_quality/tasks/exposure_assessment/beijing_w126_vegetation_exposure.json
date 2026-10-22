@@ -1,0 +1,26 @@
+{
+  "name": "beijing_w126_vegetation_exposure",
+  "difficulty": "hard",
+  "category": "exposure_assessment",
+  "case_type": "baseline",
+  "conversations": [
+    {
+      "id": "beijing_w126_vegetation_exposure",
+      "turns": [
+        {
+          "query": "Prioritise Beijing's 2025 ozone sites for a vegetation-exposure screen using annual W126. Identify the leading site, its three-month window, index and observation count; compare its annual mean with the annual-mean leader. What can this ranking establish about vegetation damage?",
+          "validator": "validate_evidence",
+          "stores": [
+            "w126_leading_station",
+            "w126_start_month",
+            "annual_w126_ppm_hours",
+            "w126_observed_hours",
+            "annual_mean_leading_station",
+            "w126_station_annual_mean_o3"
+          ]
+        }
+      ]
+    }
+  ],
+  "domain": "beijing"
+}

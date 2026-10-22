@@ -1,0 +1,52 @@
+{
+  "hk_station_isolation_ranking": {
+    "scenario": "hk_station_isolation_ranking",
+    "conversations": [
+      {
+        "id": "isolation_ranking",
+        "turns": [
+          {
+            "query": "For each air quality monitoring station, compute the distance to its nearest fellow air quality monitoring station. Return the top 3 most isolated stations (largest nearest-neighbor distance) with their names and distances in meters.",
+            "actual_response": "Based on the analysis of all 18 air quality monitoring stations in Hong Kong, I computed the distance from each station to its nearest neighboring station using PostGIS spatial functions. Here are the top 3 most isolated stations:\n\n**Most Isolated Stations by Nearest-Neighbor Distance:**\n\n1. **Tap Mun** - 19,952.20 meters (approximately 20 km from its nearest station)\n2. **Tung Chung** - 11,824.47 meters (approximately 11.8 km from its nearest station)\n3. **Yuen Long** - 7,624.00 meters (approximately 7.6 km from its nearest station)\n\nTap Mun is by far the most isolated station, located nearly 20 kilometers from its nearest fellow monitoring station. This makes sense geographically as Tap Mun is situated on a small island in the northeastern waters of Hong Kong, relatively remote from the main urban areas where most other stations are clustered.",
+            "actual_calls": [],
+            "validation_errors": [
+              "Custom validator failed: isolated_3_name='Yuen Long', expected 'Tuen Mun'"
+            ],
+            "metrics": {
+              "steps": 4,
+              "prompt_tokens": 24368,
+              "completion_tokens": 1218,
+              "total_tokens": 25586
+            },
+            "success": false,
+            "variables_not_set": false,
+            "error": null,
+            "code_snippets": [
+              "import pandas as pd\nfrom sqlalchemy import text\n\n# Get all air quality monitoring stations with their coordinates\nquery = text(\"\"\"\nSELECT id, name_en, coordinate\nFROM air_quality_station\nORDER BY id\n\"\"\")\nstations_df = pd.read_sql(query, engine)\nprint(f\"Total stations: {len(stations_df)}\")\nprint(stations_df[['id', 'name_en']])",
+              "import pandas as pd\nfrom sqlalchemy import text\n\n# Compute nearest neighbor distance for each station using PostGIS\nquery = text(\"\"\"\nSELECT \n    s1.id,\n    s1.name_en,\n    MIN(ST_Distance(s1.coordinate::geography, s2.coordinate::geography)) as nearest_distance_meters\nFROM air_quality_station s1\nJOIN air_quality_station s2 ON s1.id != s2.id\nGROUP BY s1.id, s1.name_en\nORDER BY nearest_distance_meters DESC\n\"\"\")\nnearest_distances = pd.read_sql(query, engine)\nprint(nearest_distances.head(10))",
+              "# Store the top 3 most isolated stations in the required variables\nisolated_1_name = \"Tap Mun\"\nisolated_1_distance = 19952.203652\nisolated_2_name = \"Tung Chung\"\nisolated_2_distance = 11824.474851\nisolated_3_name = \"Yuen Long\"\nisolated_3_distance = 7623.999340\n\nprint(f\"Most isolated: {isolated_1_name} ({isolated_1_distance:.2f} m)\")\nprint(f\"2nd most isolated: {isolated_2_name} ({isolated_2_distance:.2f} m)\")\nprint(f\"3rd most isolated: {isolated_3_name} ({isolated_3_distance:.2f} m)\")"
+            ],
+            "runtime_variables": {
+              "isolated_1_name": "Tap Mun",
+              "isolated_1_distance": 19952.203652,
+              "isolated_2_name": "Tung Chung",
+              "isolated_2_distance": 11824.474851,
+              "isolated_3_name": "Yuen Long",
+              "isolated_3_distance": 7623.99934
+            }
+          }
+        ]
+      }
+    ],
+    "metrics": {
+      "total_turns": 1,
+      "successful_turns": 0,
+      "failed_turns": 1,
+      "total_steps": 4,
+      "success_rate": 0.0,
+      "total_prompt_tokens": 24368,
+      "total_completion_tokens": 1218,
+      "total_tokens": 25586
+    }
+  }
+}

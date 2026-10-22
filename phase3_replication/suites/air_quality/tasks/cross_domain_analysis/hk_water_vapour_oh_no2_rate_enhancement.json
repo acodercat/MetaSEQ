@@ -1,0 +1,25 @@
+{
+  "name": "hk_water_vapour_oh_no2_rate_enhancement",
+  "difficulty": "hard",
+  "category": "cross_domain_analysis",
+  "case_type": "baseline",
+  "conversations": [
+    {
+      "id": "hk_water_vapour_oh_no2_rate_enhancement",
+      "turns": [
+        {
+          "query": "Which 2025 morning 925 hPa launches at King's Park maximize water vapour's percentage enhancement of the OH + NO₂ rate coefficient? Report all maximizing launches, enhancement, the wet coefficient, and eligible count. Does this identify the fastest OH removal?",
+          "stores": [
+            "kinetic_launch_count",
+            "maximum_enhancement_launches",
+            "water_enhancement_pct",
+            "selected_wet_rate"
+          ],
+          "validator": "validate_evidence",
+          "evaluation_tier": "execution"
+        }
+      ]
+    }
+  ],
+  "domain": "hk"
+}

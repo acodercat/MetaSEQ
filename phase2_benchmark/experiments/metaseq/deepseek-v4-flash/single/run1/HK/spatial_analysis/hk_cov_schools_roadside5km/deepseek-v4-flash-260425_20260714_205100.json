@@ -1,0 +1,46 @@
+{
+  "hk_cov_schools_roadside5km": {
+    "scenario": "hk_cov_schools_roadside5km",
+    "conversations": [
+      {
+        "id": "hk_cov_schools_roadside5km",
+        "turns": [
+          {
+            "query": "How many distinct 'EDUCATIONAL_INSTITUTION' sensitive areas have their polygon centroid within 5000 metres of at least one roadside air-quality station (station_id 14, 16, or 17)? The three stations are close together and their catchments overlap heavily; count each institution only once. Return the count.",
+            "actual_response": "The variable `schools_roadside_5km` has been assigned the value **1598**.\n\n**Final answer:** There are **1,598** distinct 'EDUCATIONAL_INSTITUTION' sensitive areas whose polygon centroid is within 5000 metres of at least one roadside air-quality station (Mong Kok, Central, or Causeway Bay).",
+            "actual_calls": [],
+            "validation_errors": [],
+            "metrics": {
+              "steps": 5,
+              "prompt_tokens": 30519,
+              "completion_tokens": 1184,
+              "total_tokens": 31703
+            },
+            "success": true,
+            "variables_not_set": false,
+            "error": null,
+            "code_snippets": [
+              "import pandas as pd\nfrom sqlalchemy import text\nimport numpy as np\n\n# Get coordinates of roadside stations (14, 16, 17)\nquery = text(\"\"\"\nSELECT id, name_en, ST_X(coordinate::geometry) as lng, ST_Y(coordinate::geometry) as lat\nFROM air_quality_station\nWHERE id IN (14, 16, 17)\n\"\"\")\nstations_df = pd.read_sql(query, engine)\nprint(stations_df)",
+              "import pandas as pd\nfrom sqlalchemy import text\nfrom shapely import wkb\nimport numpy as np\n\n# Get all EDUCATIONAL_INSTITUTION sensitive areas with their geometries\nquery = text(\"\"\"\nSELECT id, name, geometry\nFROM sensitive_area\nWHERE category = 'EDUCATIONAL_INSTITUTION'\n\"\"\")\nsa_df = pd.read_sql(query, engine)\nprint(f\"Total EDUCATIONAL_INSTITUTION sensitive areas: {len(sa_df)}\")\n\n# Compute centroid for each polygon and check distance to each roadside station\n# Station coordinates (lng, lat)\nstations = [\n    (114.185090, 22.280133),  # Causeway Bay\n    (114.158127, 22.281814),  # Central\n    (114.168272, 22.322611)   # Mong Kok\n]\n\ndef haversine(lng1, lat1, lng2, lat2):\n    R = 6371000  # metres\n    phi1, phi2 = np.radians(lat1), np.radians(lat2)\n    dphi = np.radians(lat2 - lat1)\n    dlambda = np.radians(lng2 - lng1)\n    a = np.sin(dphi/2)**2 + np.cos(phi1)*np.cos(phi2)*np.sin(dlambda/2)**2\n    return 2 * R * np.arcsin(np.sqrt(a))\n\ncount_within = 0\nwithin_ids = []\n\nfor idx, row in sa_df.iterrows():\n    geom = wkb.loads(row['geometry'].data.tobytes()) if hasattr(row['geometry'], 'data') else row['geometry']\n    # Get centroid\n    centroid = geom.centroid\n    cx, cy = centroid.x, centroid.y\n    \n    # Check distance to any of the 3 stations\n    for slng, slat in stations:\n        dist = haversine(cx, cy, slng, slat)\n        if dist <= 5000:\n            count_within += 1\n            within_ids.append(row['id'])\n            break\n\nprint(f\"Distinct EDUCATIONAL_INSTITUTION within 5000m of any roadside station: {count_within}\")\nprint(f\"IDs: {within_ids}\")",
+              "import pandas as pd\nfrom sqlalchemy import text\n\n# Use PostGIS to compute centroid and check distance to each roadside station\n# Station coordinates\nstations = {\n    14: (114.168272, 22.322611),  # Mong Kok\n    16: (114.158127, 22.281814),  # Central\n    17: (114.185090, 22.280133)   # Causeway Bay\n}\n\n# Build a query that checks distance from each institution's centroid to any of the 3 stations\nquery = text(\"\"\"\nSELECT COUNT(DISTINCT sa.id) as count\nFROM sensitive_area sa\nCROSS JOIN (\n    SELECT ST_SetSRID(ST_MakePoint(114.168272, 22.322611), 4326)::geography as pt\n    UNION ALL\n    SELECT ST_SetSRID(ST_MakePoint(114.158127, 22.281814), 4326)::geography\n    UNION ALL\n    SELECT ST_SetSRID(ST_MakePoint(114.185090, 22.280133), 4326)::geography\n) as stations\nWHERE sa.category = 'EDUCATIONAL_INSTITUTION'\n  AND ST_DWithin(ST_Centroid(sa.geometry)::geography, stations.pt, 5000)\n\"\"\")\nresult = pd.read_sql(query, engine)\nprint(result)",
+              "schools_roadside_5km = 1598"
+            ],
+            "runtime_variables": {
+              "schools_roadside_5km": 1598
+            }
+          }
+        ]
+      }
+    ],
+    "metrics": {
+      "total_turns": 1,
+      "successful_turns": 1,
+      "failed_turns": 0,
+      "total_steps": 5,
+      "success_rate": 1.0,
+      "total_prompt_tokens": 30519,
+      "total_completion_tokens": 1184,
+      "total_tokens": 31703
+    }
+  }
+}

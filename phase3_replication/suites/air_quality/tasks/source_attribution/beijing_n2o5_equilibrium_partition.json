@@ -1,0 +1,26 @@
+{
+  "name": "beijing_n2o5_equilibrium_partition",
+  "difficulty": "hard",
+  "category": "source_attribution",
+  "case_type": "baseline",
+  "conversations": [
+    {
+      "id": "beijing_n2o5_equilibrium_partition",
+      "turns": [
+        {
+          "query": "Prioritize Beijing stations for nighttime radical monitoring in 2025. Which has the largest mean conditional N₂O₅/NO₃ equilibrium ratio? Report its ratio, mean NO₂, eligible hours and network-wide eligible station-hours. What does this ranking establish about nitrate formation?",
+          "stores": [
+            "equilibrium_station",
+            "mean_n2o5_no3_ratio",
+            "equilibrium_station_hours",
+            "equilibrium_total_hours",
+            "selected_mean_no2_ugm3"
+          ],
+          "validator": "validate_turn_1",
+          "evaluation_tier": "execution"
+        }
+      ]
+    }
+  ],
+  "domain": "beijing"
+}

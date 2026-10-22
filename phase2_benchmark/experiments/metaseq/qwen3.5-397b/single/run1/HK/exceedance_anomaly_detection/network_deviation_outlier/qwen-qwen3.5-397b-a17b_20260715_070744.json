@@ -1,0 +1,48 @@
+{
+  "hk_network_deviation_outlier": {
+    "scenario": "hk_network_deviation_outlier",
+    "conversations": [
+      {
+        "id": "network_deviation",
+        "turns": [
+          {
+            "query": "On October 5, 2025, for each hour compute the network-wide mean and standard deviation of PM2.5 across all general air quality stations. Then find the single station-hour with the largest absolute z-score deviation, where z-score equals the station PM2.5 minus the network mean divided by the network standard deviation. Return the station name, the hour of day, the station's PM2.5 value rounded to 1 decimal place, the network mean at that hour rounded to 1 decimal place, and the z-score rounded to 2 decimal places.",
+            "actual_response": "On October 5, 2025, the station-hour with the largest absolute z-score deviation from the network mean PM2.5 was:\n\n- **Station**: Tseung Kwan O\n- **Hour**: 5 (05:00)\n- **Station PM2.5**: 12.4 \u00b5g/m\u00b3\n- **Network Mean PM2.5**: 5.4 \u00b5g/m\u00b3\n- **Z-score**: 2.83\n\nThis indicates that at 5 AM, Tseung Kwan O recorded a PM2.5 concentration 2.83 standard deviations above the network-wide average for that hour, representing the most significant outlier event across all general stations on that day.",
+            "actual_calls": [],
+            "validation_errors": [],
+            "metrics": {
+              "steps": 3,
+              "prompt_tokens": 18612,
+              "completion_tokens": 970,
+              "total_tokens": 19582
+            },
+            "success": true,
+            "variables_not_set": false,
+            "error": null,
+            "code_snippets": [
+              "import pandas as pd\nfrom sqlalchemy import text\n\n# Query PM2.5 data for all general stations on October 5, 2025\nquery = text(\"\"\"\nSELECT \n    aqs.name_en as station_name,\n    hsaq.datetime,\n    EXTRACT(HOUR FROM hsaq.datetime) as hour,\n    hsaq.pm2_5\nFROM hourly_station_air_quality hsaq\nJOIN air_quality_station aqs ON hsaq.station_id = aqs.id\nWHERE aqs.station_type = 'GENERAL'\nAND hsaq.datetime >= '2025-10-05 00:00:00'\nAND hsaq.datetime < '2025-10-06 00:00:00'\nAND hsaq.pm2_5 IS NOT NULL\nORDER BY hsaq.datetime, aqs.name_en\n\"\"\")\n\ndf = pd.read_sql(query, engine)\nprint(f\"Total records: {len(df)}\")\nprint(f\"Stations: {df['station_name'].unique()}\")\nprint(df.head(10))",
+              "# Compute network mean and std for each hour, then calculate z-scores\nhourly_stats = df.groupby('hour')['pm2_5'].agg(['mean', 'std']).reset_index()\nhourly_stats.columns = ['hour', 'network_mean', 'network_std']\n\n# Merge stats back to original data\ndf_merged = df.merge(hourly_stats, on='hour')\n\n# Calculate z-score\ndf_merged['zscore'] = (df_merged['pm2_5'] - df_merged['network_mean']) / df_merged['network_std']\n\n# Find the row with largest absolute z-score\nidx_max = df_merged['zscore'].abs().idxmax()\noutlier_row = df_merged.loc[idx_max]\n\nprint(f\"Outlier station: {outlier_row['station_name']}\")\nprint(f\"Outlier hour: {int(outlier_row['hour'])}\")\nprint(f\"Station PM2.5: {outlier_row['pm2_5']:.1f}\")\nprint(f\"Network mean: {outlier_row['network_mean']:.1f}\")\nprint(f\"Network std: {outlier_row['network_std']:.4f}\")\nprint(f\"Z-score: {outlier_row['zscore']:.2f}\")\n\n# Store results\noutlier_station = outlier_row['station_name']\noutlier_hour = int(outlier_row['hour'])\nstation_pm25 = round(outlier_row['pm2_5'], 1)\nnetwork_mean = round(outlier_row['network_mean'], 1)\nzscore = round(outlier_row['zscore'], 2)"
+            ],
+            "runtime_variables": {
+              "outlier_station": "Tseung Kwan O",
+              "outlier_hour": 5,
+              "station_pm25": 12.4,
+              "network_mean": 5.4,
+              "zscore": 2.83
+            }
+          }
+        ]
+      }
+    ],
+    "metrics": {
+      "total_turns": 1,
+      "successful_turns": 1,
+      "failed_turns": 0,
+      "total_steps": 3,
+      "success_rate": 1.0,
+      "total_prompt_tokens": 18612,
+      "total_completion_tokens": 970,
+      "total_tokens": 19582
+    }
+  }
+}

@@ -1,0 +1,102 @@
+{
+  "hk_regulatory_compliance_investigation": {
+    "scenario": "hk_regulatory_compliance_investigation",
+    "conversations": [
+      {
+        "id": "compliance_investigation",
+        "turns": [
+          {
+            "query": "On December 30, 2025, which air quality monitoring stations had a daily average PM2.5 exceeding the WHO 24-hour guideline of 15 \u00b5g/m\u00b3? How many stations exceeded it, and which had the highest daily average?",
+            "actual_response": "On December 30, 2025, all 18 air quality monitoring stations in Hong Kong had a daily average PM2.5 exceeding the WHO 24-hour guideline of 15 \u00b5g/m\u00b3. The station with the highest daily average PM2.5 was Tung Chung, with a value of 78.0 \u00b5g/m\u00b3.",
+            "actual_calls": [],
+            "validation_errors": [],
+            "metrics": {
+              "steps": 2,
+              "prompt_tokens": 11244,
+              "completion_tokens": 452,
+              "total_tokens": 11696
+            },
+            "success": true,
+            "variables_not_set": false,
+            "error": null,
+            "code_snippets": [
+              "import pandas as pd\nfrom sqlalchemy import text\n\n# Define the date and WHO guideline\ndate = '2025-12-30'\nwho_guideline = 15\n\n# Query the daily average PM2.5 for all stations on the specified date\nquery = text(f\"\"\"\nSELECT aqs.name_en, AVG(hsaq.pm2_5) AS daily_avg_pm25\nFROM hourly_station_air_quality hsaq\nJOIN air_quality_station aqs ON hsaq.station_id = aqs.id\nWHERE DATE(hsaq.datetime) = '{date}'\nGROUP BY aqs.name_en\n\"\"\")\n\ndf = pd.read_sql(query, engine)\n\n# Filter stations exceeding the WHO guideline\nexceeding_stations = df[df['daily_avg_pm25'] > who_guideline]\n\n# Count the number of stations exceeding the guideline\nexceedance_station_count = len(exceeding_stations)\n\n# Find the station with the highest daily average PM2.5\nworst_station = exceeding_stations.loc[exceeding_stations['daily_avg_pm25'].idxmax()]\nworst_station_name = worst_station['name_en']\nworst_station_pm25 = round(worst_station['daily_avg_pm25'], 1)\n\n# Assign the results to the provided variables\nexceedance_station_count = exceedance_station_count\nworst_station_name = worst_station_name\nworst_station_pm25 = worst_station_pm25\n\n# Print the results for verification\nprint(f\"Number of stations exceeding WHO guideline: {exceedance_station_count}\")\nprint(f\"Station with the highest daily average PM2.5: {worst_station_name}\")\nprint(f\"Highest daily average PM2.5: {worst_station_pm25} \u00b5g/m\u00b3\")"
+            ],
+            "runtime_variables": {
+              "exceedance_station_count": 18,
+              "worst_station_name": "Tung Chung",
+              "worst_station_pm25": 78.0,
+              "residential_count": null,
+              "educational_count": null,
+              "residential_in_residential_zone_pct": null
+            }
+          },
+          {
+            "query": "For the station with the highest exceedance, how many residential area and educational institution sensitive areas are within 2 km?",
+            "actual_response": "For the station with the highest exceedance, Tung Chung, there are 31 residential areas and 62 educational institutions within 2 km.",
+            "actual_calls": [],
+            "validation_errors": [],
+            "metrics": {
+              "steps": 2,
+              "prompt_tokens": 12361,
+              "completion_tokens": 368,
+              "total_tokens": 12729
+            },
+            "success": true,
+            "variables_not_set": false,
+            "error": null,
+            "code_snippets": [
+              "import pandas as pd\nfrom sqlalchemy import text\n\n# Define the station name and distance\nstation_name = worst_station_name\ndistance = 2000  # 2 km in meters\n\n# Query the coordinates of the station\nquery_station_coords = text(f\"\"\"\nSELECT coordinate\nFROM air_quality_station\nWHERE name_en = '{station_name}'\n\"\"\")\n\nstation_coords = pd.read_sql(query_station_coords, engine)\nstation_point = station_coords['coordinate'][0]\n\n# Query the number of residential and educational institution sensitive areas within 2 km\nquery_sensitive_areas = text(f\"\"\"\nSELECT category, COUNT(*) as count\nFROM sensitive_area\nWHERE ST_DWithin(geometry, ST_SetSRID(ST_MakePoint(ST_X('%s'), ST_Y('%s')), 4326)::geography, {distance})\nAND (category = 'RESIDENTIAL_AREA' OR category = 'EDUCATIONAL_INSTITUTION')\nGROUP BY category\n\"\"\" % (station_point, station_point))\n\nsensitive_areas = pd.read_sql(query_sensitive_areas, engine)\n\n# Extract counts\nresidential_count = sensitive_areas.loc[sensitive_areas['category'] == 'RESIDENTIAL_AREA', 'count'].sum()\neducational_count = sensitive_areas.loc[sensitive_areas['category'] == 'EDUCATIONAL_INSTITUTION', 'count'].sum()\n\n# Assign the results to the provided variables\nresidential_count = residential_count\neducational_count = educational_count\n\n# Print the results for verification\nprint(f\"Number of residential areas within 2 km: {residential_count}\")\nprint(f\"Number of educational institutions within 2 km: {educational_count}\")"
+            ],
+            "runtime_variables": {
+              "exceedance_station_count": 18,
+              "worst_station_name": "Tung Chung",
+              "worst_station_pm25": 78.0,
+              "residential_count": "np.int64(31)",
+              "educational_count": "np.int64(62)",
+              "residential_in_residential_zone_pct": null
+            }
+          },
+          {
+            "query": "Of the residential areas within 2 km of that station, what percentage have their centroid located in a land use zone categorized as 'Residential'?",
+            "actual_response": "Of the residential areas within 2 km of the Tung Chung station, 100.0% have their centroid located in a land use zone categorized as 'Residential'.",
+            "actual_calls": [],
+            "validation_errors": [],
+            "metrics": {
+              "steps": 4,
+              "prompt_tokens": 33247,
+              "completion_tokens": 1630,
+              "total_tokens": 34877
+            },
+            "success": true,
+            "variables_not_set": false,
+            "error": null,
+            "code_snippets": [
+              "import pandas as pd\nfrom sqlalchemy import text\n\n# Define the station name and distance\nstation_name = worst_station_name\ndistance = 2000  # 2 km in meters\n\n# Query the coordinates of the station\nquery_station_coords = text(f\"\"\"\nSELECT coordinate\nFROM air_quality_station\nWHERE name_en = '{station_name}'\n\"\"\")\n\nstation_coords = pd.read_sql(query_station_coords, engine)\nstation_point = station_coords['coordinate'][0]\n\n# Query the residential areas within 2 km\nquery_residential_areas = text(f\"\"\"\nSELECT id, geometry\nFROM sensitive_area\nWHERE ST_DWithin(geometry, ST_SetSRID(ST_MakePoint(ST_X('%s'), ST_Y('%s')), 4326)::geography, {distance})\nAND category = 'RESIDENTIAL_AREA'\n\"\"\" % (station_point, station_point))\n\nresidential_areas = pd.read_sql(query_residential_areas, engine)\n\n# Calculate the centroids of the residential areas\nresidential_areas['centroid'] = residential_areas['geometry'].apply(lambda x: x.centroid)\n\n# Query the land use zones categorized as 'Residential'\nquery_residential_zones = text(\"\"\"\nSELECT geometry\nFROM land_use_zone\nWHERE land_category = 'Residential'\n\"\"\")\n\nresidential_zones = pd.read_sql(query_residential_zones, engine)\n\n# Check if the centroids of the residential areas are within the residential zones\nresidential_areas['in_residential_zone'] = residential_areas['centroid'].apply(\n    lambda centroid: any(residential_zones['geometry'].apply(lambda zone: zone.contains(centroid)))\n)\n\n# Calculate the percentage of residential areas in residential zones\nresidential_in_residential_zone_pct = round((residential_areas['in_residential_zone'].mean() * 100), 1)\n\n# Assign the result to the provided variable\nresidential_in_residential_zone_pct = residential_in_residential_zone_pct\n\n# Print the result for verification\nprint(f\"Percentage of residential areas in residential zones: {residential_in_residential_zone_pct}%\")",
+              "import pandas as pd\nfrom sqlalchemy import text\nfrom shapely.wkt import loads\n\n# Define the station name and distance\nstation_name = worst_station_name\ndistance = 2000  # 2 km in meters\n\n# Query the coordinates of the station\nquery_station_coords = text(f\"\"\"\nSELECT coordinate\nFROM air_quality_station\nWHERE name_en = '{station_name}'\n\"\"\")\n\nstation_coords = pd.read_sql(query_station_coords, engine)\nstation_point = station_coords['coordinate'][0]\n\n# Query the residential areas within 2 km\nquery_residential_areas = text(f\"\"\"\nSELECT id, geometry\nFROM sensitive_area\nWHERE ST_DWithin(geometry, ST_SetSRID(ST_MakePoint(ST_X('%s'), ST_Y('%s')), 4326)::geography, {distance})\nAND category = 'RESIDENTIAL_AREA'\n\"\"\" % (station_point, station_point))\n\nresidential_areas = pd.read_sql(query_residential_areas, engine)\n\n# Convert the geometry column to shapely geometry type\nresidential_areas['geometry'] = residential_areas['geometry'].apply(loads)\n\n# Calculate the centroids of the residential areas\nresidential_areas['centroid'] = residential_areas['geometry'].apply(lambda x: x.centroid)\n\n# Query the land use zones categorized as 'Residential'\nquery_residential_zones = text(\"\"\"\nSELECT geometry\nFROM land_use_zone\nWHERE land_category = 'Residential'\n\"\"\")\n\nresidential_zones = pd.read_sql(query_residential_zones, engine)\n\n# Convert the geometry column to shapely geometry type\nresidential_zones['geometry'] = residential_zones['geometry'].apply(loads)\n\n# Check if the centroids of the residential areas are within the residential zones\nresidential_areas['in_residential_zone'] = residential_areas['centroid'].apply(\n    lambda centroid: any(residential_zones['geometry'].apply(lambda zone: zone.contains(centroid)))\n)\n\n# Calculate the percentage of residential areas in residential zones\nresidential_in_residential_zone_pct = round((residential_areas['in_residential_zone'].mean() * 100), 1)\n\n# Assign the result to the provided variable\nresidential_in_residential_zone_pct = residential_in_residential_zone_pct\n\n# Print the result for verification\nprint(f\"Percentage of residential areas in residential zones: {residential_in_residential_zone_pct}%\")",
+              "import pandas as pd\nfrom sqlalchemy import text\nfrom shapely.wkt import loads\n\n# Define the station name and distance\nstation_name = worst_station_name\ndistance = 2000  # 2 km in meters\n\n# Query the coordinates of the station\nquery_station_coords = text(f\"\"\"\nSELECT coordinate\nFROM air_quality_station\nWHERE name_en = '{station_name}'\n\"\"\")\n\nstation_coords = pd.read_sql(query_station_coords, engine)\nstation_point = station_coords['coordinate'][0]\n\n# Query the residential areas within 2 km and convert geometry to WKT\nquery_residential_areas = text(f\"\"\"\nSELECT id, ST_AsText(geometry) AS geometry_wkt\nFROM sensitive_area\nWHERE ST_DWithin(geometry, ST_SetSRID(ST_MakePoint(ST_X('%s'), ST_Y('%s')), 4326)::geography, {distance})\nAND category = 'RESIDENTIAL_AREA'\n\"\"\" % (station_point, station_point))\n\nresidential_areas = pd.read_sql(query_residential_areas, engine)\n\n# Convert the geometry column to shapely geometry type\nresidential_areas['geometry'] = residential_areas['geometry_wkt'].apply(loads)\n\n# Calculate the centroids of the residential areas\nresidential_areas['centroid'] = residential_areas['geometry'].apply(lambda x: x.centroid)\n\n# Query the land use zones categorized as 'Residential' and convert geometry to WKT\nquery_residential_zones = text(\"\"\"\nSELECT ST_AsText(geometry) AS geometry_wkt\nFROM land_use_zone\nWHERE land_category = 'Residential'\n\"\"\")\n\nresidential_zones = pd.read_sql(query_residential_zones, engine)\n\n# Convert the geometry column to shapely geometry type\nresidential_zones['geometry'] = residential_zones['geometry_wkt'].apply(loads)\n\n# Check if the centroids of the residential areas are within the residential zones\nresidential_areas['in_residential_zone'] = residential_areas['centroid'].apply(\n    lambda centroid: any(residential_zones['geometry'].apply(lambda zone: zone.contains(centroid)))\n)\n\n# Calculate the percentage of residential areas in residential zones\nresidential_in_residential_zone_pct = round((residential_areas['in_residential_zone'].mean() * 100), 1)\n\n# Assign the result to the provided variable\nresidential_in_residential_zone_pct = residential_in_residential_zone_pct\n\n# Print the result for verification\nprint(f\"Percentage of residential areas in residential zones: {residential_in_residential_zone_pct}%\")"
+            ],
+            "runtime_variables": {
+              "exceedance_station_count": 18,
+              "worst_station_name": "Tung Chung",
+              "worst_station_pm25": 78.0,
+              "residential_count": "np.int64(31)",
+              "educational_count": "np.int64(62)",
+              "residential_in_residential_zone_pct": 100.0
+            }
+          }
+        ]
+      }
+    ],
+    "metrics": {
+      "total_turns": 3,
+      "successful_turns": 3,
+      "failed_turns": 0,
+      "total_steps": 8,
+      "success_rate": 1.0,
+      "total_prompt_tokens": 56852,
+      "total_completion_tokens": 2450,
+      "total_tokens": 59302
+    }
+  }
+}

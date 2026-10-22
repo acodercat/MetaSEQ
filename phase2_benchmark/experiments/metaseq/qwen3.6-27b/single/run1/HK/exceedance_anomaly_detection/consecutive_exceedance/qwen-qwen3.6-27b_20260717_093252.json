@@ -1,0 +1,47 @@
+{
+  "hk_consecutive_exceedance": {
+    "scenario": "hk_consecutive_exceedance",
+    "conversations": [
+      {
+        "id": "consecutive_exceedance",
+        "turns": [
+          {
+            "query": "In October 2025, find the longest consecutive sequence of hours where any single air quality monitoring station recorded PM2.5 > 50 \u00b5g/m\u00b3. Which station experienced this longest event, how many consecutive hours did it last, and when did it start? Return the station name, the number of consecutive hours, and the start datetime.",
+            "actual_response": "In October 2025, the longest consecutive sequence of hours where PM2.5 exceeded 50 \u00b5g/m\u00b3 was recorded at the **Causeway Bay** station. This event lasted for **5 consecutive hours**, starting at **2025-10-27 18:00:00**.",
+            "actual_calls": [],
+            "validation_errors": [],
+            "metrics": {
+              "steps": 4,
+              "prompt_tokens": 26319,
+              "completion_tokens": 915,
+              "total_tokens": 27234
+            },
+            "success": true,
+            "variables_not_set": false,
+            "error": null,
+            "code_snippets": [
+              "import pandas as pd\nfrom sqlalchemy import text\nimport numpy as np\n\n# Query all PM2.5 readings > 50 in October 2025, along with station names\nquery = text(\"\"\"\nSELECT aqs.name_en, hsaq.datetime, hsaq.pm2_5\nFROM hourly_station_air_quality hsaq\nJOIN air_quality_station aqs ON hsaq.station_id = aqs.id\nWHERE hsaq.pm2_5 > 50\nAND hsaq.datetime >= '2025-10-01 00:00:00'\nAND hsaq.datetime < '2025-11-01 00:00:00'\nORDER BY aqs.name_en, hsaq.datetime\n\"\"\")\ndf = pd.read_sql(query, engine)\nprint(f\"Total exceedance records: {len(df)}\")\nprint(df.head(20))\nprint(f\"\\nStations with exceedances: {df['name_en'].nunique()}\")\nprint(df['name_en'].value_counts())",
+              "import pandas as pd\n\n# Convert datetime to datetime objects\ndf['datetime'] = pd.to_datetime(df['datetime'])\n\n# Find longest consecutive sequence for each station\nresults = []\nfor station, group in df.groupby('name_en'):\n    group = group.sort_values('datetime').reset_index(drop=True)\n    \n    # Find consecutive sequences\n    current_start = group['datetime'].iloc[0]\n    current_count = 1\n    max_count = 1\n    max_start = current_start\n    \n    for i in range(1, len(group)):\n        prev_time = group['datetime'].iloc[i-1]\n        curr_time = group['datetime'].iloc[i]\n        \n        # Check if consecutive (1 hour apart)\n        if (curr_time - prev_time).total_seconds() == 3600:\n            current_count += 1\n        else:\n            # New sequence starts\n            if current_count > max_count:\n                max_count = current_count\n                max_start = current_start\n            current_start = curr_time\n            current_count = 1\n    \n    # Check last sequence\n    if current_count > max_count:\n        max_count = current_count\n        max_start = current_start\n    \n    results.append({\n        'station_name': station,\n        'consecutive_hours': max_count,\n        'event_start': max_start.strftime('%Y-%m-%d %H:%M:%S')\n    })\n\nresults_df = pd.DataFrame(results)\nprint(results_df)\n\n# Find the longest event\nlongest = results_df.loc[results_df['consecutive_hours'].idxmax()]\nprint(f\"\\nLongest event:\")\nprint(f\"Station: {longest['station_name']}\")\nprint(f\"Consecutive hours: {longest['consecutive_hours']}\")\nprint(f\"Event start: {longest['event_start']}\")",
+              "station_name = \"Causeway Bay\"\nconsecutive_hours = 5\nevent_start = \"2025-10-27 18:00:00\""
+            ],
+            "runtime_variables": {
+              "station_name": "Causeway Bay",
+              "consecutive_hours": 5,
+              "event_start": "2025-10-27 18:00:00"
+            }
+          }
+        ]
+      }
+    ],
+    "metrics": {
+      "total_turns": 1,
+      "successful_turns": 1,
+      "failed_turns": 0,
+      "total_steps": 4,
+      "success_rate": 1.0,
+      "total_prompt_tokens": 26319,
+      "total_completion_tokens": 915,
+      "total_tokens": 27234
+    }
+  }
+}

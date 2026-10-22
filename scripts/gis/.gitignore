@@ -1,0 +1,5 @@
+# rendered map outputs (regenerate with the scripts)
+hongkong_traffic_map/
+hongkong_osm_map/
+hongkong_habitat_map/
+layers_out/

@@ -1,0 +1,25 @@
+[
+  {
+    "name": "hk_x_conservation_pop",
+    "module": "evals.neuroair.spatial_analysis.HK.hk_x_conservation_pop",
+    "requirements": "Total grid population whose cell point lies inside any Conservation land_use_zone polygon. Store conservation_pop (int).",
+    "conversations": [
+      {
+        "id": "hk_x_conservation_pop",
+        "turns": [
+          {
+            "query": "Using the HK_population_1km grid (datasets/HK_population_1km.csv; each row is a grid cell with a longitude/latitude point and a population count), compute the total population of all grid cells whose point (its longitude/latitude, SRID 4326) falls INSIDE any land_use_zone polygon of land_category 'Conservation'. Return the total population, rounded to the nearest integer.",
+            "validator": "validate_hk_x_conservation_pop"
+          }
+        ]
+      }
+    ],
+    "difficulty": "hard",
+    "category": "spatial_analysis",
+    "_source": {
+      "benchmark": "hk-x-hard",
+      "original_query_id": "hk_x_conservation_pop",
+      "verbatim": false
+    }
+  }
+]

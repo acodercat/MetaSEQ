@@ -1,0 +1,33 @@
+{
+  "name": "hk_population_weighted_background_no2",
+  "difficulty": "hard",
+  "category": "exposure_assessment",
+  "case_type": "baseline",
+  "conversations": [
+    {
+      "id": "population_weighted_background_no2",
+      "turns": [
+        {
+          "query": "Estimate mean residential background NO2 for Hong Kong's population over 2020–2025 using the specified nearest-general-station field. Compare population weighting with equal weighting of grid cells, and explain what the difference represents.",
+          "validator": "validate_weighted_against_grid",
+          "stores": [
+            "population_weighted_no2",
+            "grid_mean_no2",
+            "grid_cells",
+            "general_station_no2_hours"
+          ],
+          "evaluation_tier": "execution"
+        },
+        {
+          "query": "Report the population share assigned to the general station serving the most residents. Which weighting answers the stated resident-average question, and what does the estimate establish about concentrations where people live and their personal exposure?",
+          "validator": "validate_catchment_concentration",
+          "stores": [
+            "largest_catchment_population_share",
+            "figure_for_the_paper"
+          ]
+        }
+      ]
+    }
+  ],
+  "domain": "hk"
+}

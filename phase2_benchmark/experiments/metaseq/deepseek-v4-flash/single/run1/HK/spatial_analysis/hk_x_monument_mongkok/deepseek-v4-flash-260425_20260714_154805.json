@@ -1,0 +1,44 @@
+{
+  "hk_x_monument_mongkok": {
+    "scenario": "hk_x_monument_mongkok",
+    "conversations": [
+      {
+        "id": "hk_x_monument_mongkok",
+        "turns": [
+          {
+            "query": "Which sensitive area of category 'DECLARED_MONUMENT' lies closest to the Mong Kok air-quality station (station_id 14), measuring distance from the monument polygon's centroid to the station coordinate? Return the monument's name exactly as stored, and the distance in metres.",
+            "actual_response": "The task is complete. Here are the results:\n\n- **Nearest DECLARED_MONUMENT**: Lui Seng Chun\n- **Distance from Mong Kok station (station 14) to the monument's centroid**: **414.29 metres**",
+            "actual_calls": [],
+            "validation_errors": [],
+            "metrics": {
+              "steps": 2,
+              "prompt_tokens": 11151,
+              "completion_tokens": 372,
+              "total_tokens": 11523
+            },
+            "success": true,
+            "variables_not_set": false,
+            "error": null,
+            "code_snippets": [
+              "import pandas as pd\nfrom sqlalchemy import text\n\n# Get Mong Kok station coordinates\nstation_query = text(\"\"\"\nSELECT id, name_en, ST_AsText(coordinate::geometry) as coord_wkt\nFROM air_quality_station\nWHERE id = 14\n\"\"\")\nstation_df = pd.read_sql(station_query, engine)\nprint(\"Station:\", station_df)\n\n# Find DECLARED_MONUMENT features, compute centroid, and distance to station\nmonument_query = text(\"\"\"\nSELECT \n    sa.name,\n    ST_Distance(\n        ST_Centroid(sa.geometry)::geography,\n        (SELECT coordinate FROM air_quality_station WHERE id = 14)::geography\n    ) AS dist_m\nFROM sensitive_area sa\nWHERE sa.category = 'DECLARED_MONUMENT'\nORDER BY dist_m\nLIMIT 1\n\"\"\")\nresult = pd.read_sql(monument_query, engine)\nprint(result)\n\nnearest_monument = result['name'].iloc[0]\nmonument_dist_m = float(result['dist_m'].iloc[0])\nprint(f\"Nearest monument: {nearest_monument}\")\nprint(f\"Distance: {monument_dist_m:.2f} m\")"
+            ],
+            "runtime_variables": {
+              "nearest_monument": "Lui Seng Chun",
+              "monument_dist_m": 414.28824249
+            }
+          }
+        ]
+      }
+    ],
+    "metrics": {
+      "total_turns": 1,
+      "successful_turns": 1,
+      "failed_turns": 0,
+      "total_steps": 2,
+      "success_rate": 1.0,
+      "total_prompt_tokens": 11151,
+      "total_completion_tokens": 372,
+      "total_tokens": 11523
+    }
+  }
+}

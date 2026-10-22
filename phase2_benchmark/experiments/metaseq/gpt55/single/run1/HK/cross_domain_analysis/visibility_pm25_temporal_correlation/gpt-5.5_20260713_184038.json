@@ -1,0 +1,74 @@
+{
+  "hk_visibility_pm25_temporal_correlation": {
+    "scenario": "hk_visibility_pm25_temporal_correlation",
+    "conversations": [
+      {
+        "id": "vis_pm25_corr",
+        "turns": [
+          {
+            "query": "In October 2025, compute the Pearson correlation between hourly visibility at Chek Lap Kok weather station and hourly PM2.5 at Tung Chung air quality station (the nearest AQ station to Chek Lap Kok). Return the correlation rounded to 4 decimal places.",
+            "actual_response": "The Pearson correlation between hourly visibility at Chek Lap Kok and hourly PM2.5 at Tung Chung in October 2025 was **-0.6551**.",
+            "actual_calls": [],
+            "validation_errors": [],
+            "metrics": {
+              "steps": 2,
+              "prompt_tokens": 11736,
+              "completion_tokens": 1479,
+              "total_tokens": 13215
+            },
+            "success": true,
+            "variables_not_set": false,
+            "error": null,
+            "code_snippets": [
+              "import pandas as pd\nfrom sqlalchemy import text\n\nstart, end = \"2025-10-01 00:00:00\", \"2025-11-01 00:00:00\"\n\n# Identify the Chek Lap Kok weather station and verify October hourly record counts before retrieving data\nws = pd.read_sql(text(\"\"\"\nSELECT id, name_en\nFROM weather_station\nWHERE name_en ILIKE '%Chek Lap Kok%'\nORDER BY id\nLIMIT 10\n\"\"\"), engine)\n\nif ws.empty:\n    raise ValueError(\"Chek Lap Kok weather station not found.\")\n\nweather_station_id = int(ws.iloc[0][\"id\"])\naq_station_id = 6  # Tung Chung\n\ncounts = pd.read_sql(text(\"\"\"\nSELECT\n  (SELECT COUNT(*) FROM hourly_station_weather\n   WHERE station_id = :wsid AND datetime >= :start AND datetime < :end AND visibility IS NOT NULL) AS visibility_hours,\n  (SELECT COUNT(*) FROM hourly_station_air_quality\n   WHERE station_id = :aqid AND datetime >= :start AND datetime < :end AND pm2_5 IS NOT NULL) AS pm25_hours,\n  (SELECT COUNT(*) FROM hourly_station_weather w\n   JOIN hourly_station_air_quality a ON a.datetime = w.datetime\n   WHERE w.station_id = :wsid AND a.station_id = :aqid\n     AND w.datetime >= :start AND w.datetime < :end\n     AND w.visibility IS NOT NULL AND a.pm2_5 IS NOT NULL) AS matched_hours\n\"\"\"), engine, params={\"wsid\": weather_station_id, \"aqid\": aq_station_id, \"start\": start, \"end\": end})\n\ndf = pd.read_sql(text(\"\"\"\nSELECT w.datetime, w.visibility, a.pm2_5\nFROM hourly_station_weather w\nJOIN hourly_station_air_quality a ON a.datetime = w.datetime\nWHERE w.station_id = :wsid AND a.station_id = :aqid\n  AND w.datetime >= :start AND w.datetime < :end\n  AND w.visibility IS NOT NULL AND a.pm2_5 IS NOT NULL\nORDER BY w.datetime\n\"\"\"), engine, params={\"wsid\": weather_station_id, \"aqid\": aq_station_id, \"start\": start, \"end\": end})\n\ndaily = pd.read_sql(text(\"\"\"\nWITH v AS (\n  SELECT DATE(datetime) AS date, AVG(visibility) AS avg_visibility\n  FROM hourly_station_weather\n  WHERE station_id = :wsid AND datetime >= :start AND datetime < :end AND visibility IS NOT NULL\n  GROUP BY DATE(datetime)\n),\np AS (\n  SELECT DATE(datetime) AS date, AVG(pm2_5) AS avg_pm25\n  FROM hourly_station_air_quality\n  WHERE station_id = :aqid AND datetime >= :start AND datetime < :end AND pm2_5 IS NOT NULL\n  GROUP BY DATE(datetime)\n)\nSELECT v.date, v.avg_visibility, p.avg_pm25\nFROM v\nJOIN p USING (date)\nORDER BY v.date\n\"\"\"), engine, params={\"wsid\": weather_station_id, \"aqid\": aq_station_id, \"start\": start, \"end\": end})\n\nvis_pm25_corr = round(float(df[\"visibility\"].corr(df[\"pm2_5\"])), 4)\n\nlow_row = daily.loc[daily[\"avg_visibility\"].idxmin()]\nhigh_row = daily.loc[daily[\"avg_visibility\"].idxmax()]\n\nlow_vis_date = pd.to_datetime(low_row[\"date\"]).strftime(\"%Y-%m-%d\")\nlow_vis_value = round(float(low_row[\"avg_visibility\"]), 1)\nlow_vis_pm25 = round(float(low_row[\"avg_pm25\"]), 1)\n\nhigh_vis_date = pd.to_datetime(high_row[\"date\"]).strftime(\"%Y-%m-%d\")\nhigh_vis_value = round(float(high_row[\"avg_visibility\"]), 1)\nhigh_vis_pm25 = round(float(high_row[\"avg_pm25\"]), 1)\n\nprint({\n    \"weather_station_used\": ws.iloc[0][\"name_en\"],\n    \"visibility_hours\": int(counts.loc[0, \"visibility_hours\"]),\n    \"pm25_hours\": int(counts.loc[0, \"pm25_hours\"]),\n    \"matched_hours_for_correlation\": int(counts.loc[0, \"matched_hours\"]),\n    \"daily_days\": int(len(daily)),\n    \"vis_pm25_corr\": vis_pm25_corr,\n    \"low_visibility_day\": {\"date\": low_vis_date, \"visibility\": low_vis_value, \"pm25\": low_vis_pm25},\n    \"high_visibility_day\": {\"date\": high_vis_date, \"visibility\": high_vis_value, \"pm25\": high_vis_pm25}\n})"
+            ],
+            "runtime_variables": {
+              "vis_pm25_corr": -0.6551,
+              "low_vis_date": "2025-10-28",
+              "low_vis_value": 22019.1,
+              "low_vis_pm25": 39.1,
+              "high_vis_date": "2025-10-01",
+              "high_vis_value": 50000.0,
+              "high_vis_pm25": 6.8
+            }
+          },
+          {
+            "query": "On the day with the lowest average visibility in October 2025, what was the average PM2.5 at Tung Chung? On the day with the highest visibility, what was the PM2.5? Return both dates, visibility values, and PM2.5 values.",
+            "actual_response": "Lowest average visibility day: **2025-10-28**  \n- Average visibility: **22,019.1**  \n- Average PM2.5 at Tung Chung: **39.1**\n\nHighest average visibility day: **2025-10-01**  \n- Average visibility: **50,000.0**  \n- Average PM2.5 at Tung Chung: **6.8**",
+            "actual_calls": [],
+            "validation_errors": [],
+            "metrics": {
+              "steps": 1,
+              "prompt_tokens": 6538,
+              "completion_tokens": 160,
+              "total_tokens": 6698
+            },
+            "success": true,
+            "variables_not_set": false,
+            "error": null,
+            "code_snippets": [],
+            "runtime_variables": {
+              "vis_pm25_corr": -0.6551,
+              "low_vis_date": "2025-10-28",
+              "low_vis_value": 22019.1,
+              "low_vis_pm25": 39.1,
+              "high_vis_date": "2025-10-01",
+              "high_vis_value": 50000.0,
+              "high_vis_pm25": 6.8
+            }
+          }
+        ]
+      }
+    ],
+    "metrics": {
+      "total_turns": 2,
+      "successful_turns": 2,
+      "failed_turns": 0,
+      "total_steps": 3,
+      "success_rate": 1.0,
+      "total_prompt_tokens": 18274,
+      "total_completion_tokens": 1639,
+      "total_tokens": 19913
+    }
+  }
+}

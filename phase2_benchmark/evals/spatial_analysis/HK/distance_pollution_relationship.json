@@ -1,0 +1,20 @@
+[
+    {
+        "name": "hk_distance_pollution_relationship",
+        "module": "evals.spatial_analysis.HK.distance_pollution_relationship",
+        "requirements": "Analyze the relationship between station distance and PM2.5 similarity. Please store the results in: avg_diff_under_5km (float, average absolute PM2.5 difference for pairs <5km, rounded to 1 decimal place), avg_diff_over_15km (float, average absolute PM2.5 difference for pairs >15km, rounded to 1 decimal place).",
+        "conversations": [
+            {
+                "id": "distance_pollution",
+                "turns": [
+                    {
+                        "query": "On October 5, 2025, compute the daily average PM2.5 for each air quality monitoring station and the pairwise distances between all station pairs. What is the average absolute PM2.5 difference for station pairs less than 5 km apart compared to station pairs more than 15 km apart? Return both values rounded to 1 decimal place.",
+                        "validator": "validate_distance_pollution"
+                    }
+                ]
+            }
+        ],
+        "difficulty": "hard",
+        "category": "spatial_analysis"
+    }
+]

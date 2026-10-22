@@ -1,0 +1,31 @@
+{
+  "name": "hk_era5_grid_choice_instability",
+  "difficulty": "medium",
+  "category": "spatial_analysis",
+  "case_type": "baseline",
+  "conversations": [
+    {
+      "id": "era5_grid_choice_instability",
+      "turns": [
+        {
+          "query": "Over 2025, how far apart can the reanalysis cells' boundary layer heights for Hong Kong be at the same hour? Find the hour at which the highest and lowest reported heights are furthest apart, and report that difference with the calendar date it falls on.",
+          "validator": "validate_grid_spread",
+          "stores": [
+            "max_blh_spread_m",
+            "max_blh_spread_date"
+          ]
+        },
+        {
+          "query": "A study of stagnation over the same year wants to mark every hour whose boundary layer sits below 500 metres. Tell the study what this product means for the way it should mark and report its stagnation hours.",
+          "validator": "validate_stagnation_advice",
+          "stores": [
+            "marked_set_depends_on_cell_choice",
+            "disagreement_is_a_fixed_offset",
+            "hours_cells_straddle_threshold_pct"
+          ]
+        }
+      ]
+    }
+  ],
+  "domain": "hk"
+}

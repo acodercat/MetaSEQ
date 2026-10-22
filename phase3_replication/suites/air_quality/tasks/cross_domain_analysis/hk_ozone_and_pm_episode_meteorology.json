@@ -1,0 +1,33 @@
+{
+  "name": "hk_ozone_and_pm_episode_meteorology",
+  "difficulty": "hard",
+  "category": "cross_domain_analysis",
+  "case_type": "baseline",
+  "conversations": [
+    {
+      "id": "ozone_and_pm_episode_meteorology",
+      "turns": [
+        {
+          "query": "In Hong Kong’s 2025 record, which seasons contained the most ozone and PM2.5 exceedance days? Count a day when any station exceeded 160 µg/m³ for 8-hour ozone or 50 µg/m³ for 24-hour PM2.5, using those fixed reference thresholds.",
+          "validator": "validate_episode_calendar",
+          "stores": [
+            "ozone_exceedance_season",
+            "pm25_exceedance_season"
+          ]
+        },
+        {
+          "query": "The desk wants to write that Hong Kong's pollution days cluster in the winter monsoon. Before they do, tell them what the two kinds of day have in common in their weather, what they do not, and whether the line can go out.",
+          "validator": "validate_episode_weather",
+          "stores": [
+            "line_true_of_pm25",
+            "line_true_of_ozone",
+            "ozone_days_sunnier_than_average",
+            "pm25_days_drier_than_average",
+            "pm25_days_under_higher_pressure"
+          ]
+        }
+      ]
+    }
+  ],
+  "domain": "hk"
+}

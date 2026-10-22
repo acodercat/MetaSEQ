@@ -1,0 +1,25 @@
+{
+  "name": "beijing_inversion_potential_temp",
+  "difficulty": "hard",
+  "category": "cross_domain_analysis",
+  "case_type": "baseline",
+  "conversations": [
+    {
+      "id": "inversion_potential_temp",
+      "turns": [
+        {
+          "query": "At Dongsi at 08:00 on 12 February 2021, diagnose whether the pollution could mix vertically. Report the bulk thermal contrasts, locate any inversion connected to the lowest available level, and quantify the strongest adjacent-layer dry static stability. What can this profile establish about the PM2.5 episode?",
+          "validator": "validate_harder_turn_1",
+          "stores": [
+            "stability_diff_k",
+            "temperature_diff_c",
+            "inversion_top_hpa",
+            "inversion_depth_m",
+            "strongest_layer_n2_scaled"
+          ]
+        }
+      ]
+    }
+  ],
+  "domain": "beijing"
+}

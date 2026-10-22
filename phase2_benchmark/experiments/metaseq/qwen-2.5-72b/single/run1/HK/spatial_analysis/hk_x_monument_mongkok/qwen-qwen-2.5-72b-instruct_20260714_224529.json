@@ -1,0 +1,48 @@
+{
+  "hk_x_monument_mongkok": {
+    "scenario": "hk_x_monument_mongkok",
+    "conversations": [
+      {
+        "id": "hk_x_monument_mongkok",
+        "turns": [
+          {
+            "query": "Which sensitive area of category 'DECLARED_MONUMENT' lies closest to the Mong Kok air-quality station (station_id 14), measuring distance from the monument polygon's centroid to the station coordinate? Return the monument's name exactly as stored, and the distance in metres.",
+            "actual_response": "The nearest DECLARED_MONUMENT to the Mong Kok air-quality station is \"Lui Seng Chun\", located at a distance of approximately 3.92 meters.",
+            "actual_calls": [],
+            "validation_errors": [
+              "Custom validator failed: Custom validator failed: monument_dist_m=3.924, expected ~414.288 (tol 60.0)"
+            ],
+            "metrics": {
+              "steps": 4,
+              "prompt_tokens": 23282,
+              "completion_tokens": 627,
+              "total_tokens": 23909
+            },
+            "success": false,
+            "variables_not_set": false,
+            "error": null,
+            "code_snippets": [
+              "import pandas as pd\nfrom sqlalchemy import text\nfrom shapely.geometry import Point\nfrom shapely.wkt import loads\n\n# Query the coordinates of Mong Kok station\nquery_station = text(\"\"\"\nSELECT coordinate\nFROM air_quality_station\nWHERE id = 14\n\"\"\")\nstation_result = pd.read_sql(query_station, engine)\nstation_point = loads(station_result['coordinate'][0])\n\n# Query the centroids and names of all DECLARED_MONUMENT sensitive areas\nquery_monuments = text(\"\"\"\nSELECT name, ST_Centroid(geometry) as centroid\nFROM sensitive_area\nWHERE category = 'DECLARED_MONUMENT'\n\"\"\")\nmonuments_result = pd.read_sql(query_monuments, engine)\n\n# Calculate the distance from each monument centroid to the station\nmonuments_result['centroid'] = monuments_result['centroid'].apply(loads)\nmonuments_result['distance'] = monuments_result['centroid'].apply(lambda x: station_point.distance(x) * 1000)\n\n# Find the nearest monument\nnearest_monument = monuments_result.loc[monuments_result['distance'].idxmin()]\nnearest_monument_name = nearest_monument['name']\nnearest_monument_distance = nearest_monument['distance']\n\nnearest_monument_name, nearest_monument_distance",
+              "import pandas as pd\nfrom sqlalchemy import text\nfrom shapely.geometry import Point\nfrom shapely.wkt import loads\n\n# Query the coordinates of Mong Kok station\nquery_station = text(\"\"\"\nSELECT ST_AsText(coordinate) as coordinate\nFROM air_quality_station\nWHERE id = 14\n\"\"\")\nstation_result = pd.read_sql(query_station, engine)\nstation_point = loads(station_result['coordinate'][0])\n\n# Query the centroids and names of all DECLARED_MONUMENT sensitive areas\nquery_monuments = text(\"\"\"\nSELECT name, ST_AsText(ST_Centroid(geometry)) as centroid\nFROM sensitive_area\nWHERE category = 'DECLARED_MONUMENT'\n\"\"\")\nmonuments_result = pd.read_sql(query_monuments, engine)\n\n# Calculate the distance from each monument centroid to the station\nmonuments_result['centroid'] = monuments_result['centroid'].apply(loads)\nmonuments_result['distance'] = monuments_result['centroid'].apply(lambda x: station_point.distance(x) * 1000)\n\n# Find the nearest monument\nnearest_monument = monuments_result.loc[monuments_result['distance'].idxmin()]\nnearest_monument_name = nearest_monument['name']\nnearest_monument_distance = nearest_monument['distance']\n\nnearest_monument_name, nearest_monument_distance",
+              "nearest_monument = \"Lui Seng Chun\"\nmonument_dist_m = 3.9236609817186907"
+            ],
+            "runtime_variables": {
+              "nearest_monument": "Lui Seng Chun",
+              "monument_dist_m": 3.9236609817186907
+            }
+          }
+        ]
+      }
+    ],
+    "metrics": {
+      "total_turns": 1,
+      "successful_turns": 0,
+      "failed_turns": 1,
+      "total_steps": 4,
+      "success_rate": 0.0,
+      "total_prompt_tokens": 23282,
+      "total_completion_tokens": 627,
+      "total_tokens": 23909
+    }
+  }
+}

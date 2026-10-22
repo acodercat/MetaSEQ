@@ -1,0 +1,20 @@
+[
+    {
+        "name": "hk_wind_direction_pollution_rose",
+        "module": "evals.source_attribution.HK.wind_direction_pollution_rose",
+        "requirements": "Build a pollution rose for NO2 at Tuen Mun to identify dominant source directions. Please store the results in: highest_no2_direction (str), highest_no2_value (float, 1dp), lowest_no2_direction (str), lowest_no2_value (float, 1dp), north_sector_no2 (float, 1dp).",
+        "conversations": [
+            {
+                "id": "pollution_rose",
+                "turns": [
+                    {
+                        "query": "In October 2025, for the Tuen Mun station, compute the average NO2 concentration for each wind direction (using matched weather station data, only when wind speed exceeds 1 m/s to exclude calm conditions). Which wind direction is associated with the highest average NO2 and which with the lowest? Tuen Mun is located in northwestern New Territories — the highest-NO2 wind direction reveals the dominant pollution source region. Return the highest and lowest wind directions with their NO2 values, and the average NO2 when wind is from the north.",
+                        "validator": "validate_pollution_rose"
+                    }
+                ]
+            }
+        ],
+        "difficulty": "medium",
+        "category": "source_attribution"
+    }
+]

@@ -1,0 +1,43 @@
+{
+  "hk_x_who_station_days": {
+    "scenario": "hk_x_who_station_days",
+    "conversations": [
+      {
+        "id": "hk_x_who_station_days",
+        "turns": [
+          {
+            "query": "Over June 2025 (2025-06-01 to 2025-06-30), across all 18 air-quality stations, compute each station-day's daily mean PM2.5 (average of that station's non-NULL hourly PM2.5 values on that calendar date). How many station-days STRICTLY exceeded the World Health Organization 2021 Air Quality Guideline value for 24-hour mean PM2.5? Return the count.",
+            "actual_response": "Based on the analysis of hourly PM2.5 measurements across all 18 air quality monitoring stations in Hong Kong during June 2025:\n\n- **Total station-days analyzed**: 540 (18 stations \u00d7 30 days)\n- **WHO 2021 24-hour AQG for PM2.5**: 15 \u00b5g/m\u00b3\n- **Station-days with daily-mean PM2.5 strictly exceeding the WHO guideline**: **35**\n\nThe variable `who_exceed_station_days` has been set to **35**.",
+            "actual_calls": [],
+            "validation_errors": [],
+            "metrics": {
+              "steps": 2,
+              "prompt_tokens": 11273,
+              "completion_tokens": 753,
+              "total_tokens": 12026
+            },
+            "success": true,
+            "variables_not_set": false,
+            "error": null,
+            "code_snippets": [
+              "import pandas as pd\nfrom sqlalchemy import text\n\n# WHO 2021 24-hour AQG for PM2.5 is 15 \u00b5g/m\u00b3\nWHO_PM25_GUIDELINE = 15\n\n# Query daily mean PM2.5 for all stations in June 2025\nquery = text(\"\"\"\nSELECT \n    station_id,\n    CAST(datetime AS DATE) as date,\n    AVG(pm2_5) as daily_mean_pm25\nFROM hourly_station_air_quality\nWHERE datetime >= '2025-06-01'\n  AND datetime < '2025-07-01'\n  AND pm2_5 IS NOT NULL\nGROUP BY station_id, CAST(datetime AS DATE)\n\"\"\")\n\ndf = pd.read_sql(query, engine)\n\n# Count station-days where daily mean PM2.5 strictly exceeds WHO guideline\nwho_exceed_station_days = int((df['daily_mean_pm25'] > WHO_PM25_GUIDELINE).sum())\n\nprint(f\"Total station-days in June 2025: {len(df)}\")\nprint(f\"WHO 2021 24-hour AQG for PM2.5: {WHO_PM25_GUIDELINE} \u00b5g/m\u00b3\")\nprint(f\"Station-days exceeding WHO guideline: {who_exceed_station_days}\")"
+            ],
+            "runtime_variables": {
+              "who_exceed_station_days": 35
+            }
+          }
+        ]
+      }
+    ],
+    "metrics": {
+      "total_turns": 1,
+      "successful_turns": 1,
+      "failed_turns": 0,
+      "total_steps": 2,
+      "success_rate": 1.0,
+      "total_prompt_tokens": 11273,
+      "total_completion_tokens": 753,
+      "total_tokens": 12026
+    }
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "name": "hk_receptor_station_representativeness",
+  "difficulty": "hard",
+  "category": "spatial_analysis",
+  "case_type": "baseline",
+  "conversations": [
+    {
+      "id": "receptor_station_representativeness",
+      "turns": [
+        {
+          "query": "Hong Kong's register of sensitive locations lists every educational institution as a point. How far is a school from the nearest air quality monitoring station, taking the median across all of them?",
+          "validator": "validate_median_station_distance_km",
+          "stores": [
+            "median_station_distance_km"
+          ]
+        },
+        {
+          "query": "Now put a number on the nitrogen dioxide the air around those schools carried over 2020 through 2025. Which estimate better captures the district-background level the schools sit in, what about the network makes that so, and what does the choice of estimand not settle about the air they actually breathe?",
+          "validator": "validate_school_no2",
+          "stores": [
+            "school_no2_nearest_station",
+            "school_no2_nearest_general"
+          ]
+        }
+      ]
+    }
+  ],
+  "domain": "hk"
+}

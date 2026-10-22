@@ -1,0 +1,20 @@
+[
+    {
+        "name": "hk_nearest_station_to_severe_congestion",
+        "module": "evals.cross_domain_analysis.HK.nearest_station_to_severe_congestion",
+        "requirements": "Analyze relationships between traffic conditions and air quality.",
+        "conversations": [
+            {
+                "id": "nearest_station_to_severe_congestion",
+                "turns": [
+                    {
+                        "query": "During the evening peak hour at 18:00 on October 5, 2025, locate all severely congested road segments. What is the ID of the air quality monitoring station closest to any of these segments, and what was its NO2 concentration at that hour?",
+                        "validator": "validate_nearest_station_to_severe_congestion"
+                    }
+                ]
+            }
+        ],
+        "difficulty": "hard",
+        "category": "cross_domain_analysis"
+    }
+]

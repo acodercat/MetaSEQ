@@ -1,0 +1,23 @@
+{
+  "name": "beijing_interpolation_skill",
+  "difficulty": "medium",
+  "category": "spatial_analysis",
+  "case_type": "baseline",
+  "conversations": [
+    {
+      "id": "interpolation_skill",
+      "turns": [
+        {
+          "query": "Test whether Beijing's network can reconstruct one of its own sites: hold out each station in turn and predict its 2023 daily PM2.5 from the other eleven. Report how well that does against a comparator that ignores where the stations are, and say what the pair implies about filling a gap in the network.",
+          "validator": "validate_interpolation_skill",
+          "stores": [
+            "idw_loo_mae",
+            "equal_weight_loo_mae"
+          ],
+          "evaluation_tier": "execution"
+        }
+      ]
+    }
+  ],
+  "domain": "beijing"
+}

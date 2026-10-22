@@ -1,0 +1,23 @@
+{
+  "name": "hk_very_hot_days_hourly_floor",
+  "difficulty": "medium",
+  "category": "statistical_characterization",
+  "case_type": "baseline",
+  "conversations": [
+    {
+      "id": "very_hot_days_hourly_floor",
+      "turns": [
+        {
+          "query": "HKO reports 53 very hot days in 2025. How many does our hourly Observatory temperature record support, which count should the desk publish, and what does our count represent?",
+          "validator": "validate_evidence_and_conclusion",
+          "stores": [
+            "very_hot_days_2025",
+            "figure_to_publish",
+            "our_count_is"
+          ]
+        }
+      ]
+    }
+  ],
+  "domain": "hk"
+}

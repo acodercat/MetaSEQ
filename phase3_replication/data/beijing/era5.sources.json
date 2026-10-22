@@ -1,0 +1,82 @@
+{
+  "dataset_version": "1.0.0",
+  "created_at": "2026-07-25",
+  "scope": "ERA5 reanalysis meteorology ingested for selected Beijing months, sampled at the 12 benchmark station coordinates. Produced by scripts/ingest/fetch_era5.py.",
+  "files": {
+    "Beijing_met_era5.csv": "Hourly surface fields per station: boundary layer height, 10 m wind, 2 m temperature, surface pressure, ventilation coefficient.",
+    "Beijing_profile_era5.csv": "Hourly vertical profiles per station on 7 pressure levels: temperature, geopotential height, potential temperature."
+  },
+  "sources": [
+    {
+      "id": "ecmwf_era5_single_levels",
+      "authority": "ECMWF / Copernicus Climate Change Service (C3S)",
+      "title": "ERA5 hourly data on single levels from 1940 to present",
+      "url": "https://cds.climate.copernicus.eu/datasets/reanalysis-era5-single-levels",
+      "doi": "10.24381/cds.adbb2d47",
+      "accessed": "2026-07-25",
+      "supports": [
+        "blh_m",
+        "wind_speed_ms",
+        "wind_dir_deg",
+        "t2m_c",
+        "surface_pressure_hpa",
+        "ventilation_m2s"
+      ],
+      "notes": "product_type=reanalysis. Requested variables: boundary_layer_height, 10m_u_component_of_wind, 10m_v_component_of_wind, 2m_temperature, surface_pressure. Native resolution 0.25 degrees, hourly."
+    },
+    {
+      "id": "ecmwf_era5_pressure_levels",
+      "authority": "ECMWF / Copernicus Climate Change Service (C3S)",
+      "title": "ERA5 hourly data on pressure levels from 1940 to present",
+      "url": "https://cds.climate.copernicus.eu/datasets/reanalysis-era5-pressure-levels",
+      "doi": "10.24381/cds.bd0915c6",
+      "accessed": "2026-07-25",
+      "supports": [
+        "pressure_hpa",
+        "temperature_c",
+        "geopotential_height_m",
+        "potential_temperature_k"
+      ],
+      "notes": "product_type=reanalysis. Requested variables: temperature, geopotential on 1000/975/950/925/900/875/850 hPa. Requests are chunked to at most 10 days because the CDS cost limit counts levels x variables x days x hours."
+    }
+  ],
+  "extraction": {
+    "bounding_box_north_west_south_east": [
+      40.5,
+      116.0,
+      39.8,
+      116.8
+    ],
+    "spatial_sampling": "Nearest ERA5 grid cell to each benchmark station coordinate. The 12 stations resolve to 5 distinct 0.25-degree cells, so nearby stations legitimately share identical meteorology.",
+    "time_convention": "ERA5 timestamps are UTC; all output columns are Beijing local standard time (UTC+8) so they join directly against datasets/Beijing.csv on year/month/day/hour.",
+    "boundary_pad": "Each requested month is accompanied by the final UTC day of the preceding month so that the first local day is complete; see scripts/ingest/fetch_era5.py.",
+    "derived_fields": {
+      "wind_dir_deg": "degrees(atan2(-u10, -v10)) mod 360 — meteorological convention, the direction the wind blows FROM.",
+      "ventilation_m2s": "blh_m x wind_speed_ms, the standard dispersion-capacity index.",
+      "potential_temperature_k": "theta = T x (1000/p)^0.286 with T in kelvin and p in hPa.",
+      "geopotential_height_m": "ERA5 geopotential z divided by 9.80665."
+    }
+  },
+  "coverage": {
+    "months_local": [
+      "2014-01 (first local day incomplete: no boundary pad)",
+      "2014-06 (first local day incomplete: no boundary pad)",
+      "2015-12 (complete, 31 local days x 24 h)"
+    ],
+    "profile_months_local": [
+      "2015-12 (complete, 31 local days x 24 h)"
+    ],
+    "notes": "Partial local days at the edges of the ingested range (from the UTC to local shift) are reported by the build step and must be excluded from daily or monthly statistics."
+  },
+  "known_limitations": [
+    "ERA5 is a model reanalysis, not an observation: boundary layer height in particular is a parameterised diagnostic and should be treated as a modelled quantity, not a measurement.",
+    "Horizontal resolution is 0.25 degrees (about 31 km), so within-city gradients across Beijing are largely unresolved and several stations share the same grid cell.",
+    "Coverage is a selected subset of months, not the full 2013-2017 benchmark record; any statistic assuming continuous coverage is invalid.",
+    "Pressure levels stop at 850 hPa, so inversions capped above roughly 1.5 km altitude are not represented.",
+    "Values are sampled at the recorded station coordinates, whose historical validity for 2013-2017 is unverified (see Beijing_station_metadata.sources.json).",
+    "The product of surface concentration and boundary-layer height carries little independent information about aerosol amount at diurnal scale, which was measured when a case was proposed on it. Over 2024 the hourly mean of PM2.5 x blh_m swings by a factor of 13.7 between its daily minimum and maximum, while PM2.5 itself swings by 1.25 and blh_m by 11.6: the product tracks the boundary layer almost exactly. Surface PM2.5 holds near 30 ug/m3 from 04:00 to 15:00 while the layer grows from 118 m to 1354 m. What this does NOT establish is that the product is invalid as a column proxy — a real column burden need not be conserved through the day, since daytime emission, entrainment from aloft and advection all change the column, so the swing is not by itself proof that uniform mixing fails. The defensible statement is narrower: any result computed from this product at sub-daily resolution is dominated by the reanalysis boundary-layer diagnostic rather than by the observed concentration, so it must be reported as a dilution-scaled index and never as a measured or inferred column loading. beijing_box_model_flux is unaffected: it applies the mass balance within a pinned shallow (~160 m) stable window rather than averaging the product across a growing daytime layer."
+  ],
+  "known_limits": [
+    "`ventilation_m2s` is stored as round(blh_m x wind_speed_ms, 1), but recomputing it from the two published columns disagrees on 3,294 of 689,868 rows (0.48 %), always by exactly 0.1. The product lands on a .x5 boundary that the CSV round trip resolves the other way; it is a float representation limit, not a computation error. A case asking for this quantity needs a tolerance of at least 0.1."
+  ]
+}

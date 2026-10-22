@@ -1,0 +1,47 @@
+{
+  "hk_hard_pm25_peak_day_station_count": {
+    "scenario": "hk_hard_pm25_peak_day_station_count",
+    "conversations": [
+      {
+        "id": "hk_hard_pm25_peak_day_station_count",
+        "turns": [
+          {
+            "query": "For each station_type separately (GENERAL and ROADSIDE), during June 2025 inclusive, first compute each station's daily maximum PM2.5 over non-NULL hourly pm2_5 values for each calendar date. Then, for each station, count the number of dates with daily maximum PM2.5 >= 35.0. Finally, for each station_type compute the average of these station-level counts, giving each station equal weight. Return roadside_avg_peak_days, general_avg_peak_days, and roadside_minus_general rounded to 6 decimals. Do not average station-day indicators over all station-day rows unless it yields the same station weighting, and do not count hourly exceedance rows.",
+            "actual_response": "The analysis is complete. Based on the data for June 2025:\n\n- **Roadside stations average peak days**: 4.666667\n- **General stations average peak days**: 0.400000\n- **Difference (Roadside - General)**: 4.266667\n\nThe results show that roadside monitoring stations experienced significantly more days with high PM2.5 levels (daily maximum \u2265 35.0 \u00b5g/m\u00b3) compared to general stations. On average, roadside stations had about 4.67 such days in June 2025, while general stations had only 0.4 days. This indicates that traffic-related areas have substantially higher particulate matter pollution peaks than general urban or rural areas.",
+            "actual_calls": [],
+            "validation_errors": [],
+            "metrics": {
+              "steps": 4,
+              "prompt_tokens": 25129,
+              "completion_tokens": 990,
+              "total_tokens": 26119
+            },
+            "success": true,
+            "variables_not_set": false,
+            "error": null,
+            "code_snippets": [
+              "import pandas as pd\nfrom sqlalchemy import text\n\n# First, let's check the station types and their IDs\nquery = text(\"\"\"\nSELECT id, name_en, station_type\nFROM air_quality_station\nORDER BY station_type, name_en\n\"\"\")\nstations_df = pd.read_sql(query, engine)\nprint(stations_df)",
+              "import pandas as pd\nfrom sqlalchemy import text\n\n# Query to get daily max PM2.5 per station for June 2025, then count days >= 35.0\nquery = text(\"\"\"\nWITH daily_max AS (\n    SELECT \n        station_id,\n        DATE(datetime) as date,\n        MAX(pm2_5) as daily_max_pm25\n    FROM hourly_station_air_quality\n    WHERE datetime >= '2025-06-01 00:00:00' \n      AND datetime < '2025-07-01 00:00:00'\n      AND pm2_5 IS NOT NULL\n    GROUP BY station_id, DATE(datetime)\n),\nstation_peak_counts AS (\n    SELECT \n        station_id,\n        COUNT(*) as peak_days\n    FROM daily_max\n    WHERE daily_max_pm25 >= 35.0\n    GROUP BY station_id\n)\nSELECT \n    aqs.station_type,\n    aqs.id as station_id,\n    COALESCE(spc.peak_days, 0) as peak_days\nFROM air_quality_station aqs\nLEFT JOIN station_peak_counts spc ON aqs.id = spc.station_id\nORDER BY aqs.station_type, aqs.id\n\"\"\")\n\nresult_df = pd.read_sql(query, engine)\nprint(result_df)",
+              "import pandas as pd\n\n# Calculate average peak days for each station type\ngeneral_stations = result_df[result_df['station_type'] == 'GENERAL']['peak_days']\nroadside_stations = result_df[result_df['station_type'] == 'ROADSIDE']['peak_days']\n\ngeneral_avg_peak_days = general_stations.mean()\nroadside_avg_peak_days = roadside_stations.mean()\nroadside_minus_general = roadside_avg_peak_days - general_avg_peak_days\n\n# Round to 6 decimals\nroadside_avg_peak_days = round(roadside_avg_peak_days, 6)\ngeneral_avg_peak_days = round(general_avg_peak_days, 6)\nroadside_minus_general = round(roadside_minus_general, 6)\n\nprint(f\"GENERAL stations peak days: {general_stations.tolist()}\")\nprint(f\"GENERAL avg: {general_avg_peak_days}\")\nprint(f\"ROADSIDE stations peak days: {roadside_stations.tolist()}\")\nprint(f\"ROADSIDE avg: {roadside_avg_peak_days}\")\nprint(f\"Roadside - General: {roadside_minus_general}\")\n\n# Store the results\nroadside_avg_peak_days = roadside_avg_peak_days\ngeneral_avg_peak_days = general_avg_peak_days\nroadside_minus_general = roadside_minus_general"
+            ],
+            "runtime_variables": {
+              "roadside_avg_peak_days": 4.666667,
+              "general_avg_peak_days": 0.4,
+              "roadside_minus_general": 4.266667
+            }
+          }
+        ]
+      }
+    ],
+    "metrics": {
+      "total_turns": 1,
+      "successful_turns": 1,
+      "failed_turns": 0,
+      "total_steps": 4,
+      "success_rate": 1.0,
+      "total_prompt_tokens": 25129,
+      "total_completion_tokens": 990,
+      "total_tokens": 26119
+    }
+  }
+}

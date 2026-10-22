@@ -1,0 +1,26 @@
+{
+  "name": "hk_daily_clearness_seasonality",
+  "difficulty": "medium",
+  "category": "comparative_assessment",
+  "case_type": "baseline",
+  "conversations": [
+    {
+      "id": "hk_daily_clearness_seasonality",
+      "turns": [
+        {
+          "query": "Which month had the highest mean daily clearness index at King's Park in 2025? Report the month, index, mean global radiation, and valid-day counts for that month and year. What atmospheric causes can this ranking identify?",
+          "stores": [
+            "clearness_peak_month",
+            "monthly_clearness_index",
+            "selected_mean_radiation",
+            "clearness_month_days",
+            "clearness_year_days"
+          ],
+          "validator": "validate_evidence",
+          "evaluation_tier": "execution"
+        }
+      ]
+    }
+  ],
+  "domain": "hk"
+}

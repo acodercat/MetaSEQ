@@ -1,0 +1,29 @@
+{
+  "name": "beijing_compound_pollution_days",
+  "difficulty": "hard",
+  "category": "exceedance_anomaly_detection",
+  "case_type": "trap",
+  "conversations": [
+    {
+      "id": "compound_pollution",
+      "turns": [
+        {
+          "query": "On Beijing's city-level record in 2023, count the days whose daily maximum 8-hour ozone, as defined by HJ 663-2013, exceeded 160 ug/m3, and separately the days whose daily mean PM2.5 exceeded 75 ug/m3, considering every day of the year whatever number of hours it reports.",
+          "validator": "validate_marginal_days",
+          "stores": [
+            "o3_exceedance_days_2023",
+            "pm25_exceedance_days_2023"
+          ]
+        },
+        {
+          "query": "Now count the days on which both limits were exceeded together, and discuss how that number compares with what one would estimate from the two frequencies alone.",
+          "validator": "validate_compound_days",
+          "stores": [
+            "compound_days"
+          ]
+        }
+      ]
+    }
+  ],
+  "domain": "beijing"
+}

@@ -1,0 +1,31 @@
+{
+  "name": "hk_cyclone_approach_and_passage",
+  "difficulty": "hard",
+  "category": "temporal_pattern_analysis",
+  "case_type": "baseline",
+  "conversations": [
+    {
+      "id": "cyclone_approach_and_passage",
+      "turns": [
+        {
+          "query": "A colleague is collecting examples of Hong Kong's air clearing quickly, for a note on what makes a difference to fine particulate. Over June, July and August 2025, find the day on which the territory PM2.5 fell furthest from the day before it. Report that date and the two daily figures.",
+          "validator": "validate_largest_fall",
+          "stores": [
+            "largest_fall_end_date",
+            "pm25_day_before",
+            "pm25_fall_day"
+          ]
+        },
+        {
+          "query": "They want to use it as their headline example. Report how far it fell, and how many days in that month carried a higher territory PM2.5 than the day it fell from. Then tell them what the example does and does not show, and check what else the record holds about those two days before they write it up.",
+          "validator": "validate_where_it_sits",
+          "stores": [
+            "summer_fall_magnitude",
+            "july_days_dirtier_than_day_before"
+          ]
+        }
+      ]
+    }
+  ],
+  "domain": "hk"
+}

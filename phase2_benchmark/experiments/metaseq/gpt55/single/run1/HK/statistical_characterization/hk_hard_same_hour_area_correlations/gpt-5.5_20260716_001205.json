@@ -1,0 +1,46 @@
+{
+  "hk_hard_same_hour_area_correlations": {
+    "scenario": "hk_hard_same_hour_area_correlations",
+    "conversations": [
+      {
+        "id": "hk_hard_same_hour_area_correlations",
+        "turns": [
+          {
+            "query": "For June 2025 inclusive, compute two same-hour Pearson correlations using area-type hourly means. For each datetime, compute the mean NO2 over non-NULL GENERAL URBAN station rows and the mean NO2 over non-NULL ROADSIDE URBAN station rows. Use only datetimes where both means exist, and compute corr(urban_general_mean_no2, urban_roadside_mean_no2). Separately, compute the same correlation for PM10 using hourly mean PM10. Return no2_pair_count, no2_corr, pm10_pair_count, and pm10_corr, with correlations rounded to 6 decimals. Do not correlate station-level monthly means or unaligned hourly series.",
+            "actual_response": "no2_pair_count: 720  \nno2_corr: 0.865149  \npm10_pair_count: 720  \npm10_corr: 0.464005",
+            "actual_calls": [],
+            "validation_errors": [],
+            "metrics": {
+              "steps": 2,
+              "prompt_tokens": 11008,
+              "completion_tokens": 628,
+              "total_tokens": 11636
+            },
+            "success": true,
+            "variables_not_set": false,
+            "error": null,
+            "code_snippets": [
+              "import pandas as pd\nfrom sqlalchemy import text\n\nquery = text(\"\"\"\nWITH hourly_means AS (\n    SELECT\n        h.datetime,\n        AVG(h.no2)  FILTER (WHERE s.station_type = 'GENERAL'  AND h.no2  IS NOT NULL) AS general_no2,\n        AVG(h.no2)  FILTER (WHERE s.station_type = 'ROADSIDE' AND h.no2  IS NOT NULL) AS roadside_no2,\n        AVG(h.pm10) FILTER (WHERE s.station_type = 'GENERAL'  AND h.pm10 IS NOT NULL) AS general_pm10,\n        AVG(h.pm10) FILTER (WHERE s.station_type = 'ROADSIDE' AND h.pm10 IS NOT NULL) AS roadside_pm10\n    FROM hourly_station_air_quality h\n    JOIN air_quality_station s ON h.station_id = s.id\n    WHERE s.area_type = 'URBAN'\n      AND h.datetime >= TIMESTAMP '2025-06-01 00:00:00'\n      AND h.datetime <  TIMESTAMP '2025-07-01 00:00:00'\n    GROUP BY h.datetime\n)\nSELECT\n    COUNT(*) FILTER (WHERE general_no2 IS NOT NULL AND roadside_no2 IS NOT NULL)::int AS no2_pair_count,\n    ROUND(CORR(general_no2, roadside_no2)::numeric, 6)::float AS no2_corr,\n    COUNT(*) FILTER (WHERE general_pm10 IS NOT NULL AND roadside_pm10 IS NOT NULL)::int AS pm10_pair_count,\n    ROUND(CORR(general_pm10, roadside_pm10)::numeric, 6)::float AS pm10_corr\nFROM hourly_means;\n\"\"\")\n\nres = pd.read_sql(query, engine).iloc[0]\nno2_pair_count = int(res[\"no2_pair_count\"])\nno2_corr = float(res[\"no2_corr\"])\npm10_pair_count = int(res[\"pm10_pair_count\"])\npm10_corr = float(res[\"pm10_corr\"])\n\nprint({\n    \"no2_pair_count\": no2_pair_count,\n    \"no2_corr\": no2_corr,\n    \"pm10_pair_count\": pm10_pair_count,\n    \"pm10_corr\": pm10_corr\n})"
+            ],
+            "runtime_variables": {
+              "no2_pair_count": 720,
+              "no2_corr": 0.865149,
+              "pm10_pair_count": 720,
+              "pm10_corr": 0.464005
+            }
+          }
+        ]
+      }
+    ],
+    "metrics": {
+      "total_turns": 1,
+      "successful_turns": 1,
+      "failed_turns": 0,
+      "total_steps": 2,
+      "success_rate": 1.0,
+      "total_prompt_tokens": 11008,
+      "total_completion_tokens": 628,
+      "total_tokens": 11636
+    }
+  }
+}

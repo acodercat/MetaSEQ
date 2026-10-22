@@ -1,0 +1,50 @@
+{
+  "hk_ozone_diurnal_peak": {
+    "scenario": "hk_ozone_diurnal_peak",
+    "conversations": [
+      {
+        "id": "ozone_diurnal_peak",
+        "turns": [
+          {
+            "query": "At the Tap Mun background monitoring station, what was the peak hourly ozone concentration on July 5, 2025, and at what hour of the day did it occur?",
+            "actual_response": "The peak hourly ozone concentration at the Tap Mun background monitoring station on July 5, 2025, was 152.8 \u00b5g/m\u00b3, and it occurred at 14:00 (2 PM).",
+            "actual_calls": [],
+            "validation_errors": [],
+            "metrics": {
+              "steps": 12,
+              "prompt_tokens": 74565,
+              "completion_tokens": 2533,
+              "total_tokens": 77098
+            },
+            "success": true,
+            "variables_not_set": false,
+            "error": null,
+            "code_snippets": [
+              "import pandas as pd\nfrom sqlalchemy import text\n\n# Resolve the station id for Tap Mun\ntap_mun_station_id = 8  # From the knowledge base, Tap Mun station_id is 8\nprint(f\"RESOLVED: Tap Mun = {tap_mun_station_id}\")\n\n# Query hourly ozone concentration data for Tap Mun on July 5, 2025\nquery = text(f\"\"\"\nSELECT datetime, o3\nFROM hourly_station_air_quality\nWHERE station_id = {tap_mun_station_id}\nAND datetime >= '2025-07-05 00:00:00'\nAND datetime < '2025-07-06 00:00:00'\nORDER BY datetime\n\"\"\")\n\n# Fetch the data into a DataFrame\ntap_mun_o3_df = pd.read_sql(query, engine)\nprint(f\"Rows in Tap Mun O3 data: {len(tap_mun_o3_df)}\")\n\n# Stage the relevant health risk standards and units\no3_units = \"\u00b5g/m\u00b3\"  # Ozone concentration units\no3_health_risk_standards = {\n    \"WHO_8hr\": 100,  # WHO 8-hour average ozone concentration limit\n    \"HK_1hr\": 160,   # Hong Kong 1-hour average ozone concentration limit\n    \"HK_8hr\": 100    # Hong Kong 8-hour average ozone concentration limit\n}\nprint(f\"O3 units: {o3_units}\")\nprint(f\"O3 health risk standards: {o3_health_risk_standards}\")",
+              "# Print the first few rows of the Tap Mun O3 data to review the data\nprint(tap_mun_o3_df.head())\n\n# Calculate the peak hourly O3 concentration and the hour it occurred\ntap_mun_peak_o3 = tap_mun_o3_df['o3'].max()\ntap_mun_peak_o3_hour = tap_mun_o3_df.loc[tap_mun_o3_df['o3'].idxmax(), 'datetime'].hour\n\n# Print the peak O3 concentration and the hour it occurred\nprint(f\"Peak hourly O3 concentration: {tap_mun_peak_o3} {o3_units}\")\nprint(f\"Hour of peak O3 concentration: {tap_mun_peak_o3_hour}\")\n\n# Stage the peak O3 concentration and the hour it occurred\ntap_mun_peak_o3\ntap_mun_peak_o3_hour",
+              "import pandas as pd\nfrom sqlalchemy import text\n\n# Query the hourly ozone concentrations for Tap Mun station on July 5, 2025\nquery = text(\"\"\"\nSELECT datetime, o3\nFROM hourly_station_air_quality\nWHERE station_id = :station_id\nAND datetime >= '2025-07-05 00:00:00'\nAND datetime < '2025-07-06 00:00:00'\n\"\"\")\n\n# Execute the query and load the results into a DataFrame\ndf = pd.read_sql(query, engine, params={\"station_id\": tap_mun_station_id})\n\n# Find the peak ozone concentration and the corresponding hour\npeak_o3 = df['o3'].max()\npeak_o3_hour = df.loc[df['o3'] == peak_o3, 'datetime'].dt.hour.iloc[0]\n\n# Store the results in the shared runtime variables\ntap_mun_peak_o3 = peak_o3\ntap_mun_peak_o3_hour = peak_o3_hour\n\n# Print the results for verification\nprint(f\"Peak hourly ozone concentration: {peak_o3} {o3_units}\")\nprint(f\"Hour of the day it occurred: {peak_o3_hour}\")",
+              "import pandas as pd\nfrom sqlalchemy import text\n\n# Query the peak O3 concentration and the hour it occurred\nquery = text(f\"\"\"\nSELECT o3, datetime\nFROM hourly_station_air_quality\nWHERE station_id = {tap_mun_station_id}\nAND o3 = {tap_mun_peak_o3}\nORDER BY datetime\nLIMIT 1\n\"\"\")\n\npeak_o3_df = pd.read_sql(query, engine)\npeak_o3_df['datetime'] = pd.to_datetime(peak_o3_df['datetime'])\n\n# Extract the peak O3 concentration and the hour it occurred\npeak_o3 = peak_o3_df['o3'].values[0]\npeak_o3_hour = peak_o3_df['datetime'].dt.hour.values[0]\n\n# Determine the health risk level based on the peak O3 concentration\no3_health_risk_standards = {\n    'LOW': (0, 50),\n    'MODERATE': (51, 100),\n    'HIGH': (101, 150),\n    'VERY HIGH': (151, 200),\n    'SERIOUS': (201, float('inf'))\n}\n\nhealth_risk_level = None\nfor level, (lower, upper) in o3_health_risk_standards.items():\n    if lower <= peak_o3 <= upper:\n        health_risk_level = level\n        break\n\n# Store the health risk level and the peak O3 concentration\nhealth_risk_level_peak_o3 = health_risk_level\npeak_o3_concentration = peak_o3\npeak_o3_hour_of_day = peak_o3_hour\n\n# Print the health risk level and the peak O3 concentration\nprint(f\"Peak O3 concentration: {peak_o3} \u00b5g/m\u00b3 at hour {peak_o3_hour}\")\nprint(f\"Health risk level: {health_risk_level}\")",
+              "# Based on the health risk level, provide specific advisories\nadvisories = {\n    'LOW': \"Air quality is satisfactory, and air pollution poses little or no risk.\",\n    'MODERATE': \"Air quality is acceptable; however, there may be a risk for some people, particularly those who are unusually sensitive to air pollution.\",\n    'HIGH': \"Members of sensitive groups may experience health effects. The general public is less likely to be affected.\",\n    'VERY HIGH': \"Health warnings of emergency conditions. The entire population is more likely to be affected.\",\n    'SERIOUS': \"Health alert: everyone may experience more serious health effects.\"\n}\n\n# Retrieve the advisory for the determined health risk level\nhealth_advisory = advisories[health_risk_level_peak_o3]\n\n# Print the health advisory\nprint(f\"Health Advisory: {health_advisory}\")",
+              "# Assemble the final report using the precomputed variables\n\n# Peak hourly ozone concentration and the hour of occurrence\npeak_o3_concentration = tap_mun_peak_o3\npeak_o3_hour_of_day = tap_mun_peak_o3_hour\n\n# Health risk indicators and advisories\nhealth_risk_level_peak_o3 = health_risk_level_peak_o3\nhealth_advisory = health_advisory\n\n# Print the final report\nprint(f\"Peak hourly ozone concentration: {peak_o3_concentration} \u00b5g/m\u00b3\")\nprint(f\"Hour of occurrence: {peak_o3_hour_of_day}\")\nprint(f\"Health risk level: {health_risk_level_peak_o3}\")\nprint(f\"Health advisory: {health_advisory}\")",
+              "import pandas as pd\nfrom sqlalchemy import text\n\n# Define the station ID for Tap Mun\ntap_mun_station_id = 8\n\n# Define the date and time range for July 5, 2025\nstart_time = '2025-07-05 00:00:00'\nend_time = '2025-07-05 23:59:59'\n\n# Query the hourly ozone concentration for Tap Mun on July 5, 2025\nquery = text(f\"\"\"\nSELECT datetime, o3\nFROM hourly_station_air_quality\nWHERE station_id = {tap_mun_station_id}\nAND datetime >= '{start_time}'\nAND datetime < '{end_time}'\nORDER BY datetime\n\"\"\")\n\n# Execute the query and store the results in a DataFrame\ntap_mun_o3_df = pd.read_sql(query, engine)\n\n# Find the peak ozone concentration and the corresponding hour\npeak_o3 = tap_mun_o3_df['o3'].max()\npeak_o3_hour = tap_mun_o3_df.loc[tap_mun_o3_df['o3'] == peak_o3, 'datetime'].iloc[0].hour\n\n# Assign the results to the provided variables\ntap_mun_peak_o3 = peak_o3\ntap_mun_peak_o3_hour = peak_o3_hour\n\n# Verify the results\nprint(f\"VERIFY tap_mun_peak_o3: stored=None | independent={tap_mun_peak_o3} | final={tap_mun_peak_o3}\")\nprint(f\"VERIFY tap_mun_peak_o3_hour: stored=None | independent={tap_mun_peak_o3_hour} | final={tap_mun_peak_o3_hour}\")"
+            ],
+            "runtime_variables": {
+              "tap_mun_peak_o3": 152.8,
+              "tap_mun_peak_o3_hour": 14
+            }
+          }
+        ]
+      }
+    ],
+    "metrics": {
+      "total_turns": 1,
+      "successful_turns": 1,
+      "failed_turns": 0,
+      "total_steps": 12,
+      "success_rate": 1.0,
+      "total_prompt_tokens": 74565,
+      "total_completion_tokens": 2533,
+      "total_tokens": 77098
+    }
+  }
+}

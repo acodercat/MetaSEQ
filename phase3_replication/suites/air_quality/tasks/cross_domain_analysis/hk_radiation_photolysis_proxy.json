@@ -1,0 +1,27 @@
+{
+  "name": "hk_radiation_photolysis_proxy",
+  "difficulty": "hard",
+  "category": "cross_domain_analysis",
+  "case_type": "baseline",
+  "conversations": [
+    {
+      "id": "hk_radiation_photolysis_proxy",
+      "turns": [
+        {
+          "query": "Assess King's Park's 2025 daytime NO₂ photolysis scenario. Report sample count, mean radiation, mean J(NO₂), mean photolysis-only lifetime, and the albedo sensitivity range. Explain their applicability to observed chemistry, including calibration timescale and net ozone production.",
+          "stores": [
+            "photolysis_samples",
+            "mean_j_no2_s1",
+            "mean_photolysis_lifetime_s",
+            "mean_screen_radiation_wm2",
+            "lower_albedo_mean_j_s1",
+            "upper_albedo_mean_j_s1"
+          ],
+          "validator": "validate_turn_1",
+          "evaluation_tier": "execution"
+        }
+      ]
+    }
+  ],
+  "domain": "hk"
+}

@@ -1,0 +1,45 @@
+{
+  "hk_cov_pop_newtown2km": {
+    "scenario": "hk_cov_pop_newtown2km",
+    "conversations": [
+      {
+        "id": "hk_cov_pop_newtown2km",
+        "turns": [
+          {
+            "query": "Using the HK_population_1km grid, what is the total population living within 2000 metres of at least one air-quality station located in a NEW_TOWN area (area_type = 'NEW_TOWN')? Count each grid cell once. Return the total population.",
+            "actual_response": "The total population living within 2000 metres of at least one air-quality station located in a NEW_TOWN area is 908,960.",
+            "actual_calls": [],
+            "validation_errors": [],
+            "metrics": {
+              "steps": 4,
+              "prompt_tokens": 23776,
+              "completion_tokens": 1291,
+              "total_tokens": 25067
+            },
+            "success": true,
+            "variables_not_set": false,
+            "error": null,
+            "code_snippets": [
+              "import pandas as pd\nfrom sqlalchemy import text\nfrom haversine import haversine, Unit\n\n# Query NEW_TOWN stations\nquery = text(\"\"\"\nSELECT id, coordinate\nFROM air_quality_station\nWHERE area_type = 'NEW_TOWN'\n\"\"\")\nnew_town_stations = pd.read_sql(query, engine)\n\n# Extract coordinates of NEW_TOWN stations\nnew_town_coords = [(row['coordinate'].x, row['coordinate'].y) for _, row in new_town_stations.iterrows()]\n\n# Function to check if a grid cell is within 2000m of any NEW_TOWN station\ndef is_within_2000m(grid_lon, grid_lat):\n    grid_coord = (grid_lon, grid_lat)\n    for station_coord in new_town_coords:\n        if haversine(grid_coord, station_coord, unit=Unit.METERS) <= 2000:\n            return True\n    return False\n\n# Filter population grid cells within 2000m of any NEW_TOWN station\npop_df['within_2000m'] = pop_df.apply(lambda row: is_within_2000m(row['longitude'], row['latitude']), axis=1)\npop_near_newtown = pop_df[pop_df['within_2000m']]['population'].sum()\n\nprint(f\"Total population within 2000m of any NEW_TOWN station: {pop_near_newtown}\")",
+              "import pandas as pd\nfrom sqlalchemy import text\nfrom math import radians, sin, cos, sqrt, atan2\n\n# Define the Haversine distance function\ndef haversine_distance(coord1, coord2):\n    R = 6371  # Radius of the Earth in kilometers\n    lat1, lon1 = radians(coord1[1]), radians(coord1[0])\n    lat2, lon2 = radians(coord2[1]), radians(coord2[0])\n    \n    dlon = lon2 - lon1\n    dlat = lat2 - lat1\n    \n    a = sin(dlat / 2)**2 + cos(lat1) * cos(lat2) * sin(dlon / 2)**2\n    c = 2 * atan2(sqrt(a), sqrt(1 - a))\n    \n    distance = R * c * 1000  # Convert to meters\n    return distance\n\n# Query NEW_TOWN stations\nquery = text(\"\"\"\nSELECT id, coordinate\nFROM air_quality_station\nWHERE area_type = 'NEW_TOWN'\n\"\"\")\nnew_town_stations = pd.read_sql(query, engine)\n\n# Extract coordinates of NEW_TOWN stations\nnew_town_coords = [(row['coordinate'].x, row['coordinate'].y) for _, row in new_town_stations.iterrows()]\n\n# Function to check if a grid cell is within 2000m of any NEW_TOWN station\ndef is_within_2000m(grid_lon, grid_lat):\n    grid_coord = (grid_lon, grid_lat)\n    for station_coord in new_town_coords:\n        if haversine_distance(grid_coord, station_coord) <= 2000:\n            return True\n    return False\n\n# Filter population grid cells within 2000m of any NEW_TOWN station\npop_df['within_2000m'] = pop_df.apply(lambda row: is_within_2000m(row['longitude'], row['latitude']), axis=1)\npop_near_newtown = pop_df[pop_df['within_2000m']]['population'].sum()\n\nprint(f\"Total population within 2000m of any NEW_TOWN station: {pop_near_newtown}\")",
+              "import pandas as pd\nfrom sqlalchemy import text\nfrom math import radians, sin, cos, sqrt, atan2\n\n# Define the Haversine distance function\ndef haversine_distance(coord1, coord2):\n    R = 6371  # Radius of the Earth in kilometers\n    lat1, lon1 = radians(coord1[1]), radians(coord1[0])\n    lat2, lon2 = radians(coord2[1]), radians(coord2[0])\n    \n    dlon = lon2 - lon1\n    dlat = lat2 - lat1\n    \n    a = sin(dlat / 2)**2 + cos(lat1) * cos(lat2) * sin(dlon / 2)**2\n    c = 2 * atan2(sqrt(a), sqrt(1 - a))\n    \n    distance = R * c * 1000  # Convert to meters\n    return distance\n\n# Query NEW_TOWN stations\nquery = text(\"\"\"\nSELECT id, ST_X(coordinate::geometry) as lon, ST_Y(coordinate::geometry) as lat\nFROM air_quality_station\nWHERE area_type = 'NEW_TOWN'\n\"\"\")\nnew_town_stations = pd.read_sql(query, engine)\n\n# Extract coordinates of NEW_TOWN stations\nnew_town_coords = [(row['lon'], row['lat']) for _, row in new_town_stations.iterrows()]\n\n# Function to check if a grid cell is within 2000m of any NEW_TOWN station\ndef is_within_2000m(grid_lon, grid_lat):\n    grid_coord = (grid_lon, grid_lat)\n    for station_coord in new_town_coords:\n        if haversine_distance(grid_coord, station_coord) <= 2000:\n            return True\n    return False\n\n# Filter population grid cells within 2000m of any NEW_TOWN station\npop_df['within_2000m'] = pop_df.apply(lambda row: is_within_2000m(row['longitude'], row['latitude']), axis=1)\npop_near_newtown = pop_df[pop_df['within_2000m']]['population'].sum()\n\nprint(f\"Total population within 2000m of any NEW_TOWN station: {pop_near_newtown}\")"
+            ],
+            "runtime_variables": {
+              "pop_near_newtown": "np.int64(908960)"
+            }
+          }
+        ]
+      }
+    ],
+    "metrics": {
+      "total_turns": 1,
+      "successful_turns": 1,
+      "failed_turns": 0,
+      "total_steps": 4,
+      "success_rate": 1.0,
+      "total_prompt_tokens": 23776,
+      "total_completion_tokens": 1291,
+      "total_tokens": 25067
+    }
+  }
+}

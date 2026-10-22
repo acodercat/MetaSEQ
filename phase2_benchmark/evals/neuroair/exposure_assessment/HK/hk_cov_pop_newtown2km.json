@@ -1,0 +1,25 @@
+[
+  {
+    "name": "hk_cov_pop_newtown2km",
+    "module": "evals.neuroair.exposure_assessment.HK.hk_cov_pop_newtown2km",
+    "requirements": "Union population within 2000 m of ANY NEW_TOWN station. Store pop_near_newtown (int).",
+    "conversations": [
+      {
+        "id": "hk_cov_pop_newtown2km",
+        "turns": [
+          {
+            "query": "Using the HK_population_1km grid, what is the total population living within 2000 metres of at least one air-quality station located in a NEW_TOWN area (area_type = 'NEW_TOWN')? Count each grid cell once. Return the total population.",
+            "validator": "validate_hk_cov_pop_newtown2km"
+          }
+        ]
+      }
+    ],
+    "difficulty": "hard",
+    "category": "exposure_assessment",
+    "_source": {
+      "benchmark": "hk-coverage-hard",
+      "original_query_id": "hk_cov_pop_newtown2km",
+      "verbatim": false
+    }
+  }
+]

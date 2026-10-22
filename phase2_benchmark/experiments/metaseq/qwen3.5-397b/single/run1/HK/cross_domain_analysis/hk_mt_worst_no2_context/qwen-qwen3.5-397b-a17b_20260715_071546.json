@@ -1,0 +1,48 @@
+{
+  "hk_mt_worst_no2_context": {
+    "scenario": "hk_mt_worst_no2_context",
+    "conversations": [
+      {
+        "id": "hk_mt_worst_no2_context",
+        "turns": [
+          {
+            "query": "Identify the air-quality station with the highest mean NO2 over June 2025 (all 18 stations, non-NULL hourly). For that station, return: its name; the land_use_zone land_category with the largest intersection area with a 500-metre buffer around it; and the number of 'HEALTH_CARE_INSTITUTION' sensitive areas whose centroid is within 1000 metres of it.",
+            "actual_response": "The air-quality station with the highest mean NO2 over June 2025 is **Mong Kok**. \n\nFor this station:\n- **Dominant land use category** within 500 metres: **Major Road**\n- **Number of HEALTH_CARE_INSTITUTION sensitive areas** within 1000 metres: **63**",
+            "actual_calls": [],
+            "validation_errors": [],
+            "metrics": {
+              "steps": 5,
+              "prompt_tokens": 32160,
+              "completion_tokens": 1306,
+              "total_tokens": 33466
+            },
+            "success": true,
+            "variables_not_set": false,
+            "error": null,
+            "code_snippets": [
+              "import pandas as pd\nfrom sqlalchemy import text\n\n# Query mean NO2 for all stations in June 2025\nquery = text(\"\"\"\nSELECT station_id, AVG(no2) as mean_no2\nFROM hourly_station_air_quality\nWHERE datetime >= '2025-06-01 00:00:00' \nAND datetime < '2025-07-01 00:00:00'\nAND no2 IS NOT NULL\nGROUP BY station_id\nORDER BY mean_no2 DESC\n\"\"\")\ndf = pd.read_sql(query, engine)\nprint(df.head(10))",
+              "import pandas as pd\nfrom sqlalchemy import text\n\n# Get station 14 name and coordinates\nquery = text(\"\"\"\nSELECT id, name_en, ST_X(coordinate::geometry) as lng, ST_Y(coordinate::geometry) as lat\nFROM air_quality_station\nWHERE id = 14\n\"\"\")\nstation_info = pd.read_sql(query, engine)\nprint(station_info)\n\n# Find dominant land_category within 500m buffer\nquery = text(\"\"\"\nSELECT luc.land_category, SUM(ST_Area(ST_Intersection(\n    ST_Buffer(\n        (SELECT coordinate FROM air_quality_station WHERE id = 14)::geography,\n        500\n    )::geometry,\n    luc.geometry\n))) as intersection_area\nFROM land_use_zone luc\nWHERE ST_Intersects(\n    ST_Buffer(\n        (SELECT coordinate FROM air_quality_station WHERE id = 14)::geography,\n        500\n    )::geometry,\n    luc.geometry\n)\nGROUP BY luc.land_category\nORDER BY intersection_area DESC\nLIMIT 1\n\"\"\")\nlanduse = pd.read_sql(query, engine)\nprint(landuse)\n\n# Count HEALTH_CARE_INSTITUTION sensitive areas within 1000m (centroid check)\nquery = text(\"\"\"\nSELECT COUNT(*) as health_count\nFROM sensitive_area sa\nWHERE sa.category = 'HEALTH_CARE_INSTITUTION'\nAND ST_DWithin(\n    (SELECT coordinate FROM air_quality_station WHERE id = 14)::geography,\n    ST_Centroid(sa.geometry)::geography,\n    1000\n)\n\"\"\")\nhealth = pd.read_sql(query, engine)\nprint(health)",
+              "import pandas as pd\nfrom sqlalchemy import text\n\n# Verify land use categories within 500m and their areas\nquery = text(\"\"\"\nSELECT luc.land_category, \n       ST_Area(luc.geometry) as zone_area,\n       ST_Area(ST_Intersection(\n           ST_Buffer(\n               (SELECT coordinate FROM air_quality_station WHERE id = 14)::geography,\n               500\n           )::geometry,\n           luc.geometry\n       )) as intersection_area\nFROM land_use_zone luc\nWHERE ST_Intersects(\n    ST_Buffer(\n        (SELECT coordinate FROM air_quality_station WHERE id = 14)::geography,\n        500\n    )::geometry,\n    luc.geometry\n)\nORDER BY intersection_area DESC\nLIMIT 10\n\"\"\")\nlanduse_detail = pd.read_sql(query, engine)\nprint(landuse_detail)",
+              "worst_no2_station = \"Mong Kok\"\nworst_no2_landuse = \"Major Road\"\nworst_no2_health = 63\n\nprint(f\"Station: {worst_no2_station}\")\nprint(f\"Dominant land use (500m): {worst_no2_landuse}\")\nprint(f\"Healthcare institutions (1000m): {worst_no2_health}\")"
+            ],
+            "runtime_variables": {
+              "worst_no2_station": "Mong Kok",
+              "worst_no2_landuse": "Major Road",
+              "worst_no2_health": 63
+            }
+          }
+        ]
+      }
+    ],
+    "metrics": {
+      "total_turns": 1,
+      "successful_turns": 1,
+      "failed_turns": 0,
+      "total_steps": 5,
+      "success_rate": 1.0,
+      "total_prompt_tokens": 32160,
+      "total_completion_tokens": 1306,
+      "total_tokens": 33466
+    }
+  }
+}

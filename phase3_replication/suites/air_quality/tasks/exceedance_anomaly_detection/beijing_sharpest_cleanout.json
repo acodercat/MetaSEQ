@@ -1,0 +1,23 @@
+{
+  "name": "beijing_sharpest_cleanout",
+  "difficulty": "medium",
+  "category": "exceedance_anomaly_detection",
+  "case_type": "baseline",
+  "conversations": [
+    {
+      "id": "sharpest_cleanout",
+      "turns": [
+        {
+          "query": "Across 2024, find the day on which Beijing's air cleared most sharply — the largest one-day fall in daily mean PM2.5 from the day before — and account for what you see.",
+          "validator": "validate_cleanout",
+          "stores": [
+            "cleanout_date",
+            "cleanout_drop",
+            "dispersion_change"
+          ]
+        }
+      ]
+    }
+  ],
+  "domain": "beijing"
+}

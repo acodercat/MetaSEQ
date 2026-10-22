@@ -1,0 +1,24 @@
+{
+  "name": "beijing_nocturnal_titration",
+  "difficulty": "medium",
+  "category": "comparative_assessment",
+  "case_type": "baseline",
+  "conversations": [
+    {
+      "id": "nocturnal_titration",
+      "turns": [
+        {
+          "query": "For 2023, contrast Beijing's ozone between the urban stations and the background site in two windows of the day: the five afternoon hours stamped 12:00 to 16:00 and the four small hours stamped 02:00 to 05:00, both windows including the hour that ends them. Report the four means, and explain the pattern they form.",
+          "validator": "validate_titration_contrast",
+          "stores": [
+            "day_urban_o3",
+            "day_background_o3",
+            "night_urban_o3",
+            "night_background_o3"
+          ]
+        }
+      ]
+    }
+  ],
+  "domain": "beijing"
+}

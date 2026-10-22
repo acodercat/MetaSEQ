@@ -1,0 +1,44 @@
+{
+  "hk_distance_pollution_relationship": {
+    "scenario": "hk_distance_pollution_relationship",
+    "conversations": [
+      {
+        "id": "distance_pollution",
+        "turns": [
+          {
+            "query": "On October 5, 2025, compute the daily average PM2.5 for each air quality monitoring station and the pairwise distances between all station pairs. What is the average absolute PM2.5 difference for station pairs less than 5 km apart compared to station pairs more than 15 km apart? Return both values rounded to 1 decimal place.",
+            "actual_response": "avg_diff_under_5km = 4.4\n\navg_diff_over_15km = 2.4",
+            "actual_calls": [],
+            "validation_errors": [],
+            "metrics": {
+              "steps": 2,
+              "prompt_tokens": 10992,
+              "completion_tokens": 783,
+              "total_tokens": 11775
+            },
+            "success": true,
+            "variables_not_set": false,
+            "error": null,
+            "code_snippets": [
+              "import pandas as pd\nfrom sqlalchemy import text\n\n# Count hourly readings for the target day before aggregation\ncount_query = text(\"\"\"\nSELECT COUNT(*) AS n_readings\nFROM hourly_station_air_quality\nWHERE datetime >= TIMESTAMP '2025-10-05 00:00:00'\n  AND datetime <  TIMESTAMP '2025-10-06 00:00:00'\n  AND pm2_5 IS NOT NULL\n\"\"\")\nn_readings = int(pd.read_sql(count_query, engine)[\"n_readings\"].iloc[0])\n\n# Compute daily station PM2.5 means, all station-pair distances, and grouped absolute differences\nquery = text(\"\"\"\nWITH daily_pm AS (\n    SELECT station_id, AVG(pm2_5) AS avg_pm25\n    FROM hourly_station_air_quality\n    WHERE datetime >= TIMESTAMP '2025-10-05 00:00:00'\n      AND datetime <  TIMESTAMP '2025-10-06 00:00:00'\n      AND pm2_5 IS NOT NULL\n    GROUP BY station_id\n),\npairs AS (\n    SELECT\n        a.id AS station_a,\n        b.id AS station_b,\n        ST_Distance(a.coordinate, b.coordinate) / 1000.0 AS distance_km,\n        ABS(dpa.avg_pm25 - dpb.avg_pm25) AS abs_diff\n    FROM air_quality_station a\n    JOIN air_quality_station b ON a.id < b.id\n    JOIN daily_pm dpa ON dpa.station_id = a.id\n    JOIN daily_pm dpb ON dpb.station_id = b.id\n)\nSELECT\n    COUNT(*) FILTER (WHERE distance_km < 5) AS n_pairs_under_5km,\n    AVG(abs_diff) FILTER (WHERE distance_km < 5) AS avg_diff_under_5km,\n    COUNT(*) FILTER (WHERE distance_km > 15) AS n_pairs_over_15km,\n    AVG(abs_diff) FILTER (WHERE distance_km > 15) AS avg_diff_over_15km,\n    COUNT(*) AS n_pairs_total\nFROM pairs\n\"\"\")\nres = pd.read_sql(query, engine).iloc[0]\n\navg_diff_under_5km = round(float(res[\"avg_diff_under_5km\"]), 1)\navg_diff_over_15km = round(float(res[\"avg_diff_over_15km\"]), 1)\n\nprint({\n    \"target_day_pm25_readings_count\": n_readings,\n    \"station_pairs_total\": int(res[\"n_pairs_total\"]),\n    \"pairs_under_5km\": int(res[\"n_pairs_under_5km\"]),\n    \"pairs_over_15km\": int(res[\"n_pairs_over_15km\"]),\n    \"avg_diff_under_5km\": avg_diff_under_5km,\n    \"avg_diff_over_15km\": avg_diff_over_15km\n})"
+            ],
+            "runtime_variables": {
+              "avg_diff_under_5km": 4.4,
+              "avg_diff_over_15km": 2.4
+            }
+          }
+        ]
+      }
+    ],
+    "metrics": {
+      "total_turns": 1,
+      "successful_turns": 1,
+      "failed_turns": 0,
+      "total_steps": 2,
+      "success_rate": 1.0,
+      "total_prompt_tokens": 10992,
+      "total_completion_tokens": 783,
+      "total_tokens": 11775
+    }
+  }
+}

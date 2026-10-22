@@ -1,0 +1,26 @@
+{
+  "name": "hk_partial_column_water_mass",
+  "difficulty": "hard",
+  "category": "data_retrieval",
+  "case_type": "baseline",
+  "conversations": [
+    {
+      "id": "hk_partial_column_water_mass",
+      "turns": [
+        {
+          "query": "Audit King's Park's 2025 morning 850–500 hPa water-vapour burden. Identify the largest layer-water launch; report its amount, supplied surface–500 hPa water amount, profile-level count and eligible-launch count. Can either inventory establish total-column water or realised rainfall?",
+          "validator": "validate_evidence",
+          "stores": [
+            "partial_water_launches",
+            "largest_partial_water_launch",
+            "partial_water_mm",
+            "selected_column_water_mm",
+            "selected_water_profile_levels"
+          ],
+          "evaluation_tier": "execution"
+        }
+      ]
+    }
+  ],
+  "domain": "hk"
+}

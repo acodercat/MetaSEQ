@@ -1,0 +1,37 @@
+{
+  "name": "beijing_aerosol_compositional_closure",
+  "difficulty": "hard",
+  "category": "statistical_characterization",
+  "case_type": "baseline",
+  "conversations": [
+    {
+      "id": "compositional_closure",
+      "turns": [
+        {
+          "query": "A colleague interprets anticorrelated dust and black-carbon shares as competing sources. Using Beijing's 2020-2025 modelled aerosol column, quantify their Pearson associations as amounts and as shares recomputed from reported AOD amounts, report the sample size, and assess that interpretation.",
+          "validator": "validate_harder_turn_1",
+          "stores": [
+            "dust_bc_amount_sign",
+            "dust_bc_share_sign",
+            "colleague_reading_supported",
+            "dust_bc_amount_r",
+            "dust_bc_share_r",
+            "composition_records"
+          ],
+          "evaluation_tier": "execution"
+        },
+        {
+          "query": "Across the five aerosol species, count negative pairwise associations for amounts and shares. Also quantify the Aitchison variation between dust and black carbon on their positive records. Does changing the representation identify a physical competition or common source?",
+          "validator": "validate_harder_turn_2",
+          "stores": [
+            "negative_amount_pairs",
+            "negative_share_pairs",
+            "dust_bc_logratio_variance",
+            "positive_logratio_records"
+          ]
+        }
+      ]
+    }
+  ],
+  "domain": "beijing"
+}

@@ -1,0 +1,47 @@
+{
+  "hk_hard_pm25_peak_day_station_count": {
+    "scenario": "hk_hard_pm25_peak_day_station_count",
+    "conversations": [
+      {
+        "id": "hk_hard_pm25_peak_day_station_count",
+        "turns": [
+          {
+            "query": "For each station_type separately (GENERAL and ROADSIDE), during June 2025 inclusive, first compute each station's daily maximum PM2.5 over non-NULL hourly pm2_5 values for each calendar date. Then, for each station, count the number of dates with daily maximum PM2.5 >= 35.0. Finally, for each station_type compute the average of these station-level counts, giving each station equal weight. Return roadside_avg_peak_days, general_avg_peak_days, and roadside_minus_general rounded to 6 decimals. Do not average station-day indicators over all station-day rows unless it yields the same station weighting, and do not count hourly exceedance rows.",
+            "actual_response": "The analysis has been completed. Here are the final results:\n\n- Roadside Average Peak Days: 4.666667\n- General Average Peak Days: 1.200000\n- Roadside Minus General: 3.466667\n\nThese values are rounded to 6 decimal places as required.",
+            "actual_calls": [],
+            "validation_errors": [
+              "Custom validator failed: Custom validator failed: general_avg_peak_days=1.2, expected ~0.4 (tol 1e-06); roadside_minus_general=3.467, expected ~4.267 (tol 1e-06)"
+            ],
+            "metrics": {
+              "steps": 2,
+              "prompt_tokens": 11329,
+              "completion_tokens": 589,
+              "total_tokens": 11918
+            },
+            "success": false,
+            "variables_not_set": false,
+            "error": null,
+            "code_snippets": [
+              "import pandas as pd\nfrom sqlalchemy import text\n\n# Define the query to get daily maximum PM2.5 for each station in June 2025\nquery = text(\"\"\"\nWITH daily_max_pm2_5 AS (\n    SELECT\n        station_id,\n        DATE(datetime) AS date,\n        MAX(pm2_5) AS daily_max_pm2_5\n    FROM\n        hourly_station_air_quality\n    WHERE\n        datetime >= '2025-06-01 00:00:00' AND datetime < '2025-07-01 00:00:00'\n        AND pm2_5 IS NOT NULL\n    GROUP BY\n        station_id, DATE(datetime)\n),\npeak_days AS (\n    SELECT\n        station_id,\n        COUNT(*) AS peak_days\n    FROM\n        daily_max_pm2_5\n    WHERE\n        daily_max_pm2_5 >= 35.0\n    GROUP BY\n        station_id\n),\nstation_type_avg AS (\n    SELECT\n        aqs.station_type,\n        AVG(peak_days) AS avg_peak_days\n    FROM\n        peak_days pd\n    JOIN\n        air_quality_station aqs ON pd.station_id = aqs.id\n    GROUP BY\n        aqs.station_type\n)\nSELECT\n    station_type,\n    avg_peak_days\nFROM\n    station_type_avg\n\"\"\")\n\n# Execute the query and load the results into a DataFrame\ndf = pd.read_sql(query, engine)\n\n# Extract the results for roadside and general stations\nroadside_avg_peak_days = df.loc[df['station_type'] == 'ROADSIDE', 'avg_peak_days'].values[0]\ngeneral_avg_peak_days = df.loc[df['station_type'] == 'GENERAL', 'avg_peak_days'].values[0]\n\n# Compute the difference\nroadside_minus_general = round(roadside_avg_peak_days - general_avg_peak_days, 6)\n\n# Assign the results to the provided variables\nroadside_avg_peak_days = round(roadside_avg_peak_days, 6)\ngeneral_avg_peak_days = round(general_avg_peak_days, 6)\nroadside_minus_general = round(roadside_minus_general, 6)\n\n# Print the results for verification\nprint(f\"Roadside Average Peak Days: {roadside_avg_peak_days}\")\nprint(f\"General Average Peak Days: {general_avg_peak_days}\")\nprint(f\"Roadside Minus General: {roadside_minus_general}\")"
+            ],
+            "runtime_variables": {
+              "roadside_avg_peak_days": 4.666667,
+              "general_avg_peak_days": 1.2,
+              "roadside_minus_general": 3.466667
+            }
+          }
+        ]
+      }
+    ],
+    "metrics": {
+      "total_turns": 1,
+      "successful_turns": 0,
+      "failed_turns": 1,
+      "total_steps": 2,
+      "success_rate": 0.0,
+      "total_prompt_tokens": 11329,
+      "total_completion_tokens": 589,
+      "total_tokens": 11918
+    }
+  }
+}

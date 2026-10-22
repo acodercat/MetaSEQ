@@ -1,0 +1,24 @@
+{
+  "name": "hk_pm25_forecast_leakage",
+  "difficulty": "hard",
+  "category": "analytical_advisory",
+  "case_type": "baseline",
+  "conversations": [
+    {
+      "id": "pm25_forecast_leakage",
+      "turns": [
+        {
+          "query": "For a day-ahead Hong Kong PM2.5 forecast using general stations, establish the harder reference bar over 2025. The team proposes adding observed 2025 to the calendar-date climatology's training record: refit it, compare its score, and explain what the change establishes about forecast skill.",
+          "validator": "validate_evidence_and_conclusion_full_review",
+          "stores": [
+            "harder_reference",
+            "bar_mae",
+            "refit_scores_better",
+            "refit_improvement_is_skill"
+          ]
+        }
+      ]
+    }
+  ],
+  "domain": "hk"
+}

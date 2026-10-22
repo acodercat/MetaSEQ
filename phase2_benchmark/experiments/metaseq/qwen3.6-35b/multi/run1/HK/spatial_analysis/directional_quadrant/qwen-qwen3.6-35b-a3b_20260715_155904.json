@@ -1,0 +1,54 @@
+{
+  "hk_directional_quadrant": {
+    "scenario": "hk_directional_quadrant",
+    "conversations": [
+      {
+        "id": "quadrant_from_central",
+        "turns": [
+          {
+            "query": "From the Central air quality monitoring station, classify all other air quality monitoring stations into four quadrants (NE/NW/SE/SW) based on their relative latitude and longitude. How many stations fall into each quadrant?",
+            "actual_response": "\n\nVERIFY ne_count: stored=int | independent=8 | final=8\nVERIFY nw_count: stored=int | independent=7 | final=7\nVERIFY se_count: stored=int | independent=2 | final=2\nVERIFY sw_count: stored=int | independent=0 | final=0\n\nne_count = 8\nnw_count = 7\nse_count = 2\nsw_count = 0\nprint(f\"ne_count: {ne_count}\")\nprint(f\"nw_count: {nw_count}\")\nprint(f\"se_count: {se_count}\")\nprint(f\"sw_count: {sw_count}\")",
+            "actual_calls": [],
+            "validation_errors": [],
+            "metrics": {
+              "steps": 12,
+              "prompt_tokens": 89258,
+              "completion_tokens": 10536,
+              "total_tokens": 99794
+            },
+            "success": true,
+            "variables_not_set": false,
+            "error": null,
+            "code_snippets": [
+              "import pandas as pd\nfrom sqlalchemy import text\n\n# Fetch all air quality monitoring stations with their coordinates\nquery = text(\"\"\"\nSELECT id, name_en, \n       ST_Y(coordinate::geometry) as latitude, \n       ST_X(coordinate::geometry) as longitude\nFROM air_quality_station\nORDER BY id\n\"\"\")\nstations_df = pd.read_sql(query, engine)\nprint(\"All air quality monitoring stations:\")\nprint(stations_df.to_string(index=False))\nprint(f\"\\nTotal stations: {len(stations_df)}\")\n\n# Identify the Central station (id=16)\ncentral_station = stations_df[stations_df['name_en'] == 'Central']\nprint(f\"\\nCentral station: {central_station[['id', 'name_en', 'latitude', 'longitude']].to_string(index=False)}\")\n\nif len(central_station) == 0:\n    print(\"ERROR: Central station not found!\")\nelse:\n    central_lat = central_station['latitude'].values[0]\n    central_lon = central_station['longitude'].values[0]\n    print(f\"Central station coordinates: lat={central_lat}, lon={central_lon}\")\n    \n    # Classify each station into quadrants relative to Central station\n    # NE: lat > central_lat AND lon > central_lon\n    # NW: lat > central_lat AND lon < central_lon\n    # SE: lat < central_lat AND lon > central_lon\n    # SW: lat < central_lat AND lon < central_lon\n    \n    stations_df['quadrant'] = 'On Reference'  # default\n    \n    mask_ne = (stations_df['latitude'] > central_lat) & (stations_df['longitude'] > central_lon)\n    mask_nw = (stations_df['latitude'] > central_lat) & (stations_df['longitude'] < central_lon)\n    mask_se = (stations_df['latitude'] < central_lat) & (stations_df['longitude'] > central_lon)\n    mask_sw = (stations_df['latitude'] < central_lat) & (stations_df['longitude'] < central_lon)\n    \n    stations_df.loc[mask_ne, 'quadrant'] = 'NE'\n    stations_df.loc[mask_nw, 'quadrant'] = 'NW'\n    stations_df.loc[mask_se, 'quadrant'] = 'SE'\n    stations_df.loc[mask_sw, 'quadrant'] = 'SW'\n    \n    # Count stations in each quadrant (excluding the central station itself)\n    quadrant_counts = stations_df[stations_df['quadrant'] != 'On Reference']['quadrant'].value_counts()\n    \n    ne_count = int(quadrant_counts.get('NE', 0))\n    nw_count = int(quadrant_counts.get('NW', 0))\n    se_count = int(quadrant_counts.get('SE', 0))\n    sw_count = int(quadrant_counts.get('SW', 0))\n    \n    print(\"\\nStation classification:\")\n    print(stations_df[['id', 'name_en', 'latitude', 'longitude', 'quadrant']].to_string(index=False))\n    \n    print(f\"\\nQuadrant counts (excluding central station):\")\n    print(f\"NE: {ne_count}\")\n    print(f\"NW: {nw_count}\")\n    print(f\"SE: {se_count}\")\n    print(f\"SW: {sw_count}\")\n    print(f\"Total classified: {ne_count + nw_count + se_count + sw_count}\")",
+              "# Store the quadrant counts in the required variables\nne_count = 8\nnw_count = 7\nse_count = 2\nsw_count = 0\n\nprint(f\"Final quadrant counts stored:\")\nprint(f\"ne_count = {ne_count}\")\nprint(f\"nw_count = {nw_count}\")\nprint(f\"se_count = {se_count}\")\nprint(f\"sw_count = {sw_count}\")",
+              "# The intermediate variables are already computed in the shared runtime.\n# Let me inspect them to extract the quadrant counts properly.\n\nprint(\"Central station:\")\nprint(central_station)\nprint(\"\\nCentral lat/lon:\")\nprint(f\"lat: {central_lat}, lon: {central_lon}\")\n\nprint(\"\\nStations DataFrame:\")\nprint(stations_df)\n\nprint(\"\\nQuadrant masks:\")\nprint(f\"NE mask: {mask_ne.tolist()}\")\nprint(f\"NW mask: {mask_nw.tolist()}\")\nprint(f\"SE mask: {mask_se.tolist()}\")\nprint(f\"SW mask: {mask_sw.tolist()}\")\n\nprint(\"\\nQuadrant counts:\")\nprint(quadrant_counts)\n\n# Extract counts from the quadrant_counts series\nne_count = int(quadrant_counts.get('NE', 0))\nnw_count = int(quadrant_counts.get('NW', 0))\nse_count = int(quadrant_counts.get('SE', 0))\nsw_count = int(quadrant_counts.get('SW', 0))\n\nprint(f\"\\nFinal counts - NE: {ne_count}, NW: {nw_count}, SE: {se_count}, SW: {sw_count}\")",
+              "# Assign the final quadrant counts based on the computed intermediate variables\nne_count = int(quadrant_counts.get('NE', 0))\nnw_count = int(quadrant_counts.get('NW', 0))\nse_count = int(quadrant_counts.get('SE', 0))\nsw_count = int(quadrant_counts.get('SW', 0))\n\nprint(f\"ne_count: {ne_count}\")\nprint(f\"nw_count: {nw_count}\")\nprint(f\"se_count: {se_count}\")\nprint(f\"sw_count: {sw_count}\")",
+              "ne_count = 8\nnw_count = 7\nse_count = 2\nsw_count = 0\n\nprint(f\"ne_count: {ne_count}\")\nprint(f\"nw_count: {nw_count}\")\nprint(f\"se_count: {se_count}\")\nprint(f\"sw_count: {sw_count}\")",
+              "ne_count = 8\nnw_count = 7\nse_count = 2\nsw_count = 0\n\nprint(f\"ne_count: {ne_count}\")\nprint(f\"nw_count: {nw_count}\")\nprint(f\"se_count: {se_count}\")\nprint(f\"sw_count: {sw_count}\")",
+              "ne_count = 8\nnw_count = 7\nse_count = 2\nsw_count = 0\n\nprint(f\"ne_count: {ne_count}\")\nprint(f\"nw_count: {nw_count}\")\nprint(f\"se_count: {se_count}\")\nprint(f\"sw_count: {sw_count}\")",
+              "ne_count = 8\nnw_count = 7\nse_count = 2\nsw_count = 0\n\nprint(f\"ne_count: {ne_count}\")\nprint(f\"nw_count: {nw_count}\")\nprint(f\"se_count: {se_count}\")\nprint(f\"sw_count: {sw_count}\")",
+              "from sqlalchemy import text\nimport pandas as pd\n\n# Get all air quality stations with their coordinates\nquery = text(\"\"\"\nSELECT id, name_en, \n       ST_X(coordinate::geometry) as longitude, \n       ST_Y(coordinate::geometry) as latitude\nFROM air_quality_station\nORDER BY id\n\"\"\")\n\nstations_df = pd.read_sql(query, engine)\nprint(\"All stations:\")\nprint(stations_df)\n\n# Find Central station coordinates\ncentral_station = stations_df[stations_df['name_en'] == 'Central']\nprint(f\"\\nCentral station: {central_station[['id', 'name_en', 'latitude', 'longitude']].to_string(index=False)}\")\n\ncentral_lat = central_station['latitude'].values[0]\ncentral_lon = central_station['longitude'].values[0]\nprint(f\"\\nCentral station coordinates: lat={central_lat}, lon={central_lon}\")\n\n# Classify other stations into quadrants\nother_stations = stations_df[stations_df['name_en'] != 'Central'].copy()\nother_stations['quadrant'] = ''\n\nfor idx, row in other_stations.iterrows():\n    if row['longitude'] > central_lon and row['latitude'] > central_lat:\n        other_stations.at[idx, 'quadrant'] = 'NE'\n    elif row['longitude'] < central_lon and row['latitude'] > central_lat:\n        other_stations.at[idx, 'quadrant'] = 'NW'\n    elif row['longitude'] > central_lon and row['latitude'] < central_lat:\n        other_stations.at[idx, 'quadrant'] = 'SE'\n    elif row['longitude'] < central_lon and row['latitude'] < central_lat:\n        other_stations.at[idx, 'quadrant'] = 'SW'\n\nprint(\"\\nStations classified by quadrant:\")\nprint(other_stations[['name_en', 'latitude', 'longitude', 'quadrant']].to_string(index=False))\n\n# Count stations in each quadrant\nquadrant_counts = other_stations['quadrant'].value_counts()\nprint(\"\\nQuadrant counts:\")\nprint(quadrant_counts)\n\nne_count = int(quadrant_counts.get('NE', 0))\nnw_count = int(quadrant_counts.get('NW', 0))\nse_count = int(quadrant_counts.get('SE', 0))\nsw_count = int(quadrant_counts.get('SW', 0))\n\nprint(f\"\\nFinal counts: NE={ne_count}, NW={nw_count}, SE={se_count}, SW={sw_count}\")"
+            ],
+            "runtime_variables": {
+              "ne_count": 8,
+              "nw_count": 7,
+              "se_count": 2,
+              "sw_count": 0
+            }
+          }
+        ]
+      }
+    ],
+    "metrics": {
+      "total_turns": 1,
+      "successful_turns": 1,
+      "failed_turns": 0,
+      "total_steps": 12,
+      "success_rate": 1.0,
+      "total_prompt_tokens": 89258,
+      "total_completion_tokens": 10536,
+      "total_tokens": 99794
+    }
+  }
+}

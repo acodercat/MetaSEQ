@@ -1,0 +1,24 @@
+{
+  "name": "beijing_aerosol_beer_lambert_mean",
+  "difficulty": "medium",
+  "category": "cross_domain_analysis",
+  "case_type": "baseline",
+  "conversations": [
+    {
+      "id": "beijing_aerosol_beer_lambert_mean",
+      "turns": [
+        {
+          "query": "Audit Beijing's 2025 aerosol-only vertical 550-nm beam transmittance: report its mean, minimum, minimum's timestamp and sample count. Can mean optical depth reproduce the mean transmittance, and can these diagnostics establish absorption, broadband solar loss or surface particulate exposure?",
+          "validator": "validate_evidence",
+          "stores": [
+            "aerosol_transmission_samples",
+            "mean_aerosol_transmission",
+            "strongest_attenuation_timestamp",
+            "minimum_aerosol_transmission"
+          ]
+        }
+      ]
+    }
+  ],
+  "domain": "beijing"
+}

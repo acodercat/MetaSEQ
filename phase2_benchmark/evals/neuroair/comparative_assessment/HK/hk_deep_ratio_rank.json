@@ -1,0 +1,25 @@
+[
+  {
+    "name": "hk_deep_ratio_rank",
+    "module": "evals.neuroair.comparative_assessment.HK.hk_deep_ratio_rank",
+    "requirements": "Deep chain: per-station rush-mean / overnight-mean NO2 ratio for stations {14,16,17} over June 2025, then argmax. Store top_ratio_station_id (int) and top_ratio (float, 3dp).",
+    "conversations": [
+      {
+        "id": "hk_deep_ratio_rank",
+        "turns": [
+          {
+            "query": "Among the three roadside stations Mong Kok (station_id 14), Central (station_id 16), and Causeway Bay (station_id 17), over the whole of June 2025 (2025-06-01 to 2025-06-30 inclusive), compute for EACH station the ratio of its mean NO2 during the exact hours 07, 08, 09 to its mean NO2 during the exact overnight hours 00, 01, 02, 03, 04. Identify which of the three stations has the LARGEST such ratio. Return that station's station_id and the ratio.",
+            "validator": "validate_hk_deep_ratio_rank"
+          }
+        ]
+      }
+    ],
+    "difficulty": "deep",
+    "category": "comparative_assessment",
+    "_source": {
+      "benchmark": "Neuro-Air-MetaSEQ-deep",
+      "original_query_id": "hk_deep_ratio_rank",
+      "verbatim": false
+    }
+  }
+]

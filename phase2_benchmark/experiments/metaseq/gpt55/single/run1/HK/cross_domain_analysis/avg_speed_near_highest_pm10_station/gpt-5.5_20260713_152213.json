@@ -1,0 +1,43 @@
+{
+  "hk_avg_speed_near_highest_pm10_station": {
+    "scenario": "hk_avg_speed_near_highest_pm10_station",
+    "conversations": [
+      {
+        "id": "avg_speed_near_highest_pm10_station",
+        "turns": [
+          {
+            "query": "Identify the air quality monitoring station that recorded the highest PM10 concentration at 14:00:00 on October 5, 2025. What was the average recorded traffic speed across all road segments within 500 meters of this station at that exact same time (rounded to 1 decimal place)?",
+            "actual_response": "The air quality monitoring station with the highest PM10 concentration at 14:00 on October 5, 2025 was Causeway Bay, with PM10 of 35.7 \u00b5g/m\u00b3.\n\nAcross 84 road-segment traffic records within 500 meters of that station at the same time, the average recorded traffic speed was 53.3 km/h.",
+            "actual_calls": [],
+            "validation_errors": [],
+            "metrics": {
+              "steps": 2,
+              "prompt_tokens": 10735,
+              "completion_tokens": 807,
+              "total_tokens": 11542
+            },
+            "success": true,
+            "variables_not_set": false,
+            "error": null,
+            "code_snippets": [
+              "import pandas as pd\nfrom sqlalchemy import text\n\nts = \"2025-10-05 14:00:00\"\n\n# Identify the station with the highest PM10 at the specified hour\nq_station = text(\"\"\"\nSELECT s.id, s.name_en, h.pm10\nFROM hourly_station_air_quality h\nJOIN air_quality_station s ON s.id = h.station_id\nWHERE h.datetime = :ts AND h.pm10 IS NOT NULL\nORDER BY h.pm10 DESC\nLIMIT 1\n\"\"\")\ntop_station = pd.read_sql(q_station, engine, params={\"ts\": ts})\n\nif top_station.empty:\n    avg_speed_near_pm10 = None\n    print(\"No PM10 readings found for the specified time.\")\nelse:\n    station_id = int(top_station.loc[0, \"id\"])\n    station_name = top_station.loc[0, \"name_en\"]\n    max_pm10 = float(top_station.loc[0, \"pm10\"])\n\n    # Count traffic records within 500m at the same hour before aggregation\n    q_count = text(\"\"\"\n    SELECT COUNT(*) AS n_segments\n    FROM hourly_road_segment_traffic t\n    JOIN road_segment r ON r.id = t.road_segment_id\n    JOIN air_quality_station s ON s.id = :station_id\n    WHERE t.datetime = :ts\n      AND t.speed IS NOT NULL\n      AND ST_DWithin(r.geometry::geography, s.coordinate, 500)\n    \"\"\")\n    n_segments = int(pd.read_sql(q_count, engine, params={\"station_id\": station_id, \"ts\": ts}).loc[0, \"n_segments\"])\n\n    # Aggregate average traffic speed within 500m at the same hour\n    q_avg = text(\"\"\"\n    SELECT AVG(t.speed)::float AS avg_speed\n    FROM hourly_road_segment_traffic t\n    JOIN road_segment r ON r.id = t.road_segment_id\n    JOIN air_quality_station s ON s.id = :station_id\n    WHERE t.datetime = :ts\n      AND t.speed IS NOT NULL\n      AND ST_DWithin(r.geometry::geography, s.coordinate, 500)\n    \"\"\")\n    avg_val = pd.read_sql(q_avg, engine, params={\"station_id\": station_id, \"ts\": ts}).loc[0, \"avg_speed\"]\n    avg_speed_near_pm10 = None if pd.isna(avg_val) else round(float(avg_val), 1)\n\n    print(f\"Station with highest PM10: {station_name}\")\n    print(f\"Highest PM10 at {ts}: {max_pm10:.1f} \u00b5g/m\u00b3\")\n    print(f\"Traffic records within 500 m at same time: {n_segments}\")\n    print(f\"Average traffic speed within 500 m: {avg_speed_near_pm10}\")"
+            ],
+            "runtime_variables": {
+              "avg_speed_near_pm10": 53.3
+            }
+          }
+        ]
+      }
+    ],
+    "metrics": {
+      "total_turns": 1,
+      "successful_turns": 1,
+      "failed_turns": 0,
+      "total_steps": 2,
+      "success_rate": 1.0,
+      "total_prompt_tokens": 10735,
+      "total_completion_tokens": 807,
+      "total_tokens": 11542
+    }
+  }
+}

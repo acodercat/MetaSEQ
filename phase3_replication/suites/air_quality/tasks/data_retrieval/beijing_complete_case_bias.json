@@ -1,0 +1,31 @@
+{
+  "name": "beijing_complete_case_bias",
+  "difficulty": "medium",
+  "category": "data_retrieval",
+  "case_type": "trap",
+  "conversations": [
+    {
+      "id": "complete_case_bias",
+      "turns": [
+        {
+          "query": "For 2020 and for 2024, does restricting Beijing's annual mean PM2.5 to the hours in which all twelve stations reported change it, and in which direction? Say what the two results imply about restricting a network series to fully reported hours.",
+          "validator": "validate_complete_case_delta",
+          "stores": [
+            "restriction_direction_2020",
+            "restriction_direction_2024",
+            "restriction_has_a_fixed_direction"
+          ]
+        },
+        {
+          "query": "Now count how many hours meet that all-twelve requirement in 2024 and in 2025, and say what those counts mean for adopting it as a standing rule.",
+          "validator": "validate_complete_hours",
+          "stores": [
+            "complete_hours_2024",
+            "complete_hours_2025"
+          ]
+        }
+      ]
+    }
+  ],
+  "domain": "beijing"
+}

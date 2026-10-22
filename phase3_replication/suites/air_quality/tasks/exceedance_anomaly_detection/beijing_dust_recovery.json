@@ -1,0 +1,29 @@
+{
+  "name": "beijing_dust_recovery",
+  "difficulty": "hard",
+  "category": "exceedance_anomaly_detection",
+  "case_type": "baseline",
+  "conversations": [
+    {
+      "id": "dust_recovery",
+      "turns": [
+        {
+          "query": "Network-mean hourly PM10 across the twelve stations peaked on the morning of 15 March 2021. Report the first hour after that peak at which the network-mean hourly PM10 dropped below 150 ug/m3.",
+          "validator": "validate_first_crossing",
+          "stores": [
+            "first_crossing_time"
+          ]
+        },
+        {
+          "query": "When was the storm over? Give the hour from which Beijing's air can be said to have recovered, and describe what the record did between the first crossing and then.",
+          "validator": "validate_recovery_time",
+          "stores": [
+            "recovery_time"
+          ],
+          "evaluation_tier": "execution"
+        }
+      ]
+    }
+  ],
+  "domain": "beijing"
+}

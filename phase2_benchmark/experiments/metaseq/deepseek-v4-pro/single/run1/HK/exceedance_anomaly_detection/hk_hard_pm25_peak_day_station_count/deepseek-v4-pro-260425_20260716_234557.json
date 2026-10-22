@@ -1,0 +1,46 @@
+{
+  "hk_hard_pm25_peak_day_station_count": {
+    "scenario": "hk_hard_pm25_peak_day_station_count",
+    "conversations": [
+      {
+        "id": "hk_hard_pm25_peak_day_station_count",
+        "turns": [
+          {
+            "query": "For each station_type separately (GENERAL and ROADSIDE), during June 2025 inclusive, first compute each station's daily maximum PM2.5 over non-NULL hourly pm2_5 values for each calendar date. Then, for each station, count the number of dates with daily maximum PM2.5 >= 35.0. Finally, for each station_type compute the average of these station-level counts, giving each station equal weight. Return roadside_avg_peak_days, general_avg_peak_days, and roadside_minus_general rounded to 6 decimals. Do not average station-day indicators over all station-day rows unless it yields the same station weighting, and do not count hourly exceedance rows.",
+            "actual_response": "Based on the analysis of June 2025 hourly PM2.5 data across all air quality monitoring stations in Hong Kong:\n\n- **roadside_avg_peak_days = 4.666667** \u2014 Across the 3 ROADSIDE stations (Mong Kok, Central, Causeway Bay), the average number of days in June 2025 where the daily maximum PM2.5 reached or exceeded 35.0 \u00b5g/m\u00b3 was approximately 4.67 days. Central roadside station alone had 11 such days, driving the average up substantially.\n\n- **general_avg_peak_days = 0.400000** \u2014 Across the 15 GENERAL stations, the average number of such peak days was only 0.40. Most general stations recorded zero peak days, with only 5 stations (Southern, Tung Chung, Sham Shui Po, Central/Western, and Tsuen Wan) recording 1\u20132 days each.\n\n- **roadside_minus_general = 4.266667** \u2014 Roadside stations experienced, on average, about 4.27 more peak PM2.5 days than general stations during June 2025, highlighting the significantly higher exposure to elevated particulate matter at roadside locations compared to general ambient monitoring sites.",
+            "actual_calls": [],
+            "validation_errors": [],
+            "metrics": {
+              "steps": 3,
+              "prompt_tokens": 18357,
+              "completion_tokens": 886,
+              "total_tokens": 19243
+            },
+            "success": true,
+            "variables_not_set": false,
+            "error": null,
+            "code_snippets": [
+              "import pandas as pd\nfrom sqlalchemy import text\n\n# Step 1: Get daily max PM2.5 per station per date for June 2025\nquery = text(\"\"\"\nSELECT \n    aqs.station_type,\n    hsaq.station_id,\n    hsaq.datetime::date AS date,\n    MAX(hsaq.pm2_5) AS daily_max_pm2_5\nFROM hourly_station_air_quality hsaq\nJOIN air_quality_station aqs ON hsaq.station_id = aqs.id\nWHERE hsaq.datetime >= '2025-06-01 00:00:00'\n  AND hsaq.datetime < '2025-07-01 00:00:00'\n  AND hsaq.pm2_5 IS NOT NULL\nGROUP BY aqs.station_type, hsaq.station_id, hsaq.datetime::date\n\"\"\")\ndf = pd.read_sql(query, engine)\n\n# Step 2: For each station, count dates where daily_max_pm2_5 >= 35.0\ndf['peak_day'] = (df['daily_max_pm2_5'] >= 35.0).astype(int)\nstation_counts = df.groupby(['station_type', 'station_id'])['peak_day'].sum().reset_index()\nstation_counts.columns = ['station_type', 'station_id', 'num_peak_days']\n\n# Step 3: Average across stations within each station_type\navg_by_type = station_counts.groupby('station_type')['num_peak_days'].mean()\nprint(\"Station-level peak day counts:\")\nprint(station_counts)\nprint(\"\\nAverages by station_type:\")\nprint(avg_by_type)\n\nroadside_avg_peak_days = round(avg_by_type.get('ROADSIDE', 0.0), 6)\ngeneral_avg_peak_days = round(avg_by_type.get('GENERAL', 0.0), 6)\nroadside_minus_general = round(roadside_avg_peak_days - general_avg_peak_days, 6)\n\nprint(f\"\\nroadside_avg_peak_days: {roadside_avg_peak_days}\")\nprint(f\"general_avg_peak_days: {general_avg_peak_days}\")\nprint(f\"roadside_minus_general: {roadside_minus_general}\")",
+              "# Store final results in the required variables\nroadside_avg_peak_days = 4.666667\ngeneral_avg_peak_days = 0.4\nroadside_minus_general = 4.266667\n\nprint(f\"roadside_avg_peak_days = {roadside_avg_peak_days}\")\nprint(f\"general_avg_peak_days = {general_avg_peak_days}\")\nprint(f\"roadside_minus_general = {roadside_minus_general}\")"
+            ],
+            "runtime_variables": {
+              "roadside_avg_peak_days": 4.666667,
+              "general_avg_peak_days": 0.4,
+              "roadside_minus_general": 4.266667
+            }
+          }
+        ]
+      }
+    ],
+    "metrics": {
+      "total_turns": 1,
+      "successful_turns": 1,
+      "failed_turns": 0,
+      "total_steps": 3,
+      "success_rate": 1.0,
+      "total_prompt_tokens": 18357,
+      "total_completion_tokens": 886,
+      "total_tokens": 19243
+    }
+  }
+}

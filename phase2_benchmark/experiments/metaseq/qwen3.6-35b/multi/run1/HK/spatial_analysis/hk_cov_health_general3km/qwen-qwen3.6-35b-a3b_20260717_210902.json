@@ -1,0 +1,46 @@
+{
+  "hk_cov_health_general3km": {
+    "scenario": "hk_cov_health_general3km",
+    "conversations": [
+      {
+        "id": "hk_cov_health_general3km",
+        "turns": [
+          {
+            "query": "How many distinct 'HEALTH_CARE_INSTITUTION' sensitive areas have their polygon centroid within 3000 metres of at least one GENERAL-type air-quality station? Count each institution once. Return the count.",
+            "actual_response": "\n\nVERIFY health_general_3km: stored=883 | independent=883 | final=883 | reason=Scope invariant holds (883 out of 1117 total HCIs), query correctly filters GENERAL stations and applies 3000m distance threshold on centroids.\n\nhealth_general_3km = 883\nprint(f\"health_general_3km: {health_general_3km}\")",
+            "actual_calls": [],
+            "validation_errors": [],
+            "metrics": {
+              "steps": 7,
+              "prompt_tokens": 51199,
+              "completion_tokens": 8619,
+              "total_tokens": 59818
+            },
+            "success": true,
+            "variables_not_set": false,
+            "error": null,
+            "code_snippets": [
+              "import pandas as pd\nfrom sqlalchemy import text\n\n# Step 1: Fetch all HEALTH_CARE_INSTITUTION sensitive areas\nquery_healthcare = text(\"\"\"\nSELECT id, name, ST_Centroid(geometry) as centroid\nFROM sensitive_area\nWHERE category = 'HEALTH_CARE_INSTITUTION'\n\"\"\")\ndf_healthcare = pd.read_sql(query_healthcare, engine)\nprint(f\"Total HEALTH_CARE_INSTITUTION sensitive areas: {len(df_healthcare)}\")\nprint(df_healthcare.head())\n\n# Step 2: Fetch all GENERAL-type air quality stations\nquery_general = text(\"\"\"\nSELECT id, name_en, coordinate\nFROM air_quality_station\nWHERE station_type = 'GENERAL'\n\"\"\")\ndf_general = pd.read_sql(query_general, engine)\nprint(f\"\\nTotal GENERAL-type stations: {len(df_general)}\")\nprint(df_general)\n\n# Step 3: Compute count of distinct healthcare institutions within 3000m of at least one general station\nquery_count = text(\"\"\"\nSELECT COUNT(DISTINCT sa.id) as health_general_3km\nFROM sensitive_area sa\nWHERE sa.category = 'HEALTH_CARE_INSTITUTION'\nAND EXISTS (\n    SELECT 1\n    FROM air_quality_station aqs\n    WHERE aqs.station_type = 'GENERAL'\n    AND ST_Distance(\n        ST_Centroid(sa.geometry)::geography,\n        aqs.coordinate::geography\n    ) <= 3000\n)\n\"\"\")\nresult = pd.read_sql(query_count, engine)\nhealth_general_3km = int(result['health_general_3km'].values[0])\nprint(f\"\\nHealthcare institutions within 3000m of at least one GENERAL station: {health_general_3km}\")\n\n# Set output variable\nhealth_general_3km = health_general_3km",
+              "import pandas as pd\nfrom sqlalchemy import text\n\n# Query to count distinct healthcare institutions within 3000m of at least one GENERAL station\nquery = text(\"\"\"\nSELECT COUNT(DISTINCT sa.id) as count\nFROM sensitive_area sa\nJOIN air_quality_station aqs ON ST_Distance(\n    ST_Centroid(sa.geometry)::geography,\n    aqs.coordinate\n) <= 3000\nWHERE sa.category = 'HEALTH_CARE_INSTITUTION'\nAND aqs.station_type = 'GENERAL'\n\"\"\")\n\nresult = pd.read_sql(query, engine)\nprint(result)\n\n# Assign the result to the required variable\nhealth_general_3km = int(result['count'].values[0])\nprint(f\"health_general_3km: {health_general_3km}\")",
+              "import pandas as pd\nfrom sqlalchemy import text\n\n# Check scope invariants first\nquery_total_hci = text(\"SELECT COUNT(*) FROM sensitive_area WHERE category = 'HEALTH_CARE_INSTITUTION'\")\ntotal_hci = pd.read_sql(query_total_hci, engine)['count'].values[0]\nprint(f\"Total HEALTH_CARE_INSTITUTIONs: {total_hci}\")\n\nquery_total_gen = text(\"SELECT COUNT(*) FROM air_quality_station WHERE station_type = 'GENERAL'\")\ntotal_gen = pd.read_sql(query_total_gen, engine)['count'].values[0]\nprint(f\"Total GENERAL stations: {total_gen}\")\n\n# Main query: distinct healthcare institutions within 3000m of at least one GENERAL station\nquery_main = text(\"\"\"\nSELECT COUNT(DISTINCT sa.id) as health_general_3km\nFROM sensitive_area sa\nJOIN air_quality_station aqs ON aqs.station_type = 'GENERAL'\nWHERE sa.category = 'HEALTH_CARE_INSTITUTION'\n  AND ST_Distance(\n        ST_Centroid(sa.geometry)::geography,\n        aqs.coordinate\n      ) <= 3000\n\"\"\")\ndf_main = pd.read_sql(query_main, engine)\nhealth_general_3km = int(df_main['health_general_3km'].values[0])\nprint(f\"Distinct healthcare institutions within 3000m of GENERAL station: {health_general_3km}\")",
+              "health_general_3km = 883\nprint(f\"health_general_3km: {health_general_3km}\")"
+            ],
+            "runtime_variables": {
+              "health_general_3km": 883
+            }
+          }
+        ]
+      }
+    ],
+    "metrics": {
+      "total_turns": 1,
+      "successful_turns": 1,
+      "failed_turns": 0,
+      "total_steps": 7,
+      "success_rate": 1.0,
+      "total_prompt_tokens": 51199,
+      "total_completion_tokens": 8619,
+      "total_tokens": 59818
+    }
+  }
+}

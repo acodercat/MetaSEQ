@@ -1,0 +1,25 @@
+{
+  "name": "beijing_trend_uncertainty",
+  "difficulty": "hard",
+  "category": "statistical_characterization",
+  "case_type": "baseline",
+  "conversations": [
+    {
+      "id": "trend_uncertainty",
+      "turns": [
+        {
+          "query": "Fit a straight-line trend against date to Beijing's daily PM2.5 in 2020-2025. Report lag-one residual autocorrelation. Does the 95% conclusion survive Newey-West bandwidths through 120 days, and how should the desk describe the trend?",
+          "validator": "validate_trend_uncertainty",
+          "stores": [
+            "residual_autocorrelation",
+            "trend_direction",
+            "textbook_interval_too_narrow",
+            "separation_from_zero_is_robust"
+          ],
+          "evaluation_tier": "execution"
+        }
+      ]
+    }
+  ],
+  "domain": "beijing"
+}

@@ -1,0 +1,29 @@
+{
+  "name": "hk_ozone_probability_skill",
+  "difficulty": "hard",
+  "category": "analytical_advisory",
+  "case_type": "baseline",
+  "conversations": [
+    {
+      "id": "hk_ozone_probability_skill",
+      "turns": [
+        {
+          "query": "Audit a Tap Mun ozone-warning baseline for 2025: compare historical monthly and annual alert probabilities with always forecasting no alert. Report Brier scores, seasonal skill, no-alert accuracy and cohort counts. Does high classification accuracy establish useful warning skill?",
+          "validator": "validate_evidence",
+          "stores": [
+            "probability_training_days",
+            "probability_test_days",
+            "observed_ozone_alert_days",
+            "never_alert_accuracy_pct",
+            "seasonal_brier_score",
+            "annual_climatology_brier_score",
+            "never_alert_brier_score",
+            "seasonal_brier_skill"
+          ],
+          "evaluation_tier": "execution"
+        }
+      ]
+    }
+  ],
+  "domain": "hk"
+}

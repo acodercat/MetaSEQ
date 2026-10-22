@@ -1,0 +1,48 @@
+{
+  "name": "hk_nocturnal_decoupling_morning_fumigation",
+  "difficulty": "hard",
+  "category": "cross_domain_analysis",
+  "case_type": "baseline",
+  "conversations": [
+    {
+      "id": "nocturnal_decoupling_morning_fumigation",
+      "turns": [
+        {
+          "query": "In Sha Tin's 2025 record, quantify pre-dawn NO2 and PM2.5 contrasts between nights in the upper and lower thirds of the Tate's Cairn-Sha Tin temperature contrast, including group sizes. Which pollutant responds more, and what mechanism could account for that difference?",
+          "validator": "validate_harder_turn_1",
+          "stores": [
+            "pollutant_that_responds_more",
+            "no2_higher_on_decoupled_nights",
+            "decoupled_predawn_no2_excess",
+            "decoupled_predawn_pm25_excess",
+            "decoupled_nights",
+            "mixed_nights"
+          ],
+          "evaluation_tier": "execution"
+        },
+        {
+          "query": "For those same night groups, quantify the mean pre-dawn-to-mid-morning odd-oxygen change. Can reversal of NO titration account for the ozone rise, or do other budget terms need consideration? What can surface records identify?",
+          "validator": "validate_harder_turn_2",
+          "stores": [
+            "oxidant_was_added",
+            "ozone_rise_exceeds_no2_fall",
+            "decoupled_morning_ox_change",
+            "mixed_morning_ox_change"
+          ]
+        },
+        {
+          "query": "Compare the same temperature-contrast ranking with reported 08:00 King's Park launches. Quantify the stable-minus-mixed inversion-frequency gap and launch counts. Does this validate the valley proxy night by night, and what spatial and timing limitations remain?",
+          "validator": "validate_harder_turn_3",
+          "stores": [
+            "sounding_agreement",
+            "sounding_inversion_frequency_gap_pp",
+            "stable_sounding_days",
+            "mixed_sounding_days"
+          ],
+          "evaluation_tier": "execution"
+        }
+      ]
+    }
+  ],
+  "domain": "hk"
+}

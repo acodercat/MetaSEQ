@@ -1,0 +1,36 @@
+{
+  "name": "hk_weekend_ozone_ox_conservation",
+  "difficulty": "hard",
+  "category": "temporal_pattern_analysis",
+  "case_type": "baseline",
+  "conversations": [
+    {
+      "id": "weekend_ozone_ox_conservation",
+      "turns": [
+        {
+          "query": "How big was the weekend effect on afternoon ozone in Hong Kong in 2025? Give the weekend-minus-weekday afternoon ozone for the fifteen general stations together, Tap Mun among them, for the roadside stations together, and for Tap Mun on its own.",
+          "validator": "validate_weekend_ozone",
+          "stores": [
+            "weekend_o3_diff_general",
+            "weekend_o3_diff_roadside",
+            "weekend_o3_diff_tap_mun"
+          ]
+        },
+        {
+          "query": "For the same hours, report weekend-minus-weekday NO2 and odd-oxygen differences for general stations, roadside stations and Tap Mun. Does this support the desk's claim that cutting NOx would worsen Hong Kong ozone?",
+          "validator": "validate_evidence_and_conclusion",
+          "stores": [
+            "weekend_no2_diff_general",
+            "weekend_no2_diff_roadside",
+            "weekend_no2_diff_tap_mun",
+            "weekend_ox_diff_general",
+            "weekend_ox_diff_roadside",
+            "weekend_ox_diff_tap_mun",
+            "line_can_be_written"
+          ]
+        }
+      ]
+    }
+  ],
+  "domain": "hk"
+}

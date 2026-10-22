@@ -1,0 +1,49 @@
+{
+  "hk_mt_worst_no2_context": {
+    "scenario": "hk_mt_worst_no2_context",
+    "conversations": [
+      {
+        "id": "hk_mt_worst_no2_context",
+        "turns": [
+          {
+            "query": "Identify the air-quality station with the highest mean NO2 over June 2025 (all 18 stations, non-NULL hourly). For that station, return: its name; the land_use_zone land_category with the largest intersection area with a 500-metre buffer around it; and the number of 'HEALTH_CARE_INSTITUTION' sensitive areas whose centroid is within 1000 metres of it.",
+            "actual_response": "",
+            "actual_calls": [],
+            "validation_errors": [
+              "Custom validator failed: Custom validator failed: worst_no2_landuse='Green Belt', expected 'Major Road'; worst_no2_health=1117, expected 63"
+            ],
+            "metrics": {
+              "steps": 4,
+              "prompt_tokens": 18110,
+              "completion_tokens": 888,
+              "total_tokens": 18998
+            },
+            "success": false,
+            "variables_not_set": false,
+            "error": null,
+            "code_snippets": [
+              "import pandas as pd\nfrom sqlalchemy import text\n\n# Find the station with highest mean NO2 in June 2025\nquery = text(\"\"\"\nSELECT hsaq.station_id, aqs.name_en, AVG(hsaq.no2) as mean_no2\nFROM hourly_station_air_quality hsaq\nJOIN air_quality_station aqs ON hsaq.station_id = aqs.id\nWHERE hsaq.datetime >= '2025-06-01 00:00:00'\n  AND hsaq.datetime < '2025-07-01 00:00:00'\n  AND hsaq.no2 IS NOT NULL\nGROUP BY hsaq.station_id, aqs.name_en\nORDER BY mean_no2 DESC\nLIMIT 10\n\"\"\")\ndf = pd.read_sql(query, engine)\nprint(df)",
+              "import pandas as pd\nfrom sqlalchemy import text\n\n# Get Mong Kok station coordinates\nquery = text(\"\"\"\nSELECT id, name_en, ST_X(coordinate::geometry) as lon, ST_Y(coordinate::geometry) as lat\nFROM air_quality_station\nWHERE id = 14\n\"\"\")\nstation = pd.read_sql(query, engine)\nprint(station)\n\nlon = station['lon'].values[0]\nlat = station['lat'].values[0]\n\n# Find dominant land_category within 500m buffer\nquery_landuse = text(f\"\"\"\nSELECT lu.land_category, SUM(ST_Area(ST_Intersection(lu.geometry, ST_Buffer(ST_SetSRID(ST_MakePoint({lon}, {lat}), 4326), 500)))) as intersection_area\nFROM land_use_zone lu\nWHERE ST_DWithin(lu.geometry, ST_SetSRID(ST_MakePoint({lon}, {lat}), 4326), 500)\nGROUP BY lu.land_category\nORDER BY intersection_area DESC\nLIMIT 10\n\"\"\")\nlanduse_df = pd.read_sql(query_landuse, engine)\nprint(landuse_df)\n\n# Count HEALTH_CARE_INSTITUTION sensitive areas within 1000m\nquery_health = text(f\"\"\"\nSELECT COUNT(*) as health_count\nFROM sensitive_area\nWHERE category = 'HEALTH_CARE_INSTITUTION'\n  AND ST_DWithin(\n    ST_Centroid(geometry),\n    ST_SetSRID(ST_MakePoint({lon}, {lat}), 4326),\n    1000\n  )\n\"\"\")\nhealth_df = pd.read_sql(query_health, engine)\nprint(health_df)",
+              "worst_no2_station = \"Mong Kok\"\nworst_no2_landuse = \"Green Belt\"\nworst_no2_health = 1117\n\nprint(f\"worst_no2_station: {worst_no2_station}\")\nprint(f\"worst_no2_landuse: {worst_no2_landuse}\")\nprint(f\"worst_no2_health: {worst_no2_health}\")"
+            ],
+            "runtime_variables": {
+              "worst_no2_station": "Mong Kok",
+              "worst_no2_landuse": "Green Belt",
+              "worst_no2_health": 1117
+            }
+          }
+        ]
+      }
+    ],
+    "metrics": {
+      "total_turns": 1,
+      "successful_turns": 0,
+      "failed_turns": 1,
+      "total_steps": 4,
+      "success_rate": 0.0,
+      "total_prompt_tokens": 18110,
+      "total_completion_tokens": 888,
+      "total_tokens": 18998
+    }
+  }
+}

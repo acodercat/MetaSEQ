@@ -1,0 +1,36 @@
+{
+  "name": "hk_co_availability_selection_bias",
+  "difficulty": "medium",
+  "category": "statistical_characterization",
+  "case_type": "baseline",
+  "conversations": [
+    {
+      "id": "co_availability_selection_bias",
+      "turns": [
+        {
+          "query": "A colleague is about to study carbon monoxide and fine particulates together over 2025, and will naturally work from the hours where both are on hand. Before they start, characterise what that restriction does to the particulate picture on its own, across Hong Kong's general stations.",
+          "validator": "validate_general_means",
+          "stores": [
+            "pm25_general_all_records",
+            "pm25_general_co_reporting",
+            "general_pm25_hours",
+            "general_pm25_co_hours"
+          ]
+        },
+        {
+          "query": "Now carry the same two readings over to the roadside stations and express each as a roadside-to-general ratio. Report what each ratio was built from, and tell your colleague what these figures together mean for the study they are planning.",
+          "validator": "validate_ratio_shift",
+          "stores": [
+            "roadside_general_ratio_all",
+            "roadside_general_ratio_co_reporting",
+            "roadside_pm25_hours",
+            "roadside_pm25_co_hours",
+            "co_reporting_hours_behind_the_ratio",
+            "general_stations_without_co"
+          ]
+        }
+      ]
+    }
+  ],
+  "domain": "hk"
+}

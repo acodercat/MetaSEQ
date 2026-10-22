@@ -1,0 +1,74 @@
+{
+  "hk_no2_pm25_traffic_dominance": {
+    "scenario": "hk_no2_pm25_traffic_dominance",
+    "conversations": [
+      {
+        "id": "traffic_dominance",
+        "turns": [
+          {
+            "query": "In October 2025, compute the ratio of average NO2 at roadside stations to average NO2 at general stations, and the same ratio for PM2.5. A higher roadside-to-general ratio indicates stronger local traffic source contribution. Which pollutant shows a larger roadside enhancement, indicating it is more dominated by local traffic sources? Return both ratios rounded to 2 decimal places and the more traffic-dominated pollutant name.",
+            "actual_response": "For October 2025:\n\n- NO2 roadside-to-general ratio: 2.26\n- PM2.5 roadside-to-general ratio: 1.42\n- More traffic-dominated pollutant: NO2\n\nRoadside NO2 was 2.26 times the general-station average, while roadside PM2.5 was 1.42 times the general-station average. Therefore, NO2 showed the larger roadside enhancement, indicating stronger dominance by local traffic sources.",
+            "actual_calls": [],
+            "validation_errors": [],
+            "metrics": {
+              "steps": 2,
+              "prompt_tokens": 11974,
+              "completion_tokens": 1850,
+              "total_tokens": 13824
+            },
+            "success": true,
+            "variables_not_set": false,
+            "error": null,
+            "code_snippets": [
+              "import pandas as pd\nfrom sqlalchemy import text\n\nstart, end = \"2025-10-01 00:00:00\", \"2025-11-01 00:00:00\"\n\n# Count applicable hourly readings first, then compute aggregated pollutant means and ratios.\ncount_q = text(\"\"\"\nSELECT s.station_type::text AS station_type,\n       COUNT(*) AS total_hours,\n       COUNT(h.no2) AS no2_hours,\n       COUNT(h.pm2_5) AS pm25_hours,\n       COUNT(*) FILTER (WHERE s.station_type='ROADSIDE' AND ((EXTRACT(HOUR FROM h.datetime) >= 7 AND EXTRACT(HOUR FROM h.datetime) < 10) OR (EXTRACT(HOUR FROM h.datetime) >= 17 AND EXTRACT(HOUR FROM h.datetime) < 20))) AS roadside_rush_hours,\n       COUNT(*) FILTER (WHERE s.station_type='ROADSIDE' AND NOT ((EXTRACT(HOUR FROM h.datetime) >= 7 AND EXTRACT(HOUR FROM h.datetime) < 10) OR (EXTRACT(HOUR FROM h.datetime) >= 17 AND EXTRACT(HOUR FROM h.datetime) < 20))) AS roadside_offpeak_hours\nFROM hourly_station_air_quality h\nJOIN air_quality_station s ON h.station_id = s.id\nWHERE h.datetime >= :start AND h.datetime < :end\nGROUP BY s.station_type\nORDER BY s.station_type\n\"\"\")\ncounts = pd.read_sql(count_q, engine, params={\"start\": start, \"end\": end})\n\nagg_q = text(\"\"\"\nWITH base AS (\n  SELECT s.station_type::text AS station_type, h.no2, h.pm2_5, h.datetime\n  FROM hourly_station_air_quality h\n  JOIN air_quality_station s ON h.station_id = s.id\n  WHERE h.datetime >= :start AND h.datetime < :end\n),\ntype_avg AS (\n  SELECT station_type, AVG(no2) AS avg_no2, AVG(pm2_5) AS avg_pm25\n  FROM base\n  GROUP BY station_type\n),\nroadside_period AS (\n  SELECT CASE WHEN ((EXTRACT(HOUR FROM datetime) >= 7 AND EXTRACT(HOUR FROM datetime) < 10)\n                OR (EXTRACT(HOUR FROM datetime) >= 17 AND EXTRACT(HOUR FROM datetime) < 20))\n              THEN 'rush' ELSE 'offpeak' END AS period,\n         AVG(no2) AS avg_no2, AVG(pm2_5) AS avg_pm25\n  FROM base\n  WHERE station_type = 'ROADSIDE'\n  GROUP BY 1\n)\nSELECT\n  (SELECT avg_no2 FROM type_avg WHERE station_type='ROADSIDE') / NULLIF((SELECT avg_no2 FROM type_avg WHERE station_type='GENERAL'), 0) AS no2_roadside_general_ratio,\n  (SELECT avg_pm25 FROM type_avg WHERE station_type='ROADSIDE') / NULLIF((SELECT avg_pm25 FROM type_avg WHERE station_type='GENERAL'), 0) AS pm25_roadside_general_ratio,\n  (SELECT avg_no2 / NULLIF(avg_pm25, 0) FROM roadside_period WHERE period='rush') AS rush_no2_pm25_ratio,\n  (SELECT avg_no2 / NULLIF(avg_pm25, 0) FROM roadside_period WHERE period='offpeak') AS offpeak_no2_pm25_ratio,\n  (SELECT avg_no2 FROM type_avg WHERE station_type='ROADSIDE') AS roadside_avg_no2,\n  (SELECT avg_no2 FROM type_avg WHERE station_type='GENERAL') AS general_avg_no2,\n  (SELECT avg_pm25 FROM type_avg WHERE station_type='ROADSIDE') AS roadside_avg_pm25,\n  (SELECT avg_pm25 FROM type_avg WHERE station_type='GENERAL') AS general_avg_pm25\n\"\"\")\nres = pd.read_sql(agg_q, engine, params={\"start\": start, \"end\": end}).iloc[0]\n\nno2_roadside_general_ratio = round(float(res[\"no2_roadside_general_ratio\"]), 2)\npm25_roadside_general_ratio = round(float(res[\"pm25_roadside_general_ratio\"]), 2)\nmore_traffic_dominated = \"NO2\" if no2_roadside_general_ratio > pm25_roadside_general_ratio else (\"PM2.5\" if pm25_roadside_general_ratio > no2_roadside_general_ratio else \"Tie\")\nrush_no2_pm25_ratio = round(float(res[\"rush_no2_pm25_ratio\"]), 2)\noffpeak_no2_pm25_ratio = round(float(res[\"offpeak_no2_pm25_ratio\"]), 2)\n\nprint(\"October 2025 hourly reading counts by station class:\")\nprint(counts.to_string(index=False))\nprint(\"\\nAggregated means and computed ratios:\")\nprint(pd.DataFrame([{\n    \"roadside_avg_no2\": round(float(res[\"roadside_avg_no2\"]), 2),\n    \"general_avg_no2\": round(float(res[\"general_avg_no2\"]), 2),\n    \"roadside_avg_pm25\": round(float(res[\"roadside_avg_pm25\"]), 2),\n    \"general_avg_pm25\": round(float(res[\"general_avg_pm25\"]), 2),\n    \"no2_roadside_general_ratio\": no2_roadside_general_ratio,\n    \"pm25_roadside_general_ratio\": pm25_roadside_general_ratio,\n    \"more_traffic_dominated\": more_traffic_dominated,\n    \"rush_no2_pm25_ratio\": rush_no2_pm25_ratio,\n    \"offpeak_no2_pm25_ratio\": offpeak_no2_pm25_ratio\n}]).to_string(index=False))"
+            ],
+            "runtime_variables": {
+              "no2_roadside_general_ratio": 2.26,
+              "pm25_roadside_general_ratio": 1.42,
+              "more_traffic_dominated": "NO2",
+              "rush_no2_pm25_ratio": 3.76,
+              "offpeak_no2_pm25_ratio": 3.03
+            }
+          },
+          {
+            "query": "For roadside stations in October 2025, compute the average NO2 to PM2.5 concentration ratio during rush hours (08:00-09:00, 17:00-19:00) versus off-peak hours (00:00-05:00, 10:00-15:00). A higher ratio during rush hours would confirm that traffic peaks disproportionately elevate NO2 relative to PM2.5. Return both ratios rounded to 2 decimal places.",
+            "actual_response": "For roadside stations in October 2025:\n\n- Rush-hour NO2/PM2.5 ratio: 3.94\n- Off-peak NO2/PM2.5 ratio: 3.04\n\nThe higher rush-hour ratio shows that traffic peaks disproportionately elevated NO2 relative to PM2.5 during the specified rush-hour periods.",
+            "actual_calls": [],
+            "validation_errors": [
+              "Custom validator failed: rush_no2_pm25_ratio=3.94, expected \u2248 4.48; offpeak_no2_pm25_ratio=3.04, expected \u2248 4.21"
+            ],
+            "metrics": {
+              "steps": 2,
+              "prompt_tokens": 14530,
+              "completion_tokens": 720,
+              "total_tokens": 15250
+            },
+            "success": false,
+            "variables_not_set": false,
+            "error": null,
+            "code_snippets": [
+              "import pandas as pd\nfrom sqlalchemy import text\n\nstart, end = \"2025-10-01 00:00:00\", \"2025-11-01 00:00:00\"\n\n# Check eligible roadside readings for the specified rush/off-peak definitions, then aggregate.\nq = text(\"\"\"\nWITH base AS (\n  SELECT h.no2, h.pm2_5,\n         CASE\n           WHEN EXTRACT(HOUR FROM h.datetime) IN (8,17,18) THEN 'rush'\n           WHEN EXTRACT(HOUR FROM h.datetime) IN (0,1,2,3,4,10,11,12,13,14) THEN 'offpeak'\n         END AS period\n  FROM hourly_station_air_quality h\n  JOIN air_quality_station s ON h.station_id = s.id\n  WHERE s.station_type = 'ROADSIDE'\n    AND h.datetime >= :start AND h.datetime < :end\n    AND EXTRACT(HOUR FROM h.datetime) IN (0,1,2,3,4,8,10,11,12,13,14,17,18)\n)\nSELECT period,\n       COUNT(*) AS total_hours,\n       COUNT(no2) AS no2_hours,\n       COUNT(pm2_5) AS pm25_hours,\n       AVG(no2) AS avg_no2,\n       AVG(pm2_5) AS avg_pm25,\n       AVG(no2) / NULLIF(AVG(pm2_5), 0) AS no2_pm25_ratio\nFROM base\nWHERE period IS NOT NULL\nGROUP BY period\nORDER BY period\n\"\"\")\nperiod_stats = pd.read_sql(q, engine, params={\"start\": start, \"end\": end})\n\nrush_no2_pm25_ratio = round(float(period_stats.loc[period_stats[\"period\"]==\"rush\", \"no2_pm25_ratio\"].iloc[0]), 2)\noffpeak_no2_pm25_ratio = round(float(period_stats.loc[period_stats[\"period\"]==\"offpeak\", \"no2_pm25_ratio\"].iloc[0]), 2)\n\nprint(\"October 2025 roadside station NO2-to-PM2.5 ratios for specified periods:\")\nprint(period_stats.assign(\n    avg_no2=period_stats[\"avg_no2\"].round(2),\n    avg_pm25=period_stats[\"avg_pm25\"].round(2),\n    no2_pm25_ratio=period_stats[\"no2_pm25_ratio\"].round(2)\n).to_string(index=False))\nprint(f\"\\nrush_no2_pm25_ratio = {rush_no2_pm25_ratio}\")\nprint(f\"offpeak_no2_pm25_ratio = {offpeak_no2_pm25_ratio}\")"
+            ],
+            "runtime_variables": {
+              "no2_roadside_general_ratio": 2.26,
+              "pm25_roadside_general_ratio": 1.42,
+              "more_traffic_dominated": "NO2",
+              "rush_no2_pm25_ratio": 3.94,
+              "offpeak_no2_pm25_ratio": 3.04
+            }
+          }
+        ]
+      }
+    ],
+    "metrics": {
+      "total_turns": 2,
+      "successful_turns": 1,
+      "failed_turns": 1,
+      "total_steps": 4,
+      "success_rate": 0.5,
+      "total_prompt_tokens": 26504,
+      "total_completion_tokens": 2570,
+      "total_tokens": 29074
+    }
+  }
+}

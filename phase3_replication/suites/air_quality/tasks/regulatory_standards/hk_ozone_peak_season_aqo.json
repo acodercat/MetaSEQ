@@ -1,0 +1,31 @@
+{
+  "name": "hk_ozone_peak_season_aqo",
+  "difficulty": "hard",
+  "category": "regulatory_standards",
+  "case_type": "baseline",
+  "conversations": [
+    {
+      "id": "ozone_peak_season_aqo",
+      "turns": [
+        {
+          "query": "Hong Kong's revised Air Quality Objectives of April 2025 added an ozone peak-season objective of 100 ug/m3. What is Tap Mun's peak-season ozone value for 2025, and which six months make up its peak season?",
+          "validator": "validate_peak_season",
+          "stores": [
+            "tap_mun_peak_season_o3_2025",
+            "tap_mun_peak_season_first_month",
+            "tap_mun_peak_season_last_month"
+          ]
+        },
+        {
+          "query": "On our record, how many of the eighteen stations have a 2025 peak-season ozone value above 100 ug/m3? Name them, and tell the desk anything they should know before printing the list as the stations that failed the objective.",
+          "validator": "validate_stations_above",
+          "stores": [
+            "stations_above_100_on_record_2025",
+            "stations_above_100_on_record_names"
+          ]
+        }
+      ]
+    }
+  ],
+  "domain": "hk"
+}

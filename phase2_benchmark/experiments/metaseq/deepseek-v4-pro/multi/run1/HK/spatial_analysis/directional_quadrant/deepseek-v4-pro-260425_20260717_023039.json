@@ -1,0 +1,49 @@
+{
+  "hk_directional_quadrant": {
+    "scenario": "hk_directional_quadrant",
+    "conversations": [
+      {
+        "id": "quadrant_from_central",
+        "turns": [
+          {
+            "query": "From the Central air quality monitoring station, classify all other air quality monitoring stations into four quadrants (NE/NW/SE/SW) based on their relative latitude and longitude. How many stations fall into each quadrant?",
+            "actual_response": "The classification is complete and verified. Here are the final results:\n\nFrom the Central air quality monitoring station (22.2818\u00b0N, 114.1581\u00b0E), the 17 other stations are classified into quadrants as follows:\n\n- **NE quadrant: 8 stations** \u2014 Sham Shui Po, Kwun Tong, Tap Mun, Mong Kok, Tai Po, Sha Tin, Eastern, Tseung Kwan O\n- **NW quadrant: 7 stations** \u2014 Tuen Mun, Central/Western, North, Kwai Chung, Yuen Long, Tsuen Wan, Tung Chung\n- **SE quadrant: 2 stations** \u2014 Southern, Causeway Bay\n- **SW quadrant: 0 stations**",
+            "actual_calls": [],
+            "validation_errors": [],
+            "metrics": {
+              "steps": 7,
+              "prompt_tokens": 50670,
+              "completion_tokens": 2648,
+              "total_tokens": 53318
+            },
+            "success": true,
+            "variables_not_set": false,
+            "error": null,
+            "code_snippets": [
+              "import pandas as pd\nfrom sqlalchemy import text\n\n# Step 1: Fetch Central station coordinates (station_id = 16)\nquery_central = text(\"\"\"\nSELECT id, name_en, ST_Y(coordinate::geometry) AS lat, ST_X(coordinate::geometry) AS lon\nFROM air_quality_station\nWHERE id = 16\n\"\"\")\ncentral_df = pd.read_sql(query_central, engine)\nprint(\"Central station:\")\nprint(central_df)\ncentral_lat = central_df['lat'].values[0]\ncentral_lon = central_df['lon'].values[0]\nprint(f\"RESOLVED: Central = id 16, lat={central_lat}, lon={central_lon}\")\n\n# Step 2: Fetch all other stations\nquery_others = text(\"\"\"\nSELECT id, name_en, ST_Y(coordinate::geometry) AS lat, ST_X(coordinate::geometry) AS lon\nFROM air_quality_station\nWHERE id != 16\nORDER BY id\n\"\"\")\nothers_df = pd.read_sql(query_others, engine)\nprint(f\"\\nOther stations count: {len(others_df)}\")\nprint(others_df)\n\n# Step 3: Compute relative position and classify into quadrants\nothers_df['rel_lat'] = others_df['lat'] - central_lat\nothers_df['rel_lon'] = others_df['lon'] - central_lon\n\nne_mask = (others_df['lat'] > central_lat) & (others_df['lon'] > central_lon)\nnw_mask = (others_df['lat'] > central_lat) & (others_df['lon'] < central_lon)\nse_mask = (others_df['lat'] < central_lat) & (others_df['lon'] > central_lon)\nsw_mask = (others_df['lat'] < central_lat) & (others_df['lon'] < central_lon)\n\nothers_df['quadrant'] = 'UNCLASSIFIED'\nothers_df.loc[ne_mask, 'quadrant'] = 'NE'\nothers_df.loc[nw_mask, 'quadrant'] = 'NW'\nothers_df.loc[se_mask, 'quadrant'] = 'SE'\nothers_df.loc[sw_mask, 'quadrant'] = 'SW'\n\nprint(\"\\nClassification results:\")\nprint(others_df[['id', 'name_en', 'lat', 'lon', 'rel_lat', 'rel_lon', 'quadrant']])\n\n# Step 4: Count stations in each quadrant\nne_count = int(ne_mask.sum())\nnw_count = int(nw_mask.sum())\nse_count = int(se_mask.sum())\nsw_count = int(sw_mask.sum())\n\nprint(f\"\\nQuadrant counts:\")\nprint(f\"NE: {ne_count}\")\nprint(f\"NW: {nw_count}\")\nprint(f\"SE: {se_count}\")\nprint(f\"SW: {sw_count}\")\nprint(f\"Total classified: {ne_count + nw_count + se_count + sw_count}\")\n\n# Check for any unclassified stations\nunclassified = others_df[others_df['quadrant'] == 'UNCLASSIFIED']\nif len(unclassified) > 0:\n    print(f\"\\nWARNING: {len(unclassified)} stations unclassified (exactly on Central's lat/lon):\")\n    print(unclassified[['id', 'name_en', 'lat', 'lon']])",
+              "# The quadrant counts are already staged in the shared runtime.\n# Verify they exist and cast to plain Python int.\n\nne_count = int(ne_count)\nnw_count = int(nw_count)\nse_count = int(se_count)\nsw_count = int(sw_count)\n\nprint(f\"ne_count = {ne_count}\")\nprint(f\"nw_count = {nw_count}\")\nprint(f\"se_count = {se_count}\")\nprint(f\"sw_count = {sw_count}\")\n\n# Quick sanity check\ntotal = ne_count + nw_count + se_count + sw_count\nprint(f\"Total classified stations: {total}\")",
+              "import pandas as pd\nfrom sqlalchemy import text\n\n# Step 1: Get Central station coordinates\nquery_central = text(\"\"\"\nSELECT id, name_en, ST_Y(coordinate::geometry) as lat, ST_X(coordinate::geometry) as lon\nFROM air_quality_station\nWHERE name_en = 'Central'\n\"\"\")\ncentral_df = pd.read_sql(query_central, engine)\nprint(\"Central station:\")\nprint(central_df)\n\ncentral_lat = central_df['lat'].values[0]\ncentral_lon = central_df['lon'].values[0]\ncentral_id = central_df['id'].values[0]\nprint(f\"\\nCentral coords: lat={central_lat}, lon={central_lon}, id={central_id}\")\n\n# Step 2: Get all other stations\nquery_others = text(\"\"\"\nSELECT id, name_en, ST_Y(coordinate::geometry) as lat, ST_X(coordinate::geometry) as lon\nFROM air_quality_station\nWHERE id != :central_id\n\"\"\")\nothers_df = pd.read_sql(query_others, engine, params={\"central_id\": int(central_id)})\nprint(f\"\\nTotal other stations: {len(others_df)}\")\nprint(others_df.to_string())\n\n# Step 3: Classify into quadrants\n# NE: lat > central_lat AND lon > central_lon\n# NW: lat > central_lat AND lon < central_lon\n# SE: lat < central_lat AND lon > central_lon\n# SW: lat < central_lat AND lon < central_lon\n\nne_mask = (others_df['lat'] > central_lat) & (others_df['lon'] > central_lon)\nnw_mask = (others_df['lat'] > central_lat) & (others_df['lon'] < central_lon)\nse_mask = (others_df['lat'] < central_lat) & (others_df['lon'] > central_lon)\nsw_mask = (others_df['lat'] < central_lat) & (others_df['lon'] < central_lon)\n\nne_count = int(ne_mask.sum())\nnw_count = int(nw_mask.sum())\nse_count = int(se_mask.sum())\nsw_count = int(sw_mask.sum())\n\nprint(f\"\\nNE quadrant: {ne_count}\")\nprint(f\"NW quadrant: {nw_count}\")\nprint(f\"SE quadrant: {se_count}\")\nprint(f\"SW quadrant: {sw_count}\")\nprint(f\"Total classified: {ne_count + nw_count + se_count + sw_count}\")\n\n# Show which stations are in each quadrant\nprint(\"\\nNE stations:\")\nprint(others_df[ne_mask][['name_en', 'lat', 'lon']].to_string())\nprint(\"\\nNW stations:\")\nprint(others_df[nw_mask][['name_en', 'lat', 'lon']].to_string())\nprint(\"\\nSE stations:\")\nprint(others_df[se_mask][['name_en', 'lat', 'lon']].to_string())\nprint(\"\\nSW stations:\")\nprint(others_df[sw_mask][['name_en', 'lat', 'lon']].to_string())\n\n# Check for any unclassified (exact same lat or lon)\nunclassified = others_df[~(ne_mask | nw_mask | se_mask | sw_mask)]\nif len(unclassified) > 0:\n    print(f\"\\nWARNING: Unclassified stations: {len(unclassified)}\")\n    print(unclassified.to_string())",
+              "# Assign final values\nne_count = 8\nnw_count = 7\nse_count = 2\nsw_count = 0"
+            ],
+            "runtime_variables": {
+              "ne_count": 8,
+              "nw_count": 7,
+              "se_count": 2,
+              "sw_count": 0
+            }
+          }
+        ]
+      }
+    ],
+    "metrics": {
+      "total_turns": 1,
+      "successful_turns": 1,
+      "failed_turns": 0,
+      "total_steps": 7,
+      "success_rate": 1.0,
+      "total_prompt_tokens": 50670,
+      "total_completion_tokens": 2648,
+      "total_tokens": 53318
+    }
+  }
+}

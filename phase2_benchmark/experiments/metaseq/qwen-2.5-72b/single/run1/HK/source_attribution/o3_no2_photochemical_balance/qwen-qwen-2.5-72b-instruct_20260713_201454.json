@@ -1,0 +1,79 @@
+{
+  "hk_o3_no2_photochemical_balance": {
+    "scenario": "hk_o3_no2_photochemical_balance",
+    "conversations": [
+      {
+        "id": "photochemical_balance",
+        "turns": [
+          {
+            "query": "On October 5, 2025, for each air quality monitoring station, compute the daily average photochemical oxidant partitioning ratio (including only hours where both O3 and NO2 are available). What is the mean ratio for roadside vs general stations? Return both means rounded to 3 decimal places and the station with the highest ratio (most photochemically aged air) along with its ratio.",
+            "actual_response": "Roadside Ox Ratio: 0.680\nGeneral Ox Ratio: 0.787\nHighest Ox Station: Tap Mun\nHighest Ox Ratio: 0.964",
+            "actual_calls": [],
+            "validation_errors": [
+              "Custom validator failed: roadside_ox_ratio=0.68, expected \u2248 0.527; general_ox_ratio=0.787, expected \u2248 0.811"
+            ],
+            "metrics": {
+              "steps": 3,
+              "prompt_tokens": 18130,
+              "completion_tokens": 709,
+              "total_tokens": 18839
+            },
+            "success": false,
+            "variables_not_set": false,
+            "error": null,
+            "code_snippets": [
+              "import pandas as pd\nfrom sqlalchemy import text\n\n# Define the date and time range\ndate = '2025-10-05'\nstart_time = f'{date} 00:00:00'\nend_time = f'{date} 23:59:59'\n\n# Query the hourly data for the specified date and time range\nquery = text(f\"\"\"\nSELECT \n    aqs.name_en AS station_name,\n    aqs.station_type,\n    hsaq.o3,\n    hsaq.no2,\n    hsaq.datetime\nFROM \n    hourly_station_air_quality hsaq\nJOIN \n    air_quality_station aqs ON hsaq.station_id = aqs.id\nWHERE \n    hsaq.datetime >= '{start_time}' AND hsaq.datetime < '{end_time}'\n    AND hsaq.o3 IS NOT NULL AND hsaq.no2 IS NOT NULL\n\"\"\")\n\n# Execute the query and load the results into a DataFrame\ndf = pd.read_sql(query, engine)\n\n# Calculate the photochemical oxidant partitioning ratio (O3 / (O3 + NO2))\ndf['ox_ratio'] = df['o3'] / (df['o3'] + df['no2'])\n\n# Calculate the daily average ratio for each station\ndaily_avg_ratio = df.groupby('station_name')['ox_ratio'].mean().reset_index()\n\n# Calculate the mean ratio for roadside and general stations\nroadside_avg = daily_avg_ratio[daily_avg_ratio['station_name'].isin(['Tuen Mun', 'Sham Shui Po', 'Mong Kok', 'Tsuen Wan'])]['ox_ratio'].mean()\ngeneral_avg = daily_avg_ratio[~daily_avg_ratio['station_name'].isin(['Tuen Mun', 'Sham Shui Po', 'Mong Kok', 'Tsuen Wan'])]['ox_ratio'].mean()\n\n# Find the station with the highest ratio\nhighest_ratio_station = daily_avg_ratio.loc[daily_avg_ratio['ox_ratio'].idxmax()]\n\n# Assign the results to the required variables\nroadside_ox_ratio = round(roadside_avg, 3)\ngeneral_ox_ratio = round(general_avg, 3)\nhighest_ox_station = highest_ratio_station['station_name']\nhighest_ox_ratio = round(highest_ratio_station['ox_ratio'], 3)\n\n# Print the results for verification\nprint(f\"Roadside Ox Ratio: {roadside_ox_ratio}\")\nprint(f\"General Ox Ratio: {general_ox_ratio}\")\nprint(f\"Highest Ox Station: {highest_ox_station}\")\nprint(f\"Highest Ox Ratio: {highest_ox_ratio}\")",
+              "# Assign the final results to the required variables\nroadside_ox_ratio = 0.680\ngeneral_ox_ratio = 0.787\nhighest_ox_station = 'Tap Mun'\nhighest_ox_ratio = 0.964\n\n# Print the final results for verification\nprint(f\"Roadside Ox Ratio: {roadside_ox_ratio}\")\nprint(f\"General Ox Ratio: {general_ox_ratio}\")\nprint(f\"Highest Ox Station: {highest_ox_station}\")\nprint(f\"Highest Ox Ratio: {highest_ox_ratio}\")"
+            ],
+            "runtime_variables": {
+              "roadside_ox_ratio": 0.68,
+              "general_ox_ratio": 0.787,
+              "highest_ox_station": "Tap Mun",
+              "highest_ox_ratio": 0.964,
+              "morning_ox": null,
+              "midday_ox": null,
+              "evening_ox": null
+            }
+          },
+          {
+            "query": "For the station with the highest photochemical oxidant partitioning ratio, how does this ratio vary across the day? Compute the average ratio for morning (06:00-09:00), midday (11:00-14:00), and evening (17:00-20:00) on October 5, 2025. Return all three values rounded to 3 decimal places.",
+            "actual_response": "Morning Ox Ratio: 0.962\nMidday Ox Ratio: 0.994\nEvening Ox Ratio: 0.947",
+            "actual_calls": [],
+            "validation_errors": [],
+            "metrics": {
+              "steps": 2,
+              "prompt_tokens": 13738,
+              "completion_tokens": 587,
+              "total_tokens": 14325
+            },
+            "success": true,
+            "variables_not_set": false,
+            "error": null,
+            "code_snippets": [
+              "import pandas as pd\nfrom sqlalchemy import text\n\n# Define the date and time ranges\ndate = '2025-10-05'\nmorning_start = f'{date} 06:00:00'\nmorning_end = f'{date} 09:00:00'\nmidday_start = f'{date} 11:00:00'\nmidday_end = f'{date} 14:00:00'\nevening_start = f'{date} 17:00:00'\nevening_end = f'{date} 20:00:00'\n\n# Query the hourly data for the specified station and date\nquery = text(f\"\"\"\nSELECT \n    hsaq.o3,\n    hsaq.no2,\n    hsaq.datetime\nFROM \n    hourly_station_air_quality hsaq\nJOIN \n    air_quality_station aqs ON hsaq.station_id = aqs.id\nWHERE \n    aqs.name_en = '{highest_ox_station}'\n    AND hsaq.datetime >= '{date} 00:00:00' AND hsaq.datetime < '{date} 23:59:59'\n    AND hsaq.o3 IS NOT NULL AND hsaq.no2 IS NOT NULL\n\"\"\")\n\n# Execute the query and load the results into a DataFrame\ndf = pd.read_sql(query, engine)\n\n# Calculate the photochemical oxidant partitioning ratio (O3 / (O3 + NO2))\ndf['ox_ratio'] = df['o3'] / (df['o3'] + df['no2'])\n\n# Filter the data for morning, midday, and evening\nmorning_df = df[(df['datetime'] >= morning_start) & (df['datetime'] < morning_end)]\nmidday_df = df[(df['datetime'] >= midday_start) & (df['datetime'] < midday_end)]\nevening_df = df[(df['datetime'] >= evening_start) & (df['datetime'] < evening_end)]\n\n# Calculate the average ratio for each period\nmorning_ox = round(morning_df['ox_ratio'].mean(), 3)\nmidday_ox = round(midday_df['ox_ratio'].mean(), 3)\nevening_ox = round(evening_df['ox_ratio'].mean(), 3)\n\n# Print the results for verification\nprint(f\"Morning Ox Ratio: {morning_ox}\")\nprint(f\"Midday Ox Ratio: {midday_ox}\")\nprint(f\"Evening Ox Ratio: {evening_ox}\")"
+            ],
+            "runtime_variables": {
+              "roadside_ox_ratio": 0.68,
+              "general_ox_ratio": 0.787,
+              "highest_ox_station": "Tap Mun",
+              "highest_ox_ratio": 0.964,
+              "morning_ox": 0.962,
+              "midday_ox": 0.994,
+              "evening_ox": 0.947
+            }
+          }
+        ]
+      }
+    ],
+    "metrics": {
+      "total_turns": 2,
+      "successful_turns": 1,
+      "failed_turns": 1,
+      "total_steps": 5,
+      "success_rate": 0.5,
+      "total_prompt_tokens": 31868,
+      "total_completion_tokens": 1296,
+      "total_tokens": 33164
+    }
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "name": "hk_solar_sampling_aliasing",
+  "difficulty": "hard",
+  "category": "data_retrieval",
+  "case_type": "baseline",
+  "conversations": [
+    {
+      "id": "hk_solar_sampling_aliasing",
+      "turns": [
+        {
+          "query": "Can King's Park's hourly radiation samples replace measured daily solar exposure in 2025? Audit complete paired days: report correlation, MAE, upper-tail relative error and the worst day's two exposure estimates. Explain what this establishes about daily accuracy.",
+          "validator": "validate_evidence",
+          "stores": [
+            "solar_paired_complete_days",
+            "sample_integral_daily_r",
+            "sample_integral_mae_mj_m2",
+            "sample_relative_error_p95_pct",
+            "worst_sampling_day",
+            "worst_sample_integral_mj_m2",
+            "worst_measured_integral_mj_m2"
+          ],
+          "evaluation_tier": "execution"
+        }
+      ]
+    }
+  ],
+  "domain": "hk"
+}

@@ -1,0 +1,32 @@
+{
+  "name": "hk_ventilation_evidence_span",
+  "difficulty": "hard",
+  "category": "cross_domain_analysis",
+  "case_type": "baseline",
+  "conversations": [
+    {
+      "id": "ventilation_evidence_span",
+      "turns": [
+        {
+          "query": "An operations desk wants to know how Sha Tin's fine particulate sits against wind speed over the record up to the end of June 2026: the calmest tenth of hours against the windiest.",
+          "validator": "validate_ventilation_contrast",
+          "stores": [
+            "calm_decile_pm25",
+            "windy_decile_pm25",
+            "paired_hours"
+          ],
+          "evaluation_tier": "execution"
+        },
+        {
+          "query": "The desk wants to publish that contrast as what the record shows. Before they do, advise them on what they can and cannot say.",
+          "validator": "validate_evidence_span",
+          "stores": [
+            "publishable_as_the_record",
+            "first_paired_date"
+          ]
+        }
+      ]
+    }
+  ],
+  "domain": "hk"
+}

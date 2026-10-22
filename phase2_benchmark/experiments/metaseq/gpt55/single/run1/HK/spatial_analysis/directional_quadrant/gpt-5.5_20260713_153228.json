@@ -1,0 +1,46 @@
+{
+  "hk_directional_quadrant": {
+    "scenario": "hk_directional_quadrant",
+    "conversations": [
+      {
+        "id": "quadrant_from_central",
+        "turns": [
+          {
+            "query": "From the Central air quality monitoring station, classify all other air quality monitoring stations into four quadrants (NE/NW/SE/SW) based on their relative latitude and longitude. How many stations fall into each quadrant?",
+            "actual_response": "NE: 8  \nNW: 7  \nSE: 2  \nSW: 0",
+            "actual_calls": [],
+            "validation_errors": [],
+            "metrics": {
+              "steps": 2,
+              "prompt_tokens": 10659,
+              "completion_tokens": 558,
+              "total_tokens": 11217
+            },
+            "success": true,
+            "variables_not_set": false,
+            "error": null,
+            "code_snippets": [
+              "import pandas as pd\nfrom sqlalchemy import text\n\nquery = text(\"\"\"\nSELECT\n  id,\n  name_en,\n  ST_Y(coordinate::geometry) AS latitude,\n  ST_X(coordinate::geometry) AS longitude\nFROM air_quality_station\nWHERE id = 16 OR id <> 16\n\"\"\")\nstations = pd.read_sql(query, engine)\n\nref = stations.loc[stations[\"name_en\"] == \"Central\"].iloc[0]\nothers = stations[stations[\"name_en\"] != \"Central\"].copy()\n\nothers[\"quadrant\"] = others.apply(\n    lambda r: \"NE\" if r[\"latitude\"] > ref[\"latitude\"] and r[\"longitude\"] > ref[\"longitude\"] else\n              \"NW\" if r[\"latitude\"] > ref[\"latitude\"] and r[\"longitude\"] < ref[\"longitude\"] else\n              \"SE\" if r[\"latitude\"] < ref[\"latitude\"] and r[\"longitude\"] > ref[\"longitude\"] else\n              \"SW\" if r[\"latitude\"] < ref[\"latitude\"] and r[\"longitude\"] < ref[\"longitude\"] else\n              \"AXIS\",\n    axis=1\n)\n\ncounts = others[\"quadrant\"].value_counts().to_dict()\nne_count = int(counts.get(\"NE\", 0))\nnw_count = int(counts.get(\"NW\", 0))\nse_count = int(counts.get(\"SE\", 0))\nsw_count = int(counts.get(\"SW\", 0))\n\nprint({\n    \"reference_station\": \"Central\",\n    \"other_stations_total\": int(len(others)),\n    \"ne_count\": ne_count,\n    \"nw_count\": nw_count,\n    \"se_count\": se_count,\n    \"sw_count\": sw_count,\n    \"axis_count\": int(counts.get(\"AXIS\", 0))\n})"
+            ],
+            "runtime_variables": {
+              "ne_count": 8,
+              "nw_count": 7,
+              "se_count": 2,
+              "sw_count": 0
+            }
+          }
+        ]
+      }
+    ],
+    "metrics": {
+      "total_turns": 1,
+      "successful_turns": 1,
+      "failed_turns": 0,
+      "total_steps": 2,
+      "success_rate": 1.0,
+      "total_prompt_tokens": 10659,
+      "total_completion_tokens": 558,
+      "total_tokens": 11217
+    }
+  }
+}

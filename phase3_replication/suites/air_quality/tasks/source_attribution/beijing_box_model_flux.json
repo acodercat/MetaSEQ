@@ -1,0 +1,22 @@
+{
+  "name": "beijing_box_model_flux",
+  "difficulty": "hard",
+  "category": "source_attribution",
+  "case_type": "trap",
+  "conversations": [
+    {
+      "id": "box_model_flux",
+      "turns": [
+        {
+          "query": "During the haze buildup from 00:00 on 9 February to 23:00 on 13 February 2021, both inclusive, treat Beijing's boundary layer as a well-mixed box with no horizontal exchange, and work out what surface flux the observed PM2.5 buildup implies under that assumption. Then say whether a local-only mass balance is a plausible account of this episode.",
+          "validator": "validate_accumulation_flux",
+          "stores": [
+            "accumulation_flux"
+          ],
+          "evaluation_tier": "execution"
+        }
+      ]
+    }
+  ],
+  "domain": "beijing"
+}

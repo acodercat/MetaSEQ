@@ -1,0 +1,25 @@
+[
+  {
+    "name": "hk_x_traffic_no2_condition",
+    "module": "evals.neuroair.cross_domain_analysis.HK.hk_x_traffic_no2_condition",
+    "requirements": "Among segments <=300 m of station 17, argmax mean congestion_index over June hours with NO2>100 at station 17. Store worst_segment_id (int) and worst_segment_ci (float, 2dp).",
+    "conversations": [
+      {
+        "id": "hk_x_traffic_no2_condition",
+        "turns": [
+          {
+            "query": "Consider the road segments whose geometry lies within 300 metres of Causeway Bay air-quality station (station_id 17). Restricting to June 2025 hours (2025-06-01 to 2025-06-30) in which the hourly NO2 at station 17 exceeded 100, identify which of those road segments had the highest mean congestion_index over those hours (non-NULL values, from the hourly road-segment traffic records). Return that road_segment_id and its mean congestion_index.",
+            "validator": "validate_hk_x_traffic_no2_condition"
+          }
+        ]
+      }
+    ],
+    "difficulty": "hard",
+    "category": "cross_domain_analysis",
+    "_source": {
+      "benchmark": "hk-x-hard",
+      "original_query_id": "hk_x_traffic_no2_condition",
+      "verbatim": false
+    }
+  }
+]

@@ -1,0 +1,72 @@
+{
+  "hk_humidity_secondary_aerosol": {
+    "scenario": "hk_humidity_secondary_aerosol",
+    "conversations": [
+      {
+        "id": "humidity_aerosol",
+        "turns": [
+          {
+            "query": "In October 2025, for all general air quality stations combined, group hourly PM2.5/PM10 ratios by humidity bins from the King's Park weather station: low (<60%), medium (60-80%), high (>80%). Compute the average PM2.5/PM10 ratio for each bin (only include hours where both PM2.5 and PM10 are valid and PM10 > 0). Return the three ratios rounded to 3 decimal places.",
+            "actual_response": "Based on the analysis of all general air quality stations in October 2025, using humidity data from King's Park weather station:\n\n- **Low humidity (<60%)**: The average PM2.5/PM10 ratio is **0.686**, indicating that fine particles (PM2.5) constitute a larger fraction of total particulate matter under drier conditions. This suggests a greater contribution from primary combustion sources (e.g., vehicle emissions, industrial processes) relative to coarse particles.\n\n- **Medium humidity (60\u201380%)**: The average ratio is **0.654**, showing a moderate decline compared to low humidity. As moisture increases, secondary aerosol formation begins to enhance the coarse particle fraction, slightly reducing the PM2.5 dominance.\n\n- **High humidity (>80%)**: The average ratio drops to **0.607**, the lowest among the three bins. High humidity promotes the hygroscopic growth of particles and enhances secondary aerosol formation (e.g., sulfate and nitrate production via aqueous-phase reactions), which shifts the size distribution toward larger particles (PM2.5\u201310), thereby lowering the PM2.5/PM10 ratio.\n\n- **Pearson correlation between humidity and PM2.5/PM10 ratio**: **-0.1879**, a weak but statistically meaningful negative correlation. This confirms that as humidity increases, the proportion of fine particles relative to coarse particles tends to decrease, consistent with the bin-wise analysis. The modest correlation strength suggests that while humidity plays a role in modulating particle size distribution, other factors (e.g., emission sources, atmospheric mixing, temperature) also significantly influence the PM2.5/PM10 ratio.",
+            "actual_calls": [],
+            "validation_errors": [],
+            "metrics": {
+              "steps": 4,
+              "prompt_tokens": 24745,
+              "completion_tokens": 1304,
+              "total_tokens": 26049
+            },
+            "success": true,
+            "variables_not_set": false,
+            "error": null,
+            "code_snippets": [
+              "import pandas as pd\nfrom sqlalchemy import text\n\n# First, find the King's Park weather station ID\nquery = text(\"\"\"\nSELECT id, name_en FROM weather_station WHERE name_en ILIKE '%king%park%'\n\"\"\")\ndf_ws = pd.read_sql(query, engine)\nprint(\"Weather stations matching 'King's Park':\")\nprint(df_ws)\n\n# Find all general air quality stations\nquery = text(\"\"\"\nSELECT id, name_en FROM air_quality_station WHERE station_type = 'GENERAL'\n\"\"\")\ndf_aqs = pd.read_sql(query, engine)\nprint(\"\\nGeneral air quality stations:\")\nprint(df_aqs)",
+              "# Now join hourly air quality (general stations only) with King's Park weather (station_id=14)\n# for October 2025, compute PM2.5/PM10 ratio, and group by humidity bins\nquery = text(\"\"\"\nSELECT \n    CASE \n        WHEN w.humidity < 60 THEN 'low'\n        WHEN w.humidity >= 60 AND w.humidity <= 80 THEN 'mid'\n        WHEN w.humidity > 80 THEN 'high'\n        ELSE NULL\n    END AS humidity_bin,\n    AVG(CASE WHEN aq.pm10 > 0 THEN aq.pm2_5 / aq.pm10 ELSE NULL END) AS avg_ratio,\n    COUNT(*) AS cnt\nFROM hourly_station_air_quality aq\nJOIN air_quality_station aqs ON aq.station_id = aqs.id\nJOIN hourly_station_weather w ON w.datetime = aq.datetime\nWHERE aqs.station_type = 'GENERAL'\n  AND w.station_id = 14\n  AND aq.datetime >= '2025-10-01 00:00:00'\n  AND aq.datetime < '2025-11-01 00:00:00'\n  AND aq.pm2_5 IS NOT NULL\n  AND aq.pm10 IS NOT NULL\n  AND aq.pm10 > 0\n  AND w.humidity IS NOT NULL\nGROUP BY humidity_bin\nORDER BY humidity_bin\n\"\"\")\ndf_bins = pd.read_sql(query, engine)\nprint(\"PM2.5/PM10 ratio by humidity bins (King's Park weather, Oct 2025):\")\nprint(df_bins)",
+              "# Store the three ratios\nratio_low_humidity = round(float(df_bins[df_bins['humidity_bin'] == 'low']['avg_ratio'].values[0]), 3)\nratio_mid_humidity = round(float(df_bins[df_bins['humidity_bin'] == 'mid']['avg_ratio'].values[0]), 3)\nratio_high_humidity = round(float(df_bins[df_bins['humidity_bin'] == 'high']['avg_ratio'].values[0]), 3)\n\nprint(f\"ratio_low_humidity: {ratio_low_humidity}\")\nprint(f\"ratio_mid_humidity: {ratio_mid_humidity}\")\nprint(f\"ratio_high_humidity: {ratio_high_humidity}\")\n\n# Now compute Pearson correlation between humidity and PM2.5/PM10 ratio\nquery = text(\"\"\"\nSELECT \n    w.humidity,\n    CASE WHEN aq.pm10 > 0 THEN aq.pm2_5 / aq.pm10 ELSE NULL END AS ratio\nFROM hourly_station_air_quality aq\nJOIN air_quality_station aqs ON aq.station_id = aqs.id\nJOIN hourly_station_weather w ON w.datetime = aq.datetime\nWHERE aqs.station_type = 'GENERAL'\n  AND w.station_id = 14\n  AND aq.datetime >= '2025-10-01 00:00:00'\n  AND aq.datetime < '2025-11-01 00:00:00'\n  AND aq.pm2_5 IS NOT NULL\n  AND aq.pm10 IS NOT NULL\n  AND aq.pm10 > 0\n  AND w.humidity IS NOT NULL\n\"\"\")\ndf_corr = pd.read_sql(query, engine)\ncorrelation = df_corr['humidity'].corr(df_corr['ratio'])\nhumidity_ratio_correlation = round(correlation, 4)\nprint(f\"humidity_ratio_correlation: {humidity_ratio_correlation}\")"
+            ],
+            "runtime_variables": {
+              "ratio_low_humidity": 0.686,
+              "ratio_mid_humidity": 0.654,
+              "ratio_high_humidity": 0.607,
+              "humidity_ratio_correlation": -0.1879
+            }
+          },
+          {
+            "query": "Across all matched hours in October 2025, what is the Pearson correlation between King's Park humidity and the network-wide average PM2.5/PM10 ratio? Return the coefficient rounded to 4 decimal places.",
+            "actual_response": "The Pearson correlation between King's Park humidity and the network-wide average PM2.5/PM10 ratio across all 744 matched hours in October 2025 is **-0.2477**. This indicates a weak-to-moderate negative linear relationship: as humidity increases, the proportion of fine particles (PM2.5) relative to total particulate matter (PM10) tends to decrease. This is consistent with the physical mechanism that higher humidity promotes hygroscopic growth and secondary aerosol formation, shifting the size distribution toward coarser particles.",
+            "actual_calls": [],
+            "validation_errors": [],
+            "metrics": {
+              "steps": 2,
+              "prompt_tokens": 15144,
+              "completion_tokens": 516,
+              "total_tokens": 15660
+            },
+            "success": true,
+            "variables_not_set": false,
+            "error": null,
+            "code_snippets": [
+              "import pandas as pd\nfrom sqlalchemy import text\n\n# Compute network-wide average PM2.5/PM10 ratio per hour, then correlate with King's Park humidity\nquery = text(\"\"\"\nSELECT \n    aq.datetime,\n    w.humidity,\n    AVG(CASE WHEN aq.pm10 > 0 THEN aq.pm2_5 / aq.pm10 ELSE NULL END) AS avg_ratio\nFROM hourly_station_air_quality aq\nJOIN air_quality_station aqs ON aq.station_id = aqs.id\nJOIN hourly_station_weather w ON w.datetime = aq.datetime\nWHERE aqs.station_type = 'GENERAL'\n  AND w.station_id = 14\n  AND aq.datetime >= '2025-10-01 00:00:00'\n  AND aq.datetime < '2025-11-01 00:00:00'\n  AND aq.pm2_5 IS NOT NULL\n  AND aq.pm10 IS NOT NULL\n  AND aq.pm10 > 0\n  AND w.humidity IS NOT NULL\nGROUP BY aq.datetime, w.humidity\nORDER BY aq.datetime\n\"\"\")\ndf = pd.read_sql(query, engine)\nprint(f\"Number of matched hours: {len(df)}\")\nprint(f\"Humidity range: {df['humidity'].min():.1f}% to {df['humidity'].max():.1f}%\")\nprint(f\"Avg ratio range: {df['avg_ratio'].min():.4f} to {df['avg_ratio'].max():.4f}\")\n\ncorrelation = df['humidity'].corr(df['avg_ratio'])\nhumidity_ratio_correlation = round(correlation, 4)\nprint(f\"\\nPearson correlation: {humidity_ratio_correlation}\")"
+            ],
+            "runtime_variables": {
+              "ratio_low_humidity": 0.686,
+              "ratio_mid_humidity": 0.654,
+              "ratio_high_humidity": 0.607,
+              "humidity_ratio_correlation": -0.2477
+            }
+          }
+        ]
+      }
+    ],
+    "metrics": {
+      "total_turns": 2,
+      "successful_turns": 2,
+      "failed_turns": 0,
+      "total_steps": 6,
+      "success_rate": 1.0,
+      "total_prompt_tokens": 39889,
+      "total_completion_tokens": 1820,
+      "total_tokens": 41709
+    }
+  }
+}

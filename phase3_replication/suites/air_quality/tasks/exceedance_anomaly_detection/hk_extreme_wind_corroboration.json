@@ -1,0 +1,32 @@
+{
+  "name": "hk_extreme_wind_corroboration",
+  "difficulty": "medium",
+  "category": "exceedance_anomaly_detection",
+  "case_type": "baseline",
+  "conversations": [
+    {
+      "id": "extreme_wind_corroboration",
+      "turns": [
+        {
+          "query": "Find the strongest hourly gust reported by a Hong Kong weather station in 2025 and its date. At that exact timestamp, what was the highest gust at any other station, and what does the comparison establish?",
+          "validator": "validate_record_gust",
+          "stores": [
+            "max_gust_kmh",
+            "max_gust_date",
+            "max_peer_gust_kmh"
+          ]
+        },
+        {
+          "query": "Now approach the same year through pressure: find the lowest hourly pressure reported anywhere in the network and its date. Which of the two dates had more of the network blowing hard at once, and what does the record settle, and not settle, about the reading you found first?",
+          "validator": "validate_event_scale",
+          "stores": [
+            "min_pressure_hpa",
+            "min_pressure_date",
+            "date_with_more_of_the_network_blowing_hard"
+          ]
+        }
+      ]
+    }
+  ],
+  "domain": "hk"
+}

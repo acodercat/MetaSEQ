@@ -1,0 +1,22 @@
+{
+  "name": "beijing_partial_year_baseline",
+  "difficulty": "hard",
+  "category": "temporal_pattern_analysis",
+  "case_type": "baseline",
+  "conversations": [
+    {
+      "id": "partial_year_baseline",
+      "turns": [
+        {
+          "query": "How is ozone running this year on Beijing's city-level record? Report the year-on-year change for 2026 against the matching span of 2025, as a percent.",
+          "validator": "validate_year_on_year",
+          "stores": [
+            "o3_year_on_year_pct"
+          ],
+          "evaluation_tier": "execution"
+        }
+      ]
+    }
+  ],
+  "domain": "beijing"
+}

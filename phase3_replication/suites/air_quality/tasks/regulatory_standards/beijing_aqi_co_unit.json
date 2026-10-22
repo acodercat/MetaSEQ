@@ -1,0 +1,21 @@
+{
+  "name": "beijing_aqi_co_unit",
+  "difficulty": "hard",
+  "category": "regulatory_standards",
+  "case_type": "trap",
+  "conversations": [
+    {
+      "id": "aqi_co_unit",
+      "turns": [
+        {
+          "query": "For Dongsi station, compute the daily AQI for each day of January 2021 under China's national standard (HJ 633-2012), then report the mean of those daily values. Take the ozone contribution from the maximum daily 8-hour running mean, requiring at least 6 valid hours per window. Include every day of the month, whatever number of hours it reports.",
+          "validator": "validate_mean_daily_aqi",
+          "stores": [
+            "mean_daily_aqi"
+          ]
+        }
+      ]
+    }
+  ],
+  "domain": "beijing"
+}

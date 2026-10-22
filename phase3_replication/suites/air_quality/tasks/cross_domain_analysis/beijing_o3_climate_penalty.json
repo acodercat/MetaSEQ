@@ -1,0 +1,30 @@
+{
+  "name": "beijing_o3_climate_penalty",
+  "difficulty": "hard",
+  "category": "cross_domain_analysis",
+  "case_type": "baseline",
+  "conversations": [
+    {
+      "id": "o3_climate_penalty",
+      "turns": [
+        {
+          "query": "How is Beijing's daily peak ozone associated with hotter days? Over 2020–2025, regress the city's daily maximum eight-hour ozone on daily maximum temperature across all days, and report the slope.",
+          "validator": "validate_slope_all_days",
+          "stores": [
+            "slope_all_days"
+          ],
+          "evaluation_tier": "execution"
+        },
+        {
+          "query": "Report the same slope for June–August days only. Explain what the difference between the two estimates means for a meteorological normalisation and what it does not establish about a causal temperature effect.",
+          "validator": "validate_slope_summer",
+          "stores": [
+            "slope_summer"
+          ],
+          "evaluation_tier": "execution"
+        }
+      ]
+    }
+  ],
+  "domain": "beijing"
+}

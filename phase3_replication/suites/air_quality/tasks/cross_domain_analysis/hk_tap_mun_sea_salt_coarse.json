@@ -1,0 +1,40 @@
+{
+  "name": "hk_tap_mun_sea_salt_coarse",
+  "difficulty": "hard",
+  "category": "cross_domain_analysis",
+  "case_type": "baseline",
+  "conversations": [
+    {
+      "id": "tap_mun_sea_salt_coarse",
+      "turns": [
+        {
+          "query": "At Tap Mun in 2025, quantify how fine and coarse particulate change between the lowest and highest wind-speed quartiles, including their sample sizes. Do the fractions support the claim that stronger winds clear coastal air?",
+          "validator": "validate_harder_turn_1",
+          "stores": [
+            "pm25_with_stronger_wind",
+            "coarse_with_stronger_wind",
+            "pm10_falls_as_much_as_pm25",
+            "wind_quartile_pm25_change_pct",
+            "wind_quartile_coarse_change_pct",
+            "strong_wind_hours",
+            "light_wind_hours"
+          ],
+          "evaluation_tier": "execution"
+        },
+        {
+          "query": "Within the middle wind-speed range, compare easterly and westerly fine and coarse particulate and report the group sizes. Does this distinguish sea spray from dilution, continental transport or resuspension? Advise what the desk can publish.",
+          "validator": "validate_harder_turn_2",
+          "stores": [
+            "line_holds_for",
+            "easterly_minus_westerly_coarse",
+            "easterly_minus_westerly_pm25",
+            "moderate_easterly_hours",
+            "moderate_westerly_hours"
+          ],
+          "evaluation_tier": "execution"
+        }
+      ]
+    }
+  ],
+  "domain": "hk"
+}

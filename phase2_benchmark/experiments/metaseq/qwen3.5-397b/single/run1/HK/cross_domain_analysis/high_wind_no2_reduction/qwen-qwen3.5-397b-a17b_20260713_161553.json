@@ -1,0 +1,48 @@
+{
+  "hk_high_wind_no2_reduction": {
+    "scenario": "hk_high_wind_no2_reduction",
+    "conversations": [
+      {
+        "id": "high_wind_no2_reduction",
+        "turns": [
+          {
+            "query": "On October 5, 2025, identify the hour when any weather station recorded the highest wind speed of the day. For the air quality monitoring station closest to that windiest weather station, by what percentage was the NO2 concentration at that peak-wind hour lower than the station's daily average NO2? (Round to 1 decimal place, positive value means reduction)",
+            "actual_response": "On October 5, 2025, the highest wind speed was recorded at 09:00 by the Ngong Ping weather station. The closest air quality monitoring station to Ngong Ping is Tung Chung station.\n\nAt Tung Chung station:\n- NO2 concentration at the peak wind hour (09:00): 3.5 \u00b5g/m\u00b3\n- Daily average NO2 concentration: 4.59 \u00b5g/m\u00b3\n\nThe NO2 concentration at the peak wind hour was **23.8%** lower than the station's daily average.",
+            "actual_calls": [],
+            "validation_errors": [],
+            "metrics": {
+              "steps": 7,
+              "prompt_tokens": 44162,
+              "completion_tokens": 1759,
+              "total_tokens": 45921
+            },
+            "success": true,
+            "variables_not_set": false,
+            "error": null,
+            "code_snippets": [
+              "import pandas as pd\nfrom sqlalchemy import text\n\n# Find the hour with the highest wind speed on 2025-10-05 and the station that recorded it\nquery = text(\"\"\"\nSELECT station_id, datetime, wind_speed\nFROM hourly_station_weather\nWHERE datetime >= '2025-10-05 00:00:00' AND datetime < '2025-10-06 00:00:00'\nORDER BY wind_speed DESC\nLIMIT 1\n\"\"\")\npeak_wind = pd.read_sql(query, engine)\nprint(peak_wind)",
+              "import pandas as pd\nfrom sqlalchemy import text\n\n# Find the hour with the highest wind speed on 2025-10-05, excluding NULL values\nquery = text(\"\"\"\nSELECT station_id, datetime, wind_speed\nFROM hourly_station_weather\nWHERE datetime >= '2025-10-05 00:00:00' AND datetime < '2025-10-06 00:00:00'\nAND wind_speed IS NOT NULL\nORDER BY wind_speed DESC\nLIMIT 1\n\"\"\")\npeak_wind = pd.read_sql(query, engine)\nprint(peak_wind)",
+              "import pandas as pd\nfrom sqlalchemy import text\n\n# Get coordinates of weather station 47\nquery = text(\"\"\"\nSELECT id, name_en, ST_X(coordinate::geometry) as lon, ST_Y(coordinate::geometry) as lat\nFROM weather_station\nWHERE id = 47\n\"\"\")\nweather_station = pd.read_sql(query, engine)\nprint(weather_station)",
+              "import pandas as pd\nfrom sqlalchemy import text\n\n# Find the closest air quality monitoring station to weather station 47\nquery = text(\"\"\"\nSELECT id, name_en, ST_Distance(\n    coordinate::geography,\n    ST_SetSRID(ST_MakePoint(113.912778, 22.258611), 4326)::geography\n) as distance\nFROM air_quality_station\nORDER BY distance\nLIMIT 1\n\"\"\")\nclosest_aq_station = pd.read_sql(query, engine)\nprint(closest_aq_station)",
+              "import pandas as pd\nfrom sqlalchemy import text\n\n# Get NO2 at peak wind hour (09:00) and daily average for station 6 on 2025-10-05\nquery = text(\"\"\"\nSELECT \n    SUM(CASE WHEN datetime = '2025-10-05 09:00:00' THEN no2 END) as no2_at_peak_hour,\n    AVG(no2) as daily_avg_no2\nFROM hourly_station_air_quality\nWHERE station_id = 6\nAND datetime >= '2025-10-05 00:00:00' AND datetime < '2025-10-06 00:00:00'\nAND no2 IS NOT NULL\n\"\"\")\nno2_data = pd.read_sql(query, engine)\nprint(no2_data)",
+              "no2_at_peak_hour = 3.5\ndaily_avg_no2 = 4.591667\npct_reduction = ((daily_avg_no2 - no2_at_peak_hour) / daily_avg_no2) * 100\nno2_pct_reduction = round(pct_reduction, 1)\nprint(f\"Percentage reduction: {no2_pct_reduction}%\")"
+            ],
+            "runtime_variables": {
+              "no2_pct_reduction": 23.8
+            }
+          }
+        ]
+      }
+    ],
+    "metrics": {
+      "total_turns": 1,
+      "successful_turns": 1,
+      "failed_turns": 0,
+      "total_steps": 7,
+      "success_rate": 1.0,
+      "total_prompt_tokens": 44162,
+      "total_completion_tokens": 1759,
+      "total_tokens": 45921
+    }
+  }
+}

@@ -1,0 +1,6 @@
+name = "toy"
+domains = ["toy"]
+description = "Offline two-turn task for end-to-end tests."
+
+[source]
+repository = "tests"

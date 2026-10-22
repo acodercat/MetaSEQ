@@ -1,0 +1,45 @@
+{
+  "hk_hard_nearest_other_no2_gap": {
+    "scenario": "hk_hard_nearest_other_no2_gap",
+    "conversations": [
+      {
+        "id": "hk_hard_nearest_other_no2_gap",
+        "turns": [
+          {
+            "query": "For every GENERAL air-quality station except station 8, find its nearest OTHER GENERAL air-quality station by geodesic distance in meters, explicitly excluding itself and excluding roadside stations. For June 2025 inclusive, compute each station's mean NO2 over non-NULL hourly rows and its nearest-other GENERAL station's mean NO2 over non-NULL hourly rows. For each base station compute base_mean_no2 - nearest_other_mean_no2. Return the base station_id with the largest positive difference, the nearest_station_id, and the difference rounded to 6 decimals. Break ties by smaller base station_id, though the expected winner is unique with a non-tiny margin.",
+            "actual_response": "base_station_id: 3  \nnearest_station_id: 4  \nmax_no2_gap: 16.970511",
+            "actual_calls": [],
+            "validation_errors": [],
+            "metrics": {
+              "steps": 2,
+              "prompt_tokens": 11160,
+              "completion_tokens": 1168,
+              "total_tokens": 12328
+            },
+            "success": true,
+            "variables_not_set": false,
+            "error": null,
+            "code_snippets": [
+              "import pandas as pd\nfrom sqlalchemy import text\n\nstart, end = \"2025-06-01 00:00:00\", \"2025-07-01 00:00:00\"\n\ncount_q = text(\"\"\"\nSELECT COUNT(*) AS nonnull_no2_rows, COUNT(DISTINCT station_id) AS stations_with_no2\nFROM hourly_station_air_quality h\nJOIN air_quality_station s ON s.id = h.station_id\nWHERE s.station_type = 'GENERAL'\n  AND h.datetime >= :start AND h.datetime < :end\n  AND h.no2 IS NOT NULL\n\"\"\")\ncnt = pd.read_sql(count_q, engine, params={\"start\": start, \"end\": end})\n\nfinal_q = text(\"\"\"\nWITH general_stations AS (\n  SELECT id, coordinate\n  FROM air_quality_station\n  WHERE station_type = 'GENERAL'\n),\nnearest AS (\n  SELECT b.id AS base_station_id, n.id AS nearest_station_id,\n         ST_Distance(b.coordinate, n.coordinate) AS distance_m,\n         ROW_NUMBER() OVER (\n           PARTITION BY b.id\n           ORDER BY ST_Distance(b.coordinate, n.coordinate), n.id\n         ) AS rn\n  FROM general_stations b\n  JOIN general_stations n ON n.id <> b.id\n  WHERE b.id <> 8\n),\nmeans AS (\n  SELECT station_id, AVG(no2) AS mean_no2, COUNT(*) AS no2_count\n  FROM hourly_station_air_quality\n  WHERE datetime >= :start AND datetime < :end\n    AND no2 IS NOT NULL\n  GROUP BY station_id\n),\ngaps AS (\n  SELECT nr.base_station_id, nr.nearest_station_id,\n         bm.mean_no2 AS base_mean_no2, nm.mean_no2 AS nearest_mean_no2,\n         bm.no2_count AS base_no2_count, nm.no2_count AS nearest_no2_count,\n         bm.mean_no2 - nm.mean_no2 AS no2_gap\n  FROM nearest nr\n  JOIN means bm ON bm.station_id = nr.base_station_id\n  JOIN means nm ON nm.station_id = nr.nearest_station_id\n  WHERE nr.rn = 1\n)\nSELECT base_station_id, nearest_station_id, no2_gap,\n       COUNT(*) OVER () AS candidate_pairs,\n       SUM(CASE WHEN no2_gap > 0 THEN 1 ELSE 0 END) OVER () AS positive_gap_pairs\nFROM gaps\nWHERE no2_gap > 0\nORDER BY no2_gap DESC, base_station_id ASC\nLIMIT 1\n\"\"\")\nres = pd.read_sql(final_q, engine, params={\"start\": start, \"end\": end})\n\nbase_station_id = int(res.loc[0, \"base_station_id\"])\nnearest_station_id = int(res.loc[0, \"nearest_station_id\"])\nmax_no2_gap = round(float(res.loc[0, \"no2_gap\"]), 6)\n\nprint({\n    \"general_nonnull_no2_rows_in_period\": int(cnt.loc[0, \"nonnull_no2_rows\"]),\n    \"general_stations_with_no2_in_period\": int(cnt.loc[0, \"stations_with_no2\"]),\n    \"candidate_base_nearest_pairs_with_means\": int(res.loc[0, \"candidate_pairs\"]),\n    \"positive_gap_pairs\": int(res.loc[0, \"positive_gap_pairs\"]),\n    \"base_station_id\": base_station_id,\n    \"nearest_station_id\": nearest_station_id,\n    \"max_no2_gap\": max_no2_gap\n})"
+            ],
+            "runtime_variables": {
+              "base_station_id": 3,
+              "nearest_station_id": 4,
+              "max_no2_gap": 16.970511
+            }
+          }
+        ]
+      }
+    ],
+    "metrics": {
+      "total_turns": 1,
+      "successful_turns": 1,
+      "failed_turns": 0,
+      "total_steps": 2,
+      "success_rate": 1.0,
+      "total_prompt_tokens": 11160,
+      "total_completion_tokens": 1168,
+      "total_tokens": 12328
+    }
+  }
+}

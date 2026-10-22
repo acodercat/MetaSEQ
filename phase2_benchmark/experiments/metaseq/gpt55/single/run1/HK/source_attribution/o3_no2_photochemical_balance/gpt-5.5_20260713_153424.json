@@ -1,0 +1,74 @@
+{
+  "hk_o3_no2_photochemical_balance": {
+    "scenario": "hk_o3_no2_photochemical_balance",
+    "conversations": [
+      {
+        "id": "photochemical_balance",
+        "turns": [
+          {
+            "query": "On October 5, 2025, for each air quality monitoring station, compute the daily average photochemical oxidant partitioning ratio (including only hours where both O3 and NO2 are available). What is the mean ratio for roadside vs general stations? Return both means rounded to 3 decimal places and the station with the highest ratio (most photochemically aged air) along with its ratio.",
+            "actual_response": "Roadside mean ratio: 0.527  \nGeneral mean ratio: 0.811  \n\nHighest-ratio station: Tap Mun  \nHighest ratio: 0.964",
+            "actual_calls": [],
+            "validation_errors": [],
+            "metrics": {
+              "steps": 2,
+              "prompt_tokens": 11892,
+              "completion_tokens": 1418,
+              "total_tokens": 13310
+            },
+            "success": true,
+            "variables_not_set": false,
+            "error": null,
+            "code_snippets": [
+              "import pandas as pd\nfrom sqlalchemy import text\n\nstart, end = \"2025-10-05 00:00:00\", \"2025-10-06 00:00:00\"\n\n# Count qualifying hourly readings before aggregation\ncount_q = text(\"\"\"\nSELECT COUNT(*) AS n\nFROM hourly_station_air_quality\nWHERE datetime >= :start AND datetime < :end\n  AND o3 IS NOT NULL AND no2 IS NOT NULL\n  AND (o3 + no2) > 0\n\"\"\")\nn = pd.read_sql(count_q, engine, params={\"start\": start, \"end\": end}).iloc[0, 0]\n\n# Daily station-level photochemical oxidant partitioning ratio, then station-type means\ndaily_q = text(\"\"\"\nWITH station_daily AS (\n  SELECT\n    s.id AS station_id,\n    s.name_en AS station_name,\n    s.station_type,\n    AVG(h.o3 / NULLIF(h.o3 + h.no2, 0)) AS ox_ratio,\n    COUNT(*) AS valid_hours\n  FROM hourly_station_air_quality h\n  JOIN air_quality_station s ON h.station_id = s.id\n  WHERE h.datetime >= :start AND h.datetime < :end\n    AND h.o3 IS NOT NULL AND h.no2 IS NOT NULL\n    AND (h.o3 + h.no2) > 0\n  GROUP BY s.id, s.name_en, s.station_type\n)\nSELECT\n  station_id, station_name, station_type, ox_ratio, valid_hours,\n  AVG(ox_ratio) OVER (PARTITION BY station_type) AS type_mean_ratio,\n  COUNT(*) OVER (PARTITION BY station_type) AS stations_in_type\nFROM station_daily\nORDER BY ox_ratio DESC\n\"\"\")\nstation_daily = pd.read_sql(daily_q, engine, params={\"start\": start, \"end\": end})\n\nif station_daily.empty:\n    raise ValueError(\"No valid O3 and NO2 hourly readings were available for the specified date.\")\n\nhighest = station_daily.iloc[0]\nhighest_station_id = int(highest[\"station_id\"])\n\ntype_means = station_daily.groupby(\"station_type\")[\"ox_ratio\"].mean()\nroadside_ox_ratio = round(float(type_means.get(\"ROADSIDE\", float(\"nan\"))), 3)\ngeneral_ox_ratio = round(float(type_means.get(\"GENERAL\", float(\"nan\"))), 3)\nhighest_ox_station = str(highest[\"station_name\"])\nhighest_ox_ratio = round(float(highest[\"ox_ratio\"]), 3)\n\n# Time-window ratios at the highest-ratio station on the same date; clock ranges are start-inclusive/end-exclusive\nperiod_q = text(\"\"\"\nSELECT\n  CASE\n    WHEN EXTRACT(HOUR FROM datetime) >= 6  AND EXTRACT(HOUR FROM datetime) < 9  THEN 'morning'\n    WHEN EXTRACT(HOUR FROM datetime) >= 11 AND EXTRACT(HOUR FROM datetime) < 14 THEN 'midday'\n    WHEN EXTRACT(HOUR FROM datetime) >= 17 AND EXTRACT(HOUR FROM datetime) < 20 THEN 'evening'\n  END AS period,\n  AVG(o3 / NULLIF(o3 + no2, 0)) AS ox_ratio,\n  COUNT(*) AS valid_hours\nFROM hourly_station_air_quality\nWHERE station_id = :station_id\n  AND datetime >= :start AND datetime < :end\n  AND o3 IS NOT NULL AND no2 IS NOT NULL\n  AND (o3 + no2) > 0\n  AND (\n    (EXTRACT(HOUR FROM datetime) >= 6  AND EXTRACT(HOUR FROM datetime) < 9) OR\n    (EXTRACT(HOUR FROM datetime) >= 11 AND EXTRACT(HOUR FROM datetime) < 14) OR\n    (EXTRACT(HOUR FROM datetime) >= 17 AND EXTRACT(HOUR FROM datetime) < 20)\n  )\nGROUP BY period\n\"\"\")\nperiod_df = pd.read_sql(period_q, engine, params={\"station_id\": highest_station_id, \"start\": start, \"end\": end})\nperiod_map = dict(zip(period_df[\"period\"], period_df[\"ox_ratio\"]))\n\nmorning_ox = round(float(period_map.get(\"morning\", float(\"nan\"))), 3)\nmidday_ox = round(float(period_map.get(\"midday\", float(\"nan\"))), 3)\nevening_ox = round(float(period_map.get(\"evening\", float(\"nan\"))), 3)\n\nprint({\n    \"valid_hourly_readings\": int(n),\n    \"stations_analyzed\": int(len(station_daily)),\n    \"roadside_ox_ratio\": roadside_ox_ratio,\n    \"general_ox_ratio\": general_ox_ratio,\n    \"highest_ox_station\": highest_ox_station,\n    \"highest_ox_ratio\": highest_ox_ratio,\n    \"morning_ox\": morning_ox,\n    \"midday_ox\": midday_ox,\n    \"evening_ox\": evening_ox\n})"
+            ],
+            "runtime_variables": {
+              "roadside_ox_ratio": 0.527,
+              "general_ox_ratio": 0.811,
+              "highest_ox_station": "Tap Mun",
+              "highest_ox_ratio": 0.964,
+              "morning_ox": 0.962,
+              "midday_ox": 0.994,
+              "evening_ox": 0.947
+            }
+          },
+          {
+            "query": "For the station with the highest photochemical oxidant partitioning ratio, how does this ratio vary across the day? Compute the average ratio for morning (06:00-09:00), midday (11:00-14:00), and evening (17:00-20:00) on October 5, 2025. Return all three values rounded to 3 decimal places.",
+            "actual_response": "For Tap Mun on October 5, 2025:\n\nMorning ratio: 0.962  \nMidday ratio: 0.994  \nEvening ratio: 0.947",
+            "actual_calls": [],
+            "validation_errors": [],
+            "metrics": {
+              "steps": 1,
+              "prompt_tokens": 6665,
+              "completion_tokens": 99,
+              "total_tokens": 6764
+            },
+            "success": true,
+            "variables_not_set": false,
+            "error": null,
+            "code_snippets": [],
+            "runtime_variables": {
+              "roadside_ox_ratio": 0.527,
+              "general_ox_ratio": 0.811,
+              "highest_ox_station": "Tap Mun",
+              "highest_ox_ratio": 0.964,
+              "morning_ox": 0.962,
+              "midday_ox": 0.994,
+              "evening_ox": 0.947
+            }
+          }
+        ]
+      }
+    ],
+    "metrics": {
+      "total_turns": 2,
+      "successful_turns": 2,
+      "failed_turns": 0,
+      "total_steps": 3,
+      "success_rate": 1.0,
+      "total_prompt_tokens": 18557,
+      "total_completion_tokens": 1517,
+      "total_tokens": 20074
+    }
+  }
+}

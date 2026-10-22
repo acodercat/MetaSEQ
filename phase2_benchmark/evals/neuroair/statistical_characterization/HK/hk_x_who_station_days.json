@@ -1,0 +1,25 @@
+[
+  {
+    "name": "hk_x_who_station_days",
+    "module": "evals.neuroair.statistical_characterization.HK.hk_x_who_station_days",
+    "requirements": "Count station-days (station x date) in June 2025 with daily-mean PM2.5 strictly above the WHO 2021 24-hour AQG. Store who_exceed_station_days (int).",
+    "conversations": [
+      {
+        "id": "hk_x_who_station_days",
+        "turns": [
+          {
+            "query": "Over June 2025 (2025-06-01 to 2025-06-30), across all 18 air-quality stations, compute each station-day's daily mean PM2.5 (average of that station's non-NULL hourly PM2.5 values on that calendar date). How many station-days STRICTLY exceeded the World Health Organization 2021 Air Quality Guideline value for 24-hour mean PM2.5? Return the count.",
+            "validator": "validate_hk_x_who_station_days"
+          }
+        ]
+      }
+    ],
+    "difficulty": "hard",
+    "category": "statistical_characterization",
+    "_source": {
+      "benchmark": "hk-x-hard",
+      "original_query_id": "hk_x_who_station_days",
+      "verbatim": false
+    }
+  }
+]

@@ -1,0 +1,78 @@
+{
+  "hk_voronoi_population_aqhi_burden": {
+    "scenario": "hk_voronoi_population_aqhi_burden",
+    "conversations": [
+      {
+        "id": "voronoi_aqhi",
+        "turns": [
+          {
+            "query": "Assign each population grid cell in pop_df to its nearest air quality monitoring station using haversine distance. Which station serves the largest population? Which serves the smallest? Return both station names and their served population counts.",
+            "actual_response": "Largest served population: Mong Kok \u2014 837,592 people\n\nSmallest served population: Tap Mun \u2014 16,123 people",
+            "actual_calls": [],
+            "validation_errors": [],
+            "metrics": {
+              "steps": 2,
+              "prompt_tokens": 11533,
+              "completion_tokens": 1472,
+              "total_tokens": 13005
+            },
+            "success": true,
+            "variables_not_set": false,
+            "error": null,
+            "code_snippets": [
+              "import pandas as pd\nimport numpy as np\nfrom sqlalchemy import text\n\n# Retrieve station locations and aggregate AQHI summaries\nstation_df = pd.read_sql(text(\"\"\"\n    SELECT id, name_en,\n           ST_X(coordinate::geometry) AS longitude,\n           ST_Y(coordinate::geometry) AS latitude\n    FROM air_quality_station\n    WHERE coordinate IS NOT NULL\n\"\"\"), engine)\n\naqhi_count = pd.read_sql(text(\"\"\"\n    SELECT COUNT(*) AS n\n    FROM hourly_station_air_quality\n    WHERE aqhi IS NOT NULL\n\"\"\"), engine)['n'].iloc[0]\n\naqhi_df = pd.read_sql(text(\"\"\"\n    SELECT station_id, AVG(aqhi)::float AS avg_aqhi, COUNT(*) AS n_readings\n    FROM hourly_station_air_quality\n    WHERE aqhi IS NOT NULL\n    GROUP BY station_id\n\"\"\"), engine)\n\n# Assign each population grid cell to nearest station using haversine distance\npop = pop_df[['longitude', 'latitude', 'population']].dropna().copy()\npop = pop[pop['population'].fillna(0) > 0]\n\nR = 6371.0088\nlat1 = np.radians(pop['latitude'].to_numpy())[:, None]\nlon1 = np.radians(pop['longitude'].to_numpy())[:, None]\nlat2 = np.radians(station_df['latitude'].to_numpy())[None, :]\nlon2 = np.radians(station_df['longitude'].to_numpy())[None, :]\na = np.sin((lat2 - lat1) / 2) ** 2 + np.cos(lat1) * np.cos(lat2) * np.sin((lon2 - lon1) / 2) ** 2\ndist = 2 * R * np.arcsin(np.sqrt(a))\nnearest_idx = dist.argmin(axis=1)\n\npop['station_id'] = station_df['id'].to_numpy()[nearest_idx]\nserved = (pop.groupby('station_id', as_index=False)['population'].sum()\n            .merge(station_df[['id', 'name_en']], left_on='station_id', right_on='id', how='right')\n            .drop(columns=['id']))\nserved['population'] = served['population'].fillna(0)\nserved['served_pop_int'] = served['population'].round().astype(int)\n\nsummary = served.merge(aqhi_df, on='station_id', how='left')\nsummary['avg_aqhi_1dp'] = summary['avg_aqhi'].round(1)\nsummary['burden'] = summary['served_pop_int'] * summary['avg_aqhi']\nsummary['burden_int'] = summary['burden'].round().astype('Int64')\n\nmost_row = summary.loc[summary['served_pop_int'].idxmax()]\nleast_row = summary.loc[summary['served_pop_int'].idxmin()]\nburden_row = summary.loc[summary['burden'].idxmax()]\n\nmost_served_station = str(most_row['name_en'])\nmost_served_pop = int(most_row['served_pop_int'])\nleast_served_station = str(least_row['name_en'])\nleast_served_pop = int(least_row['served_pop_int'])\nhighest_burden_station = str(burden_row['name_en'])\nhighest_burden_value = int(round(burden_row['burden']))\nhighest_burden_pop = int(burden_row['served_pop_int'])\nhighest_burden_aqhi = float(round(burden_row['avg_aqhi'], 1))\n\nprint(f\"Population grid cells assigned: {len(pop)}\")\nprint(f\"Total assigned population: {int(round(pop['population'].sum()))}\")\nprint(f\"Stations evaluated: {len(station_df)}\")\nprint(f\"AQHI readings included for burden calculation: {int(aqhi_count)}\")\nprint(f\"Largest served population: {most_served_station} \u2014 {most_served_pop}\")\nprint(f\"Smallest served population: {least_served_station} \u2014 {least_served_pop}\")\nprint(f\"Highest AQHI exposure burden: {highest_burden_station} \u2014 burden {highest_burden_value}, population {highest_burden_pop}, average AQHI {highest_burden_aqhi:.1f}\")"
+            ],
+            "runtime_variables": {
+              "most_served_station": "Mong Kok",
+              "most_served_pop": 837592,
+              "least_served_station": "Tap Mun",
+              "least_served_pop": 16123,
+              "highest_burden_station": "Mong Kok",
+              "highest_burden_value": 3022953,
+              "highest_burden_pop": 837592,
+              "highest_burden_aqhi": 3.6
+            }
+          },
+          {
+            "query": "Compute each station's July 2025 AQHI health burden as: (served population) multiplied by (monthly average AQHI). Which station has the highest health burden? Return the station name, the burden value (nearest integer), its served population, and its average AQHI (1dp).",
+            "actual_response": "Highest July 2025 AQHI health burden: Mong Kok\n\nBurden value: 2,750,456  \nServed population: 837,592  \nAverage AQHI: 3.3",
+            "actual_calls": [],
+            "validation_errors": [],
+            "metrics": {
+              "steps": 2,
+              "prompt_tokens": 13378,
+              "completion_tokens": 696,
+              "total_tokens": 14074
+            },
+            "success": true,
+            "variables_not_set": false,
+            "error": null,
+            "code_snippets": [
+              "import pandas as pd\nfrom sqlalchemy import text\n\n# Count July 2025 AQHI readings before aggregation\njuly_count = pd.read_sql(text(\"\"\"\n    SELECT COUNT(*) AS n\n    FROM hourly_station_air_quality\n    WHERE aqhi IS NOT NULL\n      AND datetime >= '2025-07-01 00:00:00'\n      AND datetime <  '2025-08-01 00:00:00'\n\"\"\"), engine)['n'].iloc[0]\n\n# Monthly average AQHI per station for July 2025\njuly_aqhi = pd.read_sql(text(\"\"\"\n    SELECT station_id, AVG(aqhi)::float AS avg_aqhi, COUNT(*) AS n_readings\n    FROM hourly_station_air_quality\n    WHERE aqhi IS NOT NULL\n      AND datetime >= '2025-07-01 00:00:00'\n      AND datetime <  '2025-08-01 00:00:00'\n    GROUP BY station_id\n\"\"\"), engine)\n\njuly_summary = served[['station_id', 'name_en', 'served_pop_int']].merge(july_aqhi, on='station_id', how='inner')\njuly_summary['burden'] = july_summary['served_pop_int'] * july_summary['avg_aqhi']\njuly_summary['burden_int'] = july_summary['burden'].round().astype(int)\njuly_summary['avg_aqhi_1dp'] = july_summary['avg_aqhi'].round(1)\n\njuly_burden_row = july_summary.loc[july_summary['burden'].idxmax()]\n\nhighest_burden_station = str(july_burden_row['name_en'])\nhighest_burden_value = int(july_burden_row['burden_int'])\nhighest_burden_pop = int(july_burden_row['served_pop_int'])\nhighest_burden_aqhi = float(july_burden_row['avg_aqhi_1dp'])\n\nprint(f\"July 2025 AQHI readings included: {int(july_count)}\")\nprint(f\"Stations with July 2025 AQHI data and assigned population: {len(july_summary)}\")\nprint(f\"Highest July 2025 AQHI health burden: {highest_burden_station} \u2014 burden {highest_burden_value}, population {highest_burden_pop}, average AQHI {highest_burden_aqhi:.1f}\")"
+            ],
+            "runtime_variables": {
+              "most_served_station": "Mong Kok",
+              "most_served_pop": 837592,
+              "least_served_station": "Tap Mun",
+              "least_served_pop": 16123,
+              "highest_burden_station": "Mong Kok",
+              "highest_burden_value": 2750456,
+              "highest_burden_pop": 837592,
+              "highest_burden_aqhi": 3.3
+            }
+          }
+        ]
+      }
+    ],
+    "metrics": {
+      "total_turns": 2,
+      "successful_turns": 2,
+      "failed_turns": 0,
+      "total_steps": 4,
+      "success_rate": 1.0,
+      "total_prompt_tokens": 24911,
+      "total_completion_tokens": 2168,
+      "total_tokens": 27079
+    }
+  }
+}

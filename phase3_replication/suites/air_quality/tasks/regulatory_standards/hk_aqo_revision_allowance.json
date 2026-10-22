@@ -1,0 +1,29 @@
+{
+  "name": "hk_aqo_revision_allowance",
+  "difficulty": "medium",
+  "category": "regulatory_standards",
+  "case_type": "baseline",
+  "conversations": [
+    {
+      "id": "aqo_revision_allowance",
+      "turns": [
+        {
+          "query": "Hong Kong replaced its Air Quality Objectives during 2025. Screen the whole year against the 24-hour PM2.5 objective that applied before the change — a limit of 50 ug/m3 which a station may exceed on up to 35 days in a calendar year — and report how many stations that would put in breach.",
+          "validator": "validate_previous_objective",
+          "stores": [
+            "stations_failing_previous"
+          ]
+        },
+        {
+          "query": "Repeat the 2025 station screen with the revised PM2.5 daily objective: 37.5 ug/m3 and eighteen permitted exceedance days. How many stations fail, what explains the change, and can the desk describe this counterfactual full-year screen as a legal breach?",
+          "validator": "validate_evidence_and_conclusion",
+          "stores": [
+            "stations_failing_current",
+            "printable_as_a_breach"
+          ]
+        }
+      ]
+    }
+  ],
+  "domain": "hk"
+}

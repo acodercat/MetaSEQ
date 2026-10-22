@@ -1,0 +1,31 @@
+{
+  "name": "hk_radiation_sensor_failure",
+  "difficulty": "medium",
+  "category": "exceedance_anomaly_detection",
+  "case_type": "baseline",
+  "conversations": [
+    {
+      "id": "radiation_sensor_failure",
+      "turns": [
+        {
+          "query": "Go through the 2025 hourly solar radiation record from Hong Kong's two radiation sites and find the station-days on which the global solar radiation is zero at every hour that was recorded. Report how many there are, and using whatever else in the record bears on it, work out what was going on.",
+          "validator": "validate_zero_days",
+          "stores": [
+            "zero_global_station_days"
+          ]
+        },
+        {
+          "query": "For each flagged day at Kau Sai Chau, report the peak direct radiation, then report King's Park's peak global and direct radiation on the earlier day. Use these channel measurements to assess the fault hypothesis, allowing for low-level offsets and the unresolved direct-channel reference plane.",
+          "validator": "validate_channel_peaks",
+          "stores": [
+            "earlier_day_peak_direct_wm2",
+            "later_day_peak_direct_wm2",
+            "earlier_day_peer_peak_global_wm2",
+            "earlier_day_peer_peak_direct_wm2"
+          ]
+        }
+      ]
+    }
+  ],
+  "domain": "hk"
+}

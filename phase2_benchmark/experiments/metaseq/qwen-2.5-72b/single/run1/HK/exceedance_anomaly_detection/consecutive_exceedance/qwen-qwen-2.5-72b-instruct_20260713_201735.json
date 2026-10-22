@@ -1,0 +1,46 @@
+{
+  "hk_consecutive_exceedance": {
+    "scenario": "hk_consecutive_exceedance",
+    "conversations": [
+      {
+        "id": "consecutive_exceedance",
+        "turns": [
+          {
+            "query": "In October 2025, find the longest consecutive sequence of hours where any single air quality monitoring station recorded PM2.5 > 50 \u00b5g/m\u00b3. Which station experienced this longest event, how many consecutive hours did it last, and when did it start? Return the station name, the number of consecutive hours, and the start datetime.",
+            "actual_response": "The longest consecutive PM2.5 exceedance event in October 2025 occurred at the **Causeway Bay** station. The event lasted for **5 consecutive hours** and started at **2025-10-27 18:00:00**.",
+            "actual_calls": [],
+            "validation_errors": [],
+            "metrics": {
+              "steps": 3,
+              "prompt_tokens": 17054,
+              "completion_tokens": 585,
+              "total_tokens": 17639
+            },
+            "success": true,
+            "variables_not_set": false,
+            "error": null,
+            "code_snippets": [
+              "import pandas as pd\nfrom sqlalchemy import text\n\n# Define the time range for October 2025\nstart_time = '2025-10-01 00:00:00'\nend_time = '2025-11-01 00:00:00'\n\n# Query the PM2.5 data for October 2025\nquery = text(f\"\"\"\nSELECT station_id, datetime, pm2_5\nFROM hourly_station_air_quality\nWHERE datetime >= '{start_time}' AND datetime < '{end_time}'\nORDER BY station_id, datetime\n\"\"\")\ndf = pd.read_sql(query, engine)\n\n# Convert datetime to pandas datetime\ndf['datetime'] = pd.to_datetime(df['datetime'])\n\n# Filter for PM2.5 > 50\ndf = df[df['pm2_5'] > 50]\n\n# Calculate the difference in time between consecutive rows\ndf['time_diff'] = df.groupby('station_id')['datetime'].diff().fillna(pd.Timedelta(hours=1))\n\n# Identify the start of new events\ndf['event_start'] = df['time_diff'] > pd.Timedelta(hours=1)\n\n# Group by station and event start to find the longest consecutive event\ngrouped = df.groupby(['station_id', df['event_start'].cumsum()])\n\n# Find the longest event for each station\nlongest_events = grouped['datetime'].agg(['first', 'last', 'count']).reset_index()\nlongest_events['duration'] = (longest_events['last'] - longest_events['first']).dt.total_seconds() / 3600\n\n# Find the overall longest event\nlongest_event = longest_events[longest_events['count'] == longest_events['count'].max()].iloc[0]\n\n# Get the station name\nstation_id = longest_event['station_id']\nquery_station_name = text(f\"\"\"\nSELECT name_en\nFROM air_quality_station\nWHERE id = {station_id}\n\"\"\")\nstation_name = pd.read_sql(query_station_name, engine)['name_en'].iloc[0]\n\n# Assign the results to the required variables\nstation_name = station_name\nconsecutive_hours = longest_event['count']\nevent_start = longest_event['first'].strftime('%Y-%m-%d %H:%M:%S')",
+              "# Print the results to verify\nprint(f\"Station: {station_name}\")\nprint(f\"Consecutive Hours: {consecutive_hours}\")\nprint(f\"Event Start: {event_start}\")"
+            ],
+            "runtime_variables": {
+              "station_name": "Causeway Bay",
+              "consecutive_hours": "np.int64(5)",
+              "event_start": "2025-10-27 18:00:00"
+            }
+          }
+        ]
+      }
+    ],
+    "metrics": {
+      "total_turns": 1,
+      "successful_turns": 1,
+      "failed_turns": 0,
+      "total_steps": 3,
+      "success_rate": 1.0,
+      "total_prompt_tokens": 17054,
+      "total_completion_tokens": 585,
+      "total_tokens": 17639
+    }
+  }
+}

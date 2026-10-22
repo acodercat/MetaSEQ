@@ -1,0 +1,25 @@
+{
+  "name": "beijing_multiple_comparisons",
+  "difficulty": "hard",
+  "category": "statistical_characterization",
+  "case_type": "baseline",
+  "conversations": [
+    {
+      "id": "multiple_comparisons",
+      "turns": [
+        {
+          "query": "Someone on the team wants a 'trends across the network' box for a report: is anything at any station actually trending? Screen every station-pollutant combination in Beijing's record over 2020 through 2025 for a trend in its monthly means, and say what the screen actually found.",
+          "validator": "validate_multiple_comparisons",
+          "stores": [
+            "tests_run",
+            "naive_significant",
+            "autocorr_significant",
+            "fdr_survivors"
+          ],
+          "evaluation_tier": "execution"
+        }
+      ]
+    }
+  ],
+  "domain": "beijing"
+}

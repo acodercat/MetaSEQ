@@ -1,0 +1,47 @@
+{
+  "hk_network_deviation_outlier": {
+    "scenario": "hk_network_deviation_outlier",
+    "conversations": [
+      {
+        "id": "network_deviation",
+        "turns": [
+          {
+            "query": "On October 5, 2025, for each hour compute the network-wide mean and standard deviation of PM2.5 across all general air quality stations. Then find the single station-hour with the largest absolute z-score deviation, where z-score equals the station PM2.5 minus the network mean divided by the network standard deviation. Return the station name, the hour of day, the station's PM2.5 value rounded to 1 decimal place, the network mean at that hour rounded to 1 decimal place, and the z-score rounded to 2 decimal places.",
+            "actual_response": "Outlier station: Tseung Kwan O  \nOutlier hour: 5  \nStation PM2.5: 12.4  \nNetwork mean PM2.5: 5.4  \nZ-score: 2.93",
+            "actual_calls": [],
+            "validation_errors": [],
+            "metrics": {
+              "steps": 2,
+              "prompt_tokens": 11351,
+              "completion_tokens": 1261,
+              "total_tokens": 12612
+            },
+            "success": true,
+            "variables_not_set": false,
+            "error": null,
+            "code_snippets": [
+              "import pandas as pd\nfrom sqlalchemy import text\n\nstart_ts = \"2025-10-05 00:00:00\"\nend_ts = \"2025-10-06 00:00:00\"\n\ncount_query = text(\"\"\"\nSELECT COUNT(*) AS readings, COUNT(DISTINCT h.station_id) AS stations, COUNT(DISTINCT h.datetime) AS hours\nFROM hourly_station_air_quality h\nJOIN air_quality_station s ON s.id = h.station_id\nWHERE s.station_type = 'GENERAL'\n  AND h.datetime >= :start_ts AND h.datetime < :end_ts\n  AND h.pm2_5 IS NOT NULL\n\"\"\")\ncount_df = pd.read_sql(count_query, engine, params={\"start_ts\": start_ts, \"end_ts\": end_ts})\n\noutlier_query = text(\"\"\"\nWITH hourly_stats AS (\n    SELECT h.datetime,\n           AVG(h.pm2_5) AS mean_pm25,\n           STDDEV_POP(h.pm2_5) AS sd_pm25,\n           COUNT(*) AS n\n    FROM hourly_station_air_quality h\n    JOIN air_quality_station s ON s.id = h.station_id\n    WHERE s.station_type = 'GENERAL'\n      AND h.datetime >= :start_ts AND h.datetime < :end_ts\n      AND h.pm2_5 IS NOT NULL\n    GROUP BY h.datetime\n),\nzs AS (\n    SELECT s.name_en AS station_name,\n           EXTRACT(HOUR FROM h.datetime)::int AS hour_of_day,\n           h.pm2_5 AS station_pm25,\n           hs.mean_pm25 AS network_mean,\n           (h.pm2_5 - hs.mean_pm25) / hs.sd_pm25 AS zscore\n    FROM hourly_station_air_quality h\n    JOIN air_quality_station s ON s.id = h.station_id\n    JOIN hourly_stats hs ON hs.datetime = h.datetime\n    WHERE s.station_type = 'GENERAL'\n      AND h.datetime >= :start_ts AND h.datetime < :end_ts\n      AND h.pm2_5 IS NOT NULL\n      AND hs.n >= 2\n      AND hs.sd_pm25 > 0\n)\nSELECT station_name, hour_of_day, station_pm25, network_mean, zscore\nFROM zs\nORDER BY ABS(zscore) DESC, hour_of_day, station_name\nLIMIT 1\n\"\"\")\nres = pd.read_sql(outlier_query, engine, params={\"start_ts\": start_ts, \"end_ts\": end_ts})\n\nif res.empty:\n    raise ValueError(\"No valid PM2.5 z-score result found for general stations on 2025-10-05.\")\n\nrow = res.iloc[0]\noutlier_station = str(row[\"station_name\"])\noutlier_hour = int(row[\"hour_of_day\"])\nstation_pm25 = round(float(row[\"station_pm25\"]), 1)\nnetwork_mean = round(float(row[\"network_mean\"]), 1)\nzscore = round(float(row[\"zscore\"]), 2)\n\nprint(f\"Valid inputs: {int(count_df.loc[0,'readings'])} PM2.5 readings across {int(count_df.loc[0,'stations'])} general stations and {int(count_df.loc[0,'hours'])} hours.\")\nprint(f\"Outlier station: {outlier_station}; hour: {outlier_hour}; station PM2.5: {station_pm25:.1f}; network mean: {network_mean:.1f}; z-score: {zscore:.2f}\")"
+            ],
+            "runtime_variables": {
+              "outlier_station": "Tseung Kwan O",
+              "outlier_hour": 5,
+              "station_pm25": 12.4,
+              "network_mean": 5.4,
+              "zscore": 2.93
+            }
+          }
+        ]
+      }
+    ],
+    "metrics": {
+      "total_turns": 1,
+      "successful_turns": 1,
+      "failed_turns": 0,
+      "total_steps": 2,
+      "success_rate": 1.0,
+      "total_prompt_tokens": 11351,
+      "total_completion_tokens": 1261,
+      "total_tokens": 12612
+    }
+  }
+}

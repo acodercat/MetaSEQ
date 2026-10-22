@@ -1,0 +1,59 @@
+{
+  "hk_station_isolation_ranking": {
+    "scenario": "hk_station_isolation_ranking",
+    "conversations": [
+      {
+        "id": "isolation_ranking",
+        "turns": [
+          {
+            "query": "For each air quality monitoring station, compute the distance to its nearest fellow air quality monitoring station. Return the top 3 most isolated stations (largest nearest-neighbor distance) with their names and distances in meters.",
+            "actual_response": "The top 3 most isolated air quality monitoring stations in Hong Kong, ranked by their nearest-neighbor distance, are:\n\n1. **Tap Mun** - 20,003.74 meters from its nearest neighbor (Tseung Kwan O)\n2. **Tung Chung** - 11,867.96 meters from its nearest neighbor (Tuen Mun)\n3. **Yuen Long** - 7,638.77 meters from its nearest neighbor (Tuen Mun)\n\nTap Mun is by far the most isolated station, located over 20 kilometers from any other monitoring station, which makes sense given its location on a small island in the northeastern waters of Hong Kong. Tung Chung and Yuen Long are also relatively isolated, both situated in the western New Territories area.",
+            "actual_calls": [],
+            "validation_errors": [
+              "Custom validator failed: isolated_3_name='Yuen Long ', expected 'Tuen Mun'"
+            ],
+            "metrics": {
+              "steps": 14,
+              "prompt_tokens": 103249,
+              "completion_tokens": 3510,
+              "total_tokens": 106759
+            },
+            "success": false,
+            "variables_not_set": false,
+            "error": null,
+            "code_snippets": [
+              "import pandas as pd\nfrom sqlalchemy import text\n\n# Fetch all air quality monitoring stations with their coordinates and names\nquery = text(\"\"\"\nSELECT id, name_en, ST_X(coordinate::geometry) as longitude, ST_Y(coordinate::geometry) as latitude\nFROM air_quality_station\nORDER BY id\n\"\"\")\nstations_df = pd.read_sql(query, engine)\nprint(stations_df)\nprint(f\"Total stations: {len(stations_df)}\")",
+              "import pandas as pd\nfrom sqlalchemy import text\nimport numpy as np\n\n# Store station data in a variable for reuse\nstation_coords = stations_df.copy()\n\n# Calculate nearest-neighbor distances for each station\n# For each station, find the distance to its closest neighbor\ndef haversine_distance(lat1, lon1, lat2, lon2):\n    \"\"\"Calculate haversine distance between two points in meters\"\"\"\n    R = 6371000  # Earth's radius in meters\n    lat1, lon1, lat2, lon2 = map(np.radians, [lat1, lon1, lat2, lon2])\n    dlat = lat2 - lat1\n    dlon = lon2 - lon1\n    a = np.sin(dlat/2)**2 + np.cos(lat1) * np.cos(lat2) * np.sin(dlon/2)**2\n    c = 2 * np.arcsin(np.sqrt(a))\n    return R * c\n\n# Calculate distance matrix and find nearest neighbor for each station\nn_stations = len(station_coords)\nmin_distances = []\nnearest_neighbors = []\n\nfor i in range(n_stations):\n    lat1 = station_coords.iloc[i]['latitude']\n    lon1 = station_coords.iloc[i]['longitude']\n    name1 = station_coords.iloc[i]['name_en']\n    \n    distances = []\n    for j in range(n_stations):\n        if i != j:\n            lat2 = station_coords.iloc[j]['latitude']\n            lon2 = station_coords.iloc[j]['longitude']\n            dist = haversine_distance(lat1, lon1, lat2, lon2)\n            distances.append((dist, station_coords.iloc[j]['name_en']))\n    \n    # Find minimum distance\n    min_dist, nearest_name = min(distances, key=lambda x: x[0])\n    min_distances.append(min_dist)\n    nearest_neighbors.append(nearest_name)\n\nstation_coords['min_distance_m'] = min_distances\nstation_coords['nearest_neighbor'] = nearest_neighbors\n\n# Sort by distance (descending) to find most isolated stations\nisolated_stations = station_coords.sort_values('min_distance_m', ascending=False)\n\nprint(\"Stations ranked by isolation (nearest-neighbor distance):\")\nprint(isolated_stations[['name_en', 'min_distance_m', 'nearest_neighbor']].head(10))\n\n# Store top 3 most isolated stations in variables for synthesis agent\nisolated_1_name_val = isolated_stations.iloc[0]['name_en']\nisolated_1_distance_val = float(isolated_stations.iloc[0]['min_distance_m'])\nisolated_2_name_val = isolated_stations.iloc[1]['name_en']\nisolated_2_distance_val = float(isolated_stations.iloc[1]['min_distance_m'])\nisolated_3_name_val = isolated_stations.iloc[2]['name_en']\nisolated_3_distance_val = float(isolated_stations.iloc[2]['min_distance_m'])\n\nprint(f\"\\nMost isolated: {isolated_1_name_val} ({isolated_1_distance_val:.2f} m)\")\nprint(f\"2nd most isolated: {isolated_2_name_val} ({isolated_2_distance_val:.2f} m)\")\nprint(f\"3rd most isolated: {isolated_3_name_val} ({isolated_3_distance_val:.2f} m)\")",
+              "# Assign the results to the required output variables\nisolated_1_name = isolated_1_name_val\nisolated_1_distance = isolated_1_distance_val\nisolated_2_name = isolated_2_name_val\nisolated_2_distance = isolated_2_distance_val\nisolated_3_name = isolated_3_name_val\nisolated_3_distance = isolated_3_distance_val\n\nprint(f\"Results stored:\")\nprint(f\"isolated_1_name: {isolated_1_name}\")\nprint(f\"isolated_1_distance: {isolated_1_distance:.2f} meters\")\nprint(f\"isolated_2_name: {isolated_2_name}\")\nprint(f\"isolated_2_distance: {isolated_2_distance:.2f} meters\")\nprint(f\"isolated_3_name: {isolated_3_name}\")\nprint(f\"isolated_3_distance: {isolated_3_distance:.2f} meters\")",
+              "import pandas as pd\nimport numpy as np\nfrom geopy.distance import geodesic\n\n# Check the stations_df and station_coords that are already available\nprint(\"stations_df columns:\", stations_df.columns.tolist())\nprint(\"station_coords columns:\", station_coords.columns.tolist())\nprint(\"\\nstation_coords data:\")\nprint(station_coords)\nprint(\"\\nn_stations:\", n_stations)",
+              "import pandas as pd\nimport numpy as np\n\n# Check the stations_df and station_coords that are already available\nprint(\"stations_df columns:\", stations_df.columns.tolist())\nprint(\"station_coords columns:\", station_coords.columns.tolist())\nprint(\"\\nstation_coords data:\")\nprint(station_coords)\nprint(\"\\nn_stations:\", n_stations)",
+              "# Sort by min_distance_m descending to find most isolated stations\nsorted_stations = station_coords.sort_values('min_distance_m', ascending=False)\nprint(\"Stations sorted by isolation (nearest-neighbor distance):\")\nprint(sorted_stations[['name_en', 'min_distance_m', 'nearest_neighbor']])\n\n# Get top 3 most isolated\ntop3 = sorted_stations.head(3)\nprint(\"\\nTop 3 most isolated stations:\")\nprint(top3[['name_en', 'min_distance_m']])\n\n# Store results in the required variables\nisolated_1_name = top3.iloc[0]['name_en']\nisolated_1_distance = float(top3.iloc[0]['min_distance_m'])\nisolated_2_name = top3.iloc[1]['name_en']\nisolated_2_distance = float(top3.iloc[1]['min_distance_m'])\nisolated_3_name = top3.iloc[2]['name_en']\nisolated_3_distance = float(top3.iloc[2]['min_distance_m'])\n\nprint(f\"\\nMost isolated: {isolated_1_name} ({isolated_1_distance:.2f} m)\")\nprint(f\"2nd most isolated: {isolated_2_name} ({isolated_2_distance:.2f} m)\")\nprint(f\"3rd most isolated: {isolated_3_name} ({isolated_3_distance:.2f} m)\")",
+              "# Reuse the pre-computed values from the shared runtime\n# The upstream agents have already computed isolated_stations, sorted_stations, and top3 DataFrames\n# as well as the *_val variables\n\n# Assign the required output variables from the pre-computed values\nisolated_1_name = isolated_1_name_val\nisolated_1_distance = float(isolated_1_distance_val)\nisolated_2_name = isolated_2_name_val\nisolated_2_distance = float(isolated_2_distance_val)\nisolated_3_name = isolated_3_name_val\nisolated_3_distance = float(isolated_3_distance_val)\n\n# Print each required output to confirm it is set\nprint(f\"isolated_1_name: {isolated_1_name}\")\nprint(f\"isolated_1_distance: {isolated_1_distance}\")\nprint(f\"isolated_2_name: {isolated_2_name}\")\nprint(f\"isolated_2_distance: {isolated_2_distance}\")\nprint(f\"isolated_3_name: {isolated_3_name}\")\nprint(f\"isolated_3_distance: {isolated_3_distance}\")",
+              "import pandas as pd\nfrom sqlalchemy import text\nimport numpy as np\n\n# Get all air quality monitoring stations with their coordinates\nquery = text(\"\"\"\nSELECT id, name_en, ST_X(coordinate::geometry) as lon, ST_Y(coordinate::geometry) as lat\nFROM air_quality_station\nORDER BY id\n\"\"\")\nstations_df = pd.read_sql(query, engine)\nprint(stations_df)",
+              "import numpy as np\n\n# Haversine distance function to compute distance between two points in meters\ndef haversine_distance(lat1, lon1, lat2, lon2):\n    R = 6371000  # Earth radius in meters\n    lat1, lon1, lat2, lon2 = map(np.radians, [lat1, lon1, lat2, lon2])\n    dlat = lat2 - lat1\n    dlon = lon2 - lon1\n    a = np.sin(dlat/2)**2 + np.cos(lat1) * np.cos(lat2) * np.sin(dlon/2)**2\n    c = 2 * np.arcsin(np.sqrt(a))\n    return R * c\n\n# Compute nearest neighbor distance for each station\nn_stations = len(stations_df)\nmin_distances = []\nnearest_neighbors = []\n\nfor i in range(n_stations):\n    lat1 = stations_df.iloc[i]['lat']\n    lon1 = stations_df.iloc[i]['lon']\n    name1 = stations_df.iloc[i]['name_en']\n    \n    distances = []\n    for j in range(n_stations):\n        if i == j:\n            continue\n        lat2 = stations_df.iloc[j]['lat']\n        lon2 = stations_df.iloc[j]['lon']\n        dist = haversine_distance(lat1, lon1, lat2, lon2)\n        distances.append((dist, stations_df.iloc[j]['name_en']))\n    \n    min_dist, nearest_name = min(distances, key=lambda x: x[0])\n    min_distances.append(min_dist)\n    nearest_neighbors.append(nearest_name)\n\nstations_df['min_distance'] = min_distances\nstations_df['nearest_neighbor'] = nearest_neighbors\n\n# Sort by distance descending to find most isolated\nisolated_stations = stations_df.sort_values('min_distance', ascending=False)\nprint(isolated_stations[['name_en', 'min_distance', 'nearest_neighbor']])",
+              "# Extract top 3 most isolated stations and assign to required variables\nisolated_1_name = isolated_stations.iloc[0]['name_en']\nisolated_1_distance = float(isolated_stations.iloc[0]['min_distance'])\nisolated_2_name = isolated_stations.iloc[1]['name_en']\nisolated_2_distance = float(isolated_stations.iloc[1]['min_distance'])\nisolated_3_name = isolated_stations.iloc[2]['name_en']\nisolated_3_distance = float(isolated_stations.iloc[2]['min_distance'])\n\nprint(f\"Most isolated: {isolated_1_name} ({isolated_1_distance:.2f} m)\")\nprint(f\"2nd most isolated: {isolated_2_name} ({isolated_2_distance:.2f} m)\")\nprint(f\"3rd most isolated: {isolated_3_name} ({isolated_3_distance:.2f} m)\")"
+            ],
+            "runtime_variables": {
+              "isolated_1_name": "Tap Mun",
+              "isolated_1_distance": 20003.74272011276,
+              "isolated_2_name": "Tung Chung",
+              "isolated_2_distance": 11867.963634412476,
+              "isolated_3_name": "Yuen Long ",
+              "isolated_3_distance": 7638.770056533351
+            }
+          }
+        ]
+      }
+    ],
+    "metrics": {
+      "total_turns": 1,
+      "successful_turns": 0,
+      "failed_turns": 1,
+      "total_steps": 14,
+      "success_rate": 0.0,
+      "total_prompt_tokens": 103249,
+      "total_completion_tokens": 3510,
+      "total_tokens": 106759
+    }
+  }
+}

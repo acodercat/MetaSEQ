@@ -1,0 +1,44 @@
+{
+  "hk_global_morans_i": {
+    "scenario": "hk_global_morans_i",
+    "conversations": [
+      {
+        "id": "morans_i_pm25",
+        "turns": [
+          {
+            "query": "On October 5, 2025, compute the daily average PM2.5 for each air quality monitoring station. Then calculate the Global Moran's I statistic using inverse distance weights. Return the Moran's I value (rounded to 4 decimal places) and whether the spatial pattern is 'clustered', 'dispersed', or 'random'.",
+            "actual_response": "The analysis is complete. The computed Moran's I value is -0.0571, which is very close to the expected value under spatial randomness (-0.0588). This indicates no significant spatial autocorrelation in the daily average PM2.5 across Hong Kong's monitoring stations on October 5, 2025.\n\n**Final Results:**\n- **morans_i**: -0.0571\n- **spatial_pattern**: random",
+            "actual_calls": [],
+            "validation_errors": [],
+            "metrics": {
+              "steps": 2,
+              "prompt_tokens": 12209,
+              "completion_tokens": 1027,
+              "total_tokens": 13236
+            },
+            "success": true,
+            "variables_not_set": false,
+            "error": null,
+            "code_snippets": [
+              "import pandas as pd\nimport numpy as np\nfrom sqlalchemy import text\nfrom math import radians, sin, cos, sqrt, asin\n\n# Step 1: Get all stations with their coordinates and daily avg PM2.5 on Oct 5, 2025\nquery = text(\"\"\"\nSELECT aqs.id, aqs.name_en, \n       ST_X(aqs.coordinate::geometry) as longitude, \n       ST_Y(aqs.coordinate::geometry) as latitude,\n       AVG(hsaq.pm2_5) as avg_pm25\nFROM air_quality_station aqs\nJOIN hourly_station_air_quality hsaq ON aqs.id = hsaq.station_id\nWHERE hsaq.datetime >= '2025-10-05 00:00:00' \n  AND hsaq.datetime < '2025-10-06 00:00:00'\n  AND hsaq.pm2_5 IS NOT NULL\nGROUP BY aqs.id, aqs.name_en, aqs.coordinate\nORDER BY aqs.id\n\"\"\")\ndf = pd.read_sql(query, engine)\nprint(\"Stations with daily avg PM2.5:\")\nprint(df[['id', 'name_en', 'avg_pm25', 'latitude', 'longitude']].to_string(index=False))\n\n# Step 2: Haversine distance function\ndef haversine(lat1, lon1, lat2, lon2):\n    R = 6371.0  # Earth radius in km\n    lat1, lon1, lat2, lon2 = map(radians, [lat1, lon1, lat2, lon2])\n    dlat = lat2 - lat1\n    dlon = lon2 - lon1\n    a = sin(dlat/2)**2 + cos(lat1) * cos(lat2) * sin(dlon/2)**2\n    c = 2 * asin(sqrt(a))\n    return R * c\n\n# Step 3: Build inverse distance weight matrix\nn = len(df)\ncoords = df[['latitude', 'longitude']].values\nvalues = df['avg_pm25'].values\n\n# Compute weight matrix (inverse distance)\nW = np.zeros((n, n))\nfor i in range(n):\n    for j in range(n):\n        if i != j:\n            d = haversine(coords[i,0], coords[i,1], coords[j,0], coords[j,1])\n            if d > 0:\n                W[i,j] = 1.0 / d\n\n# Row-standardize the weight matrix\nrow_sums = W.sum(axis=1, keepdims=True)\nrow_sums[row_sums == 0] = 1  # avoid division by zero\nW = W / row_sums\n\n# Step 4: Compute Global Moran's I\ny = values\ny_bar = np.mean(y)\nn = len(y)\n\n# Numerator: sum of weighted deviations\nnum = 0.0\nfor i in range(n):\n    for j in range(n):\n        num += W[i,j] * (y[i] - y_bar) * (y[j] - y_bar)\n\n# Denominator: sum of squared deviations\ndenom = np.sum((y - y_bar)**2)\n\n# S0: sum of all weights\nS0 = np.sum(W)\n\n# Moran's I\nmorans_i = (n / S0) * (num / denom) if denom != 0 else 0.0\nmorans_i = round(morans_i, 4)\n\n# Step 5: Determine spatial pattern\n# Expected I under randomness: -1/(n-1)\nexpected_i = -1.0 / (n - 1)\nif morans_i > expected_i + 0.05:\n    spatial_pattern = 'clustered'\nelif morans_i < expected_i - 0.05:\n    spatial_pattern = 'dispersed'\nelse:\n    spatial_pattern = 'random'\n\nprint(f\"\\nMoran's I: {morans_i}\")\nprint(f\"Expected I (random): {expected_i:.4f}\")\nprint(f\"Spatial pattern: {spatial_pattern}\")"
+            ],
+            "runtime_variables": {
+              "morans_i": -0.0571,
+              "spatial_pattern": "random"
+            }
+          }
+        ]
+      }
+    ],
+    "metrics": {
+      "total_turns": 1,
+      "successful_turns": 1,
+      "failed_turns": 0,
+      "total_steps": 2,
+      "success_rate": 1.0,
+      "total_prompt_tokens": 12209,
+      "total_completion_tokens": 1027,
+      "total_tokens": 13236
+    }
+  }
+}

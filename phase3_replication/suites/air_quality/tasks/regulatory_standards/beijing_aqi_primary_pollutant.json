@@ -1,0 +1,22 @@
+{
+  "name": "beijing_aqi_primary_pollutant",
+  "difficulty": "hard",
+  "category": "regulatory_standards",
+  "case_type": "trap",
+  "conversations": [
+    {
+      "id": "aqi_primary_pollutant",
+      "turns": [
+        {
+          "query": "At Guanyuan station on 2022-06-21, determine the primary pollutant of that day's air quality index under China's national standard (HJ 633-2012), considering all six regulated pollutants. Where a pollutant's sub-index is defined on a running-mean basis, require each window to contain at least 6 valid hours. Report that pollutant and its own sub-index.",
+          "validator": "validate_primary_pollutant",
+          "stores": [
+            "primary_pollutant",
+            "primary_iaqi"
+          ]
+        }
+      ]
+    }
+  ],
+  "domain": "beijing"
+}

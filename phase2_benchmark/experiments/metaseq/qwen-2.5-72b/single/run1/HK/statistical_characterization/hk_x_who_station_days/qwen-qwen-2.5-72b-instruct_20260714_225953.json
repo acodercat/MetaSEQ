@@ -1,0 +1,45 @@
+{
+  "hk_x_who_station_days": {
+    "scenario": "hk_x_who_station_days",
+    "conversations": [
+      {
+        "id": "hk_x_who_station_days",
+        "turns": [
+          {
+            "query": "Over June 2025 (2025-06-01 to 2025-06-30), across all 18 air-quality stations, compute each station-day's daily mean PM2.5 (average of that station's non-NULL hourly PM2.5 values on that calendar date). How many station-days STRICTLY exceeded the World Health Organization 2021 Air Quality Guideline value for 24-hour mean PM2.5? Return the count.",
+            "actual_response": "The number of station-days with daily-mean PM2.5 strictly above the WHO 2021 24-hour guideline in June 2025 is 6.",
+            "actual_calls": [],
+            "validation_errors": [
+              "Custom validator failed: Custom validator failed: who_exceed_station_days=6.0, expected ~35.0 (tol 1.0)"
+            ],
+            "metrics": {
+              "steps": 2,
+              "prompt_tokens": 10905,
+              "completion_tokens": 311,
+              "total_tokens": 11216
+            },
+            "success": false,
+            "variables_not_set": false,
+            "error": null,
+            "code_snippets": [
+              "from sqlalchemy import text\nimport pandas as pd\n\n# Define the WHO 2021 24-hour PM2.5 guideline value\nwho_guideline_pm25 = 25\n\n# Query to calculate daily mean PM2.5 for each station in June 2025\nquery = text(\"\"\"\nSELECT \n    station_id, \n    DATE(datetime) AS date, \n    AVG(pm2_5) AS daily_mean_pm2_5\nFROM \n    hourly_station_air_quality\nWHERE \n    datetime >= '2025-06-01' AND datetime < '2025-07-01'\nGROUP BY \n    station_id, DATE(datetime)\n\"\"\")\n\n# Execute the query and load the results into a DataFrame\ndf = pd.read_sql(query, engine)\n\n# Filter the DataFrame to count the number of station-days exceeding the WHO guideline\nexceeding_days = df[df['daily_mean_pm2_5'] > who_guideline_pm25]\n\n# Count the number of exceeding station-days\nwho_exceed_station_days = len(exceeding_days)\n\n# Print the result\nprint(f\"Number of station-days with daily-mean PM2.5 strictly above the WHO 2021 24-hour guideline: {who_exceed_station_days}\")"
+            ],
+            "runtime_variables": {
+              "who_exceed_station_days": 6
+            }
+          }
+        ]
+      }
+    ],
+    "metrics": {
+      "total_turns": 1,
+      "successful_turns": 0,
+      "failed_turns": 1,
+      "total_steps": 2,
+      "success_rate": 0.0,
+      "total_prompt_tokens": 10905,
+      "total_completion_tokens": 311,
+      "total_tokens": 11216
+    }
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "hk_station_isolation_ranking": {
+    "scenario": "hk_station_isolation_ranking",
+    "conversations": [
+      {
+        "id": "isolation_ranking",
+        "turns": [
+          {
+            "query": "For each air quality monitoring station, compute the distance to its nearest fellow air quality monitoring station. Return the top 3 most isolated stations (largest nearest-neighbor distance) with their names and distances in meters.",
+            "actual_response": "Most isolated air quality monitoring stations by nearest-neighbor distance:\n\n1. Tap Mun \u2014 19,952.20 meters  \n2. Tung Chung \u2014 11,824.47 meters  \n3. Tuen Mun \u2014 7,624.00 meters",
+            "actual_calls": [],
+            "validation_errors": [],
+            "metrics": {
+              "steps": 2,
+              "prompt_tokens": 10811,
+              "completion_tokens": 486,
+              "total_tokens": 11297
+            },
+            "success": true,
+            "variables_not_set": false,
+            "error": null,
+            "code_snippets": [
+              "import pandas as pd\nfrom sqlalchemy import text\n\nquery = text(\"\"\"\nWITH nearest AS (\n  SELECT\n    a.id,\n    a.name_en,\n    MIN(ST_Distance(a.coordinate, b.coordinate))::double precision AS nearest_distance_m\n  FROM air_quality_station a\n  JOIN air_quality_station b ON a.id <> b.id\n  GROUP BY a.id, a.name_en\n)\nSELECT name_en, nearest_distance_m\nFROM nearest\nORDER BY nearest_distance_m DESC\nLIMIT 3\n\"\"\")\ntop3_isolated = pd.read_sql(query, engine)\n\nisolated_1_name = str(top3_isolated.loc[0, \"name_en\"])\nisolated_1_distance = float(top3_isolated.loc[0, \"nearest_distance_m\"])\nisolated_2_name = str(top3_isolated.loc[1, \"name_en\"])\nisolated_2_distance = float(top3_isolated.loc[1, \"nearest_distance_m\"])\nisolated_3_name = str(top3_isolated.loc[2, \"name_en\"])\nisolated_3_distance = float(top3_isolated.loc[2, \"nearest_distance_m\"])\n\nprint(\"Top 3 most isolated stations by nearest-neighbor distance:\")\nprint(top3_isolated.round({\"nearest_distance_m\": 2}).to_string(index=False))"
+            ],
+            "runtime_variables": {
+              "isolated_1_name": "Tap Mun",
+              "isolated_1_distance": 19952.20365173,
+              "isolated_2_name": "Tung Chung",
+              "isolated_2_distance": 11824.47485051,
+              "isolated_3_name": "Tuen Mun",
+              "isolated_3_distance": 7623.99933966
+            }
+          }
+        ]
+      }
+    ],
+    "metrics": {
+      "total_turns": 1,
+      "successful_turns": 1,
+      "failed_turns": 0,
+      "total_steps": 2,
+      "success_rate": 1.0,
+      "total_prompt_tokens": 10811,
+      "total_completion_tokens": 486,
+      "total_tokens": 11297
+    }
+  }
+}

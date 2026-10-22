@@ -1,0 +1,30 @@
+{
+  "name": "beijing_aqi_aggregation_order",
+  "difficulty": "hard",
+  "category": "regulatory_standards",
+  "case_type": "baseline",
+  "conversations": [
+    {
+      "id": "aqi_aggregation_order",
+      "turns": [
+        {
+          "query": "Summarise Beijing's 2024 air quality for an annual review as one number: the year's mean daily city AQI under the national standard HJ 633-2012, over the city's assessment points. Report that mean, and how many different pollutants take the lead on at least one day.",
+          "validator": "validate_daily_then_mean",
+          "stores": [
+            "mean_of_daily_aqi",
+            "distinct_daily_drivers"
+          ],
+          "evaluation_tier": "execution"
+        },
+        {
+          "query": "A colleague proposes a shortcut for the same summary: average each pollutant over the whole of 2024 first, run the six annual means through the sub-index tables once, and take the largest. Report the figure that shortcut produces, and say whether it can stand in for the one you already computed.",
+          "validator": "validate_mean_then_index",
+          "stores": [
+            "aqi_of_annual_means"
+          ]
+        }
+      ]
+    }
+  ],
+  "domain": "beijing"
+}

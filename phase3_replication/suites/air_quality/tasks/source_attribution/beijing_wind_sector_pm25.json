@@ -1,0 +1,22 @@
+{
+  "name": "beijing_wind_sector_pm25",
+  "difficulty": "medium",
+  "category": "source_attribution",
+  "case_type": "baseline",
+  "conversations": [
+    {
+      "id": "wind_sector_pm25",
+      "turns": [
+        {
+          "query": "For the January, February and December months of each calendar year from 2020 through 2025 (January 2020 to December 2025, not whole winters), report Beijing's station-hour mean PM2.5 under southerly winds (135-225 degrees inclusive) and northerly winds (315-360 or 0-45 degrees inclusive), using each station's concurrent meteorology. Is wind sector useful for winter episode screening?",
+          "validator": "validate_sector_means",
+          "stores": [
+            "southerly_pm25_mean",
+            "northerly_pm25_mean"
+          ]
+        }
+      ]
+    }
+  ],
+  "domain": "beijing"
+}

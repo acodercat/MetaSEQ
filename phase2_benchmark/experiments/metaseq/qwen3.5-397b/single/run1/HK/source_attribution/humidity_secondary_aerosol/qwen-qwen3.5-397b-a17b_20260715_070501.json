@@ -1,0 +1,72 @@
+{
+  "hk_humidity_secondary_aerosol": {
+    "scenario": "hk_humidity_secondary_aerosol",
+    "conversations": [
+      {
+        "id": "humidity_aerosol",
+        "turns": [
+          {
+            "query": "In October 2025, for all general air quality stations combined, group hourly PM2.5/PM10 ratios by humidity bins from the King's Park weather station: low (<60%), medium (60-80%), high (>80%). Compute the average PM2.5/PM10 ratio for each bin (only include hours where both PM2.5 and PM10 are valid and PM10 > 0). Return the three ratios rounded to 3 decimal places.",
+            "actual_response": "Based on the analysis of October 2025 data from all 15 general air quality monitoring stations combined with humidity data from King's Park weather station:\n\n**Average PM2.5/PM10 Ratios by Humidity Level:**\n- Low humidity (<60%): **0.686**\n- Medium humidity (60-80%): **0.654**\n- High humidity (>80%): **0.607**\n\n**Pearson Correlation between Humidity and PM2.5/PM10 Ratio:** **-0.1879**\n\n**Interpretation:**\nThe results show a clear negative relationship between humidity and the PM2.5/PM10 ratio. As humidity increases, the ratio decreases, indicating that PM2.5 constitutes a smaller proportion of total PM10 under high humidity conditions. The negative correlation coefficient of -0.1879 (statistically significant with p-value < 0.0001) confirms this inverse relationship.\n\nThis pattern suggests that under lower humidity conditions, secondary aerosol formation processes may contribute more significantly to fine particle (PM2.5) concentrations relative to coarse particles (PM10). Conversely, at higher humidity levels, other processes such as hygroscopic growth of coarse particles or different atmospheric chemistry may reduce the relative proportion of PM2.5 to PM10.",
+            "actual_calls": [],
+            "validation_errors": [],
+            "metrics": {
+              "steps": 4,
+              "prompt_tokens": 25660,
+              "completion_tokens": 2050,
+              "total_tokens": 27710
+            },
+            "success": true,
+            "variables_not_set": false,
+            "error": null,
+            "code_snippets": [
+              "import pandas as pd\nfrom sqlalchemy import text\n\n# First, find King's Park weather station ID\nquery = text(\"\"\"\nSELECT id, name_en, station_code\nFROM weather_station\nWHERE name_en ILIKE '%King%Park%' OR name_en ILIKE '%Kings Park%'\n\"\"\")\nweather_stations = pd.read_sql(query, engine)\nprint(\"Weather stations matching King's Park:\")\nprint(weather_stations)\n\n# Find all general air quality stations\nquery = text(\"\"\"\nSELECT id, name_en, station_type\nFROM air_quality_station\nWHERE station_type = 'GENERAL'\n\"\"\")\ngeneral_stations = pd.read_sql(query, engine)\nprint(\"\\nGeneral air quality stations:\")\nprint(general_stations)",
+              "import pandas as pd\nfrom sqlalchemy import text\n\n# Query combined weather and air quality data for October 2025\n# King's Park weather station ID = 14\n# General air quality station IDs from previous query\ngeneral_station_ids = [5, 12, 15, 2, 1, 3, 9, 8, 13, 10, 18, 11, 6, 7, 4]\n\nquery = text(f\"\"\"\nSELECT \n    hsaq.datetime,\n    hsaq.pm2_5,\n    hsaq.pm10,\n    hsw.humidity\nFROM hourly_station_air_quality hsaq\nJOIN hourly_station_weather hsw ON hsaq.datetime = hsw.datetime\nWHERE hsaq.station_id IN {tuple(general_station_ids)}\nAND hsw.station_id = 14\nAND hsaq.datetime >= '2025-10-01 00:00:00'\nAND hsaq.datetime < '2025-11-01 00:00:00'\nAND hsaq.pm2_5 IS NOT NULL\nAND hsaq.pm10 IS NOT NULL\nAND hsaq.pm10 > 0\nAND hsw.humidity IS NOT NULL\n\"\"\")\n\ndf = pd.read_sql(query, engine)\nprint(f\"Total records: {len(df)}\")\nprint(df.head())\nprint(f\"\\nHumidity range: {df['humidity'].min()} - {df['humidity'].max()}\")\nprint(f\"PM2.5 range: {df['pm2_5'].min()} - {df['pm2_5'].max()}\")\nprint(f\"PM10 range: {df['pm10'].min()} - {df['pm10'].max()}\")",
+              "import pandas as pd\nimport numpy as np\nfrom scipy import stats\n\n# Calculate PM2.5/PM10 ratio\ndf['pm_ratio'] = df['pm2_5'] / df['pm10']\n\n# Define humidity bins\ndef humidity_bin(humidity):\n    if humidity < 60:\n        return 'low'\n    elif humidity <= 80:\n        return 'mid'\n    else:\n        return 'high'\n\ndf['humidity_bin'] = df['humidity'].apply(humidity_bin)\n\n# Calculate average ratio for each humidity bin\nratio_by_bin = df.groupby('humidity_bin')['pm_ratio'].mean()\nprint(\"Average PM2.5/PM10 ratio by humidity bin:\")\nprint(ratio_by_bin)\n\n# Calculate Pearson correlation between humidity and PM2.5/PM10 ratio\ncorrelation, p_value = stats.pearsonr(df['humidity'], df['pm_ratio'])\nprint(f\"\\nPearson correlation: {correlation:.4f} (p-value: {p_value:.4f})\")\n\n# Store results\nratio_low_humidity = round(ratio_by_bin.get('low', 0), 3)\nratio_mid_humidity = round(ratio_by_bin.get('mid', 0), 3)\nratio_high_humidity = round(ratio_by_bin.get('high', 0), 3)\nhumidity_ratio_correlation = round(correlation, 4)\n\nprint(f\"\\nFinal results:\")\nprint(f\"ratio_low_humidity (<60%): {ratio_low_humidity}\")\nprint(f\"ratio_mid_humidity (60-80%): {ratio_mid_humidity}\")\nprint(f\"ratio_high_humidity (>80%): {ratio_high_humidity}\")\nprint(f\"humidity_ratio_correlation: {humidity_ratio_correlation}\")"
+            ],
+            "runtime_variables": {
+              "ratio_low_humidity": 0.686,
+              "ratio_mid_humidity": 0.654,
+              "ratio_high_humidity": 0.607,
+              "humidity_ratio_correlation": -0.1879
+            }
+          },
+          {
+            "query": "Across all matched hours in October 2025, what is the Pearson correlation between King's Park humidity and the network-wide average PM2.5/PM10 ratio? Return the coefficient rounded to 4 decimal places.",
+            "actual_response": "Based on the analysis of all 744 matched hours in October 2025:\n\n**Pearson Correlation between King's Park Humidity and Network-wide Average PM2.5/PM10 Ratio: -0.2477**\n\nThis negative correlation indicates that as humidity increases, the network-wide average PM2.5/PM10 ratio tends to decrease. The relationship is statistically significant (p-value < 0.0001), suggesting that humidity plays a measurable role in influencing the relative proportions of fine to coarse particulate matter across Hong Kong's general air quality monitoring network.",
+            "actual_calls": [],
+            "validation_errors": [],
+            "metrics": {
+              "steps": 2,
+              "prompt_tokens": 15904,
+              "completion_tokens": 671,
+              "total_tokens": 16575
+            },
+            "success": true,
+            "variables_not_set": false,
+            "error": null,
+            "code_snippets": [
+              "import pandas as pd\nfrom scipy import stats\n\n# Group by datetime to get network-wide average PM2.5/PM10 ratio per hour\ndf['pm_ratio'] = df['pm2_5'] / df['pm10']\nhourly_avg = df.groupby('datetime').agg({\n    'pm_ratio': 'mean',\n    'humidity': 'first'  # humidity is same for all stations in same hour\n}).reset_index()\n\nprint(f\"Number of unique hours: {len(hourly_avg)}\")\nprint(hourly_avg.head())\n\n# Calculate Pearson correlation between humidity and network-wide average ratio\ncorrelation, p_value = stats.pearsonr(hourly_avg['humidity'], hourly_avg['pm_ratio'])\nprint(f\"\\nPearson correlation: {correlation:.4f} (p-value: {p_value:.4f})\")\n\n# Store result\nhumidity_ratio_correlation = round(correlation, 4)\nprint(f\"\\nFinal result - humidity_ratio_correlation: {humidity_ratio_correlation}\")"
+            ],
+            "runtime_variables": {
+              "ratio_low_humidity": 0.686,
+              "ratio_mid_humidity": 0.654,
+              "ratio_high_humidity": 0.607,
+              "humidity_ratio_correlation": -0.2477
+            }
+          }
+        ]
+      }
+    ],
+    "metrics": {
+      "total_turns": 2,
+      "successful_turns": 2,
+      "failed_turns": 0,
+      "total_steps": 6,
+      "success_rate": 1.0,
+      "total_prompt_tokens": 41564,
+      "total_completion_tokens": 2721,
+      "total_tokens": 44285
+    }
+  }
+}

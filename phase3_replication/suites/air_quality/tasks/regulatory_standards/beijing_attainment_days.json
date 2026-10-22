@@ -1,0 +1,21 @@
+{
+  "name": "beijing_attainment_days",
+  "difficulty": "hard",
+  "category": "regulatory_standards",
+  "case_type": "trap",
+  "conversations": [
+    {
+      "id": "attainment_days",
+      "turns": [
+        {
+          "query": "On Beijing's city-level record, count the attainment days of 2023 — the days whose daily air quality index under China's national standard (HJ 633-2012, with the ozone sub-index on the HJ 663-2013 daily maximum 8-hour basis) is at or below 100 — considering every day of the year whatever number of hours it reports.",
+          "validator": "validate_attainment_days",
+          "stores": [
+            "attainment_days"
+          ]
+        }
+      ]
+    }
+  ],
+  "domain": "beijing"
+}

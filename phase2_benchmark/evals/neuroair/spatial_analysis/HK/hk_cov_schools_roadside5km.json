@@ -1,0 +1,25 @@
+[
+  {
+    "name": "hk_cov_schools_roadside5km",
+    "module": "evals.neuroair.spatial_analysis.HK.hk_cov_schools_roadside5km",
+    "requirements": "Distinct schools with centroid within 5000 m of ANY roadside station. Store schools_roadside_5km (int).",
+    "conversations": [
+      {
+        "id": "hk_cov_schools_roadside5km",
+        "turns": [
+          {
+            "query": "How many distinct 'EDUCATIONAL_INSTITUTION' sensitive areas have their polygon centroid within 5000 metres of at least one roadside air-quality station (station_id 14, 16, or 17)? The three stations are close together and their catchments overlap heavily; count each institution only once. Return the count.",
+            "validator": "validate_hk_cov_schools_roadside5km"
+          }
+        ]
+      }
+    ],
+    "difficulty": "hard",
+    "category": "spatial_analysis",
+    "_source": {
+      "benchmark": "hk-coverage-hard",
+      "original_query_id": "hk_cov_schools_roadside5km",
+      "verbatim": false
+    }
+  }
+]

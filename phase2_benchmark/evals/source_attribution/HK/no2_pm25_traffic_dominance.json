@@ -1,0 +1,24 @@
+[
+    {
+        "name": "hk_no2_pm25_traffic_dominance",
+        "module": "evals.source_attribution.HK.no2_pm25_traffic_dominance",
+        "requirements": "Compare roadside enhancement for NO2 vs PM2.5, then examine rush hour effect. Please store the results in: no2_roadside_general_ratio (float, 2dp), pm25_roadside_general_ratio (float, 2dp), more_traffic_dominated (str), rush_no2_pm25_ratio (float, 2dp), offpeak_no2_pm25_ratio (float, 2dp).",
+        "conversations": [
+            {
+                "id": "traffic_dominance",
+                "turns": [
+                    {
+                        "query": "In October 2025, compute the ratio of average NO2 at roadside stations to average NO2 at general stations, and the same ratio for PM2.5. A higher roadside-to-general ratio indicates stronger local traffic source contribution. Which pollutant shows a larger roadside enhancement, indicating it is more dominated by local traffic sources? Return both ratios rounded to 2 decimal places and the more traffic-dominated pollutant name.",
+                        "validator": "validate_traffic_dominance"
+                    },
+                    {
+                        "query": "For roadside stations in October 2025, compute the average NO2 to PM2.5 concentration ratio during rush hours (08:00-09:00, 17:00-19:00) versus off-peak hours (00:00-05:00, 10:00-15:00). A higher ratio during rush hours would confirm that traffic peaks disproportionately elevate NO2 relative to PM2.5. Return both ratios rounded to 2 decimal places.",
+                        "validator": "validate_rush_offpeak_ratio"
+                    }
+                ]
+            }
+        ],
+        "difficulty": "medium",
+        "category": "source_attribution"
+    }
+]

@@ -1,0 +1,25 @@
+[
+  {
+    "name": "hk_hard_pm25_peak_day_station_count",
+    "module": "evals.neuroair.exceedance_anomaly_detection.HK.hk_hard_pm25_peak_day_station_count",
+    "requirements": "Store roadside_avg_peak_days float, general_avg_peak_days float, and roadside_minus_general float, each rounded to 6 decimals.",
+    "conversations": [
+      {
+        "id": "hk_hard_pm25_peak_day_station_count",
+        "turns": [
+          {
+            "query": "For each station_type separately (GENERAL and ROADSIDE), during June 2025 inclusive, first compute each station's daily maximum PM2.5 over non-NULL hourly pm2_5 values for each calendar date. Then, for each station, count the number of dates with daily maximum PM2.5 >= 35.0. Finally, for each station_type compute the average of these station-level counts, giving each station equal weight. Return roadside_avg_peak_days, general_avg_peak_days, and roadside_minus_general rounded to 6 decimals. Do not average station-day indicators over all station-day rows unless it yields the same station weighting, and do not count hourly exceedance rows.",
+            "validator": "validate_hk_hard_pm25_peak_day_station_count"
+          }
+        ]
+      }
+    ],
+    "difficulty": "hard",
+    "category": "exceedance_anomaly_detection",
+    "_source": {
+      "benchmark": "gpt55-hardened",
+      "original_query_id": "hk_hard_pm25_peak_day_station_count",
+      "verbatim": false
+    }
+  }
+]

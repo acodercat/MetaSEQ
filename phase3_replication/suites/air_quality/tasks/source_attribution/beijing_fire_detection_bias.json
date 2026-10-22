@@ -1,0 +1,32 @@
+{
+  "name": "beijing_fire_detection_bias",
+  "difficulty": "hard",
+  "category": "source_attribution",
+  "case_type": "baseline",
+  "conversations": [
+    {
+      "id": "fire_detection_bias",
+      "turns": [
+        {
+          "query": "Do regional fires drive Beijing's autumn PM2.5? Look at October and November of 2020 to 2025 and the satellite fire detections within 300 km of the city, and say what the record does and does not tell you about regional fires' contribution.",
+          "validator": "validate_fire_corr_all",
+          "stores": [
+            "days_compared",
+            "fire_pm25_corr_all",
+            "fire_pm25_corr_sign_all",
+            "fires_shown_not_to_matter"
+          ]
+        },
+        {
+          "query": "A colleague says the sign settles it: regional fires do not matter for Beijing. Are they right? Look at the detections the wind could actually have carried to the city, and explain what changes the picture.",
+          "validator": "validate_fire_corr_upwind",
+          "stores": [
+            "fire_pm25_corr_upwind",
+            "colleague_is_right"
+          ]
+        }
+      ]
+    }
+  ],
+  "domain": "beijing"
+}

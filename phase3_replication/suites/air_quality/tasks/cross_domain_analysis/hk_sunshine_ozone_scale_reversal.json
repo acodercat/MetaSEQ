@@ -1,0 +1,27 @@
+{
+  "name": "hk_sunshine_ozone_scale_reversal",
+  "difficulty": "hard",
+  "category": "cross_domain_analysis",
+  "case_type": "baseline",
+  "conversations": [
+    {
+      "id": "sunshine_ozone_scale_reversal",
+      "turns": [
+        {
+          "query": "For Hong Kong in 2020-2025, assess a sunshine term in a daily maximum-eight-hour ozone model. Quantify the pooled and month-adjusted slopes, the monthly-climatology correlation and paired sample size. What seasonal and photochemical conclusions do those scales support, and would the term transfer into an operational forecast?",
+          "validator": "validate_harder_turn_1",
+          "stores": [
+            "months_with_more_ozone_on_sunnier_days",
+            "sunniest_season_has_the_most_ozone",
+            "pooled_sunshine_slope",
+            "month_adjusted_sunshine_slope",
+            "monthly_climatology_correlation",
+            "sunshine_paired_days"
+          ],
+          "evaluation_tier": "execution"
+        }
+      ]
+    }
+  ],
+  "domain": "hk"
+}

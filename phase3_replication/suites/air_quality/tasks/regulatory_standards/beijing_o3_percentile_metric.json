@@ -1,0 +1,21 @@
+{
+  "name": "beijing_o3_percentile_metric",
+  "difficulty": "hard",
+  "category": "regulatory_standards",
+  "case_type": "trap",
+  "conversations": [
+    {
+      "id": "o3_percentile_metric",
+      "turns": [
+        {
+          "query": "For the Dongsi station in 2023, report the annual evaluation value for ozone as prescribed by China's ambient air quality assessment standard (HJ 663-2013), considering every day the station reports. State whether the station attains the Grade II ozone standard on this basis.",
+          "validator": "validate_o3_evaluation_value",
+          "stores": [
+            "o3_evaluation_value"
+          ]
+        }
+      ]
+    }
+  ],
+  "domain": "beijing"
+}

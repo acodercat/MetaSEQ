@@ -1,0 +1,20 @@
+[
+    {
+        "name": "hk_global_morans_i",
+        "module": "evals.spatial_analysis.HK.global_morans_i",
+        "requirements": "Compute the Global Moran's I statistic for PM2.5 spatial autocorrelation. Please store the results in: morans_i (float, rounded to 4 decimal places), spatial_pattern (str, one of 'clustered', 'dispersed', or 'random').",
+        "conversations": [
+            {
+                "id": "morans_i_pm25",
+                "turns": [
+                    {
+                        "query": "On October 5, 2025, compute the daily average PM2.5 for each air quality monitoring station. Then calculate the Global Moran's I statistic using inverse distance weights. Return the Moran's I value (rounded to 4 decimal places) and whether the spatial pattern is 'clustered', 'dispersed', or 'random'.",
+                        "validator": "validate_morans_i"
+                    }
+                ]
+            }
+        ],
+        "difficulty": "hard",
+        "category": "spatial_analysis"
+    }
+]

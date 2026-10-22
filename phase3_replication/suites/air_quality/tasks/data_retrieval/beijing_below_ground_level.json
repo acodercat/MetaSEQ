@@ -1,0 +1,28 @@
+{
+  "name": "beijing_below_ground_level",
+  "difficulty": "hard",
+  "category": "data_retrieval",
+  "case_type": "baseline",
+  "conversations": [
+    {
+      "id": "below_ground_level",
+      "turns": [
+        {
+          "query": "From the vertical profile record, report the mean temperature at the 1000 hPa level at Dingling station over January 2023. Alongside the number, explain what this quantity physically represents at this particular station.",
+          "validator": "validate_mean_t1000",
+          "stores": [
+            "mean_t1000_dingling"
+          ]
+        },
+        {
+          "query": "Now take the 925 hPa level over the same month. Using each station's January 2023 mean at that level, report how far above the ground that surface sits at the station where it comes closest to the ground, in metres.",
+          "validator": "validate_min_agl",
+          "stores": [
+            "min_925hpa_height_above_ground_m"
+          ]
+        }
+      ]
+    }
+  ],
+  "domain": "beijing"
+}

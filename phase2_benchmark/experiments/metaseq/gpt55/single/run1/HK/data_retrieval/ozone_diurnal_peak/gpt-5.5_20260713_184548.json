@@ -1,0 +1,44 @@
+{
+  "hk_ozone_diurnal_peak": {
+    "scenario": "hk_ozone_diurnal_peak",
+    "conversations": [
+      {
+        "id": "ozone_diurnal_peak",
+        "turns": [
+          {
+            "query": "At the Tap Mun background monitoring station, what was the peak hourly ozone concentration on July 5, 2025, and at what hour of the day did it occur?",
+            "actual_response": "At the Tap Mun background monitoring station on July 5, 2025, the peak hourly ozone concentration was 152.8 \u00b5g/m\u00b3.\n\nIt occurred at 14:00.",
+            "actual_calls": [],
+            "validation_errors": [],
+            "metrics": {
+              "steps": 2,
+              "prompt_tokens": 10759,
+              "completion_tokens": 766,
+              "total_tokens": 11525
+            },
+            "success": true,
+            "variables_not_set": false,
+            "error": null,
+            "code_snippets": [
+              "import pandas as pd\nfrom sqlalchemy import text\n\nstart = \"2025-07-05 00:00:00\"\nend = \"2025-07-06 00:00:00\"\nstation_id = 8  # Tap Mun\n\ncount_q = text(\"\"\"\nSELECT COUNT(*) AS n_readings, COUNT(o3) AS n_o3_readings\nFROM hourly_station_air_quality\nWHERE station_id = :station_id\n  AND datetime >= :start\n  AND datetime < :end\n\"\"\")\ncount_df = pd.read_sql(count_q, engine, params={\"station_id\": station_id, \"start\": start, \"end\": end})\n\npeak_q = text(\"\"\"\nWITH peak AS (\n  SELECT MAX(o3) AS peak_o3\n  FROM hourly_station_air_quality\n  WHERE station_id = :station_id\n    AND datetime >= :start\n    AND datetime < :end\n    AND o3 IS NOT NULL\n)\nSELECT\n  peak.peak_o3,\n  MIN(EXTRACT(HOUR FROM h.datetime))::int AS first_peak_hour,\n  COUNT(*) AS peak_hour_count,\n  STRING_AGG(EXTRACT(HOUR FROM h.datetime)::int::text, ', ' ORDER BY h.datetime) AS peak_hours\nFROM peak\nJOIN hourly_station_air_quality h\n  ON h.station_id = :station_id\n AND h.datetime >= :start\n AND h.datetime < :end\n AND h.o3 = peak.peak_o3\nGROUP BY peak.peak_o3\n\"\"\")\npeak_df = pd.read_sql(peak_q, engine, params={\"station_id\": station_id, \"start\": start, \"end\": end})\n\nif len(peak_df) and pd.notna(peak_df.loc[0, \"peak_o3\"]):\n    tap_mun_peak_o3 = float(peak_df.loc[0, \"peak_o3\"])\n    tap_mun_peak_o3_hour = int(peak_df.loc[0, \"first_peak_hour\"])\nelse:\n    tap_mun_peak_o3 = None\n    tap_mun_peak_o3_hour = None\n\nprint({\n    \"date\": \"2025-07-05\",\n    \"station\": \"Tap Mun\",\n    \"hourly_readings\": int(count_df.loc[0, \"n_readings\"]),\n    \"ozone_readings\": int(count_df.loc[0, \"n_o3_readings\"]),\n    \"peak_ozone_ug_m3\": tap_mun_peak_o3,\n    \"peak_hour_first_if_tied\": tap_mun_peak_o3_hour,\n    \"all_peak_hours\": None if peak_df.empty else peak_df.loc[0, \"peak_hours\"],\n    \"number_of_peak_hours\": 0 if peak_df.empty else int(peak_df.loc[0, \"peak_hour_count\"])\n})"
+            ],
+            "runtime_variables": {
+              "tap_mun_peak_o3": 152.8,
+              "tap_mun_peak_o3_hour": 14
+            }
+          }
+        ]
+      }
+    ],
+    "metrics": {
+      "total_turns": 1,
+      "successful_turns": 1,
+      "failed_turns": 0,
+      "total_steps": 2,
+      "success_rate": 1.0,
+      "total_prompt_tokens": 10759,
+      "total_completion_tokens": 766,
+      "total_tokens": 11525
+    }
+  }
+}

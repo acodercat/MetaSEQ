@@ -1,0 +1,43 @@
+{
+  "hk_cov_pop_general5km": {
+    "scenario": "hk_cov_pop_general5km",
+    "conversations": [
+      {
+        "id": "hk_cov_pop_general5km",
+        "turns": [
+          {
+            "query": "Using the HK_population_1km grid, what is the total population living within 5000 metres of at least one GENERAL-type air-quality station? Each grid cell (by its point) is counted once regardless of how many stations are nearby. Return the total population.",
+            "actual_response": "The total population living within 5000 metres of at least one GENERAL-type air-quality station is **6,613,680**.",
+            "actual_calls": [],
+            "validation_errors": [],
+            "metrics": {
+              "steps": 2,
+              "prompt_tokens": 10461,
+              "completion_tokens": 462,
+              "total_tokens": 10923
+            },
+            "success": true,
+            "variables_not_set": false,
+            "error": null,
+            "code_snippets": [
+              "import pandas as pd, numpy as np\nfrom sqlalchemy import text\n\n# Get GENERAL-type station coordinates\nstations = pd.read_sql(text(\"\"\"\nSELECT\n  ST_X(coordinate::geometry) AS longitude,\n  ST_Y(coordinate::geometry) AS latitude\nFROM air_quality_station\nWHERE station_type = 'GENERAL'\n\"\"\"), engine)\n\n# Haversine distance from each population grid point to any GENERAL station; count each grid cell once\nR = 6371000.0\npop_lon = np.radians(pop_df[\"longitude\"].to_numpy(dtype=float))[:, None]\npop_lat = np.radians(pop_df[\"latitude\"].to_numpy(dtype=float))[:, None]\nst_lon = np.radians(stations[\"longitude\"].to_numpy(dtype=float))[None, :]\nst_lat = np.radians(stations[\"latitude\"].to_numpy(dtype=float))[None, :]\n\ndlat = st_lat - pop_lat\ndlon = st_lon - pop_lon\na = np.sin(dlat/2)**2 + np.cos(pop_lat) * np.cos(st_lat) * np.sin(dlon/2)**2\ndist = 2 * R * np.arcsin(np.sqrt(a))\nnear_any = (dist <= 5000).any(axis=1)\n\npop_near_general = int(round(pop_df.loc[near_any, \"population\"].sum()))\nprint({\n    \"general_station_count\": int(len(stations)),\n    \"population_grid_cells_total\": int(len(pop_df)),\n    \"population_grid_cells_within_5000m\": int(near_any.sum()),\n    \"total_population_within_5000m\": pop_near_general\n})"
+            ],
+            "runtime_variables": {
+              "pop_near_general": 6613680
+            }
+          }
+        ]
+      }
+    ],
+    "metrics": {
+      "total_turns": 1,
+      "successful_turns": 1,
+      "failed_turns": 0,
+      "total_steps": 2,
+      "success_rate": 1.0,
+      "total_prompt_tokens": 10461,
+      "total_completion_tokens": 462,
+      "total_tokens": 10923
+    }
+  }
+}

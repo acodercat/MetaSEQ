@@ -1,0 +1,24 @@
+[
+    {
+        "name": "hk_aqhi_high_risk_episode",
+        "module": "evals.exceedance_anomaly_detection.HK.aqhi_high_risk_episode",
+        "requirements": "Find the day in July 2025 with the most stations simultaneously recording AQHI >= 7, then drill into the peak hour. Turn 1: episode_date (str, YYYY-MM-DD), affected_stations (int). Turn 2: peak_hour (int), peak_aqhi (int), peak_station (str).",
+        "conversations": [
+            {
+                "id": "aqhi_high_risk_episode",
+                "turns": [
+                    {
+                        "query": "In July 2025, on which day did the most air quality monitoring stations record an AQHI of 7 or above (high, very high, or serious health risk) at any hour? How many stations were affected? Return the date in YYYY-MM-DD format and the count of affected stations.",
+                        "validator": "validate_episode_date"
+                    },
+                    {
+                        "query": "On that day, at which hour was the peak AQHI across all stations? What was the peak value and at which station? Return the hour (0-23), the AQHI value, and the station name.",
+                        "validator": "validate_peak_hour"
+                    }
+                ]
+            }
+        ],
+        "difficulty": "medium",
+        "category": "exceedance_anomaly_detection"
+    }
+]

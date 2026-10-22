@@ -1,0 +1,36 @@
+{
+  "name": "beijing_exceedance_exposure_bias",
+  "difficulty": "hard",
+  "category": "exposure_assessment",
+  "case_type": "trap",
+  "conversations": [
+    {
+      "id": "exceedance_exposure_bias",
+      "turns": [
+        {
+          "query": "For summer 2023 — June, July and August — count the days on which Beijing's citywide daily maximum 8-hour ozone exceeded the Grade II limit of 160 ug/m3.",
+          "validator": "validate_citywide_days",
+          "stores": [
+            "citywide_exceedance_days"
+          ]
+        },
+        {
+          "query": "Now count the days of the same summer on which that limit was exceeded anywhere in the network — at one or more individual stations, each judged on its own hourly record on the same HJ 663-2013 basis. Explain what separates this figure from the previous one.",
+          "validator": "validate_anywhere_days",
+          "stores": [
+            "anywhere_exceedance_days"
+          ]
+        },
+        {
+          "query": "A health study treats each resident as exposed to the air at their nearest monitoring station. On that basis, how many residents lived where the limit was exceeded on more than 40 days that summer?",
+          "validator": "validate_population_over_40",
+          "stores": [
+            "population_over_40_days",
+            "station_over_40_days"
+          ]
+        }
+      ]
+    }
+  ],
+  "domain": "beijing"
+}

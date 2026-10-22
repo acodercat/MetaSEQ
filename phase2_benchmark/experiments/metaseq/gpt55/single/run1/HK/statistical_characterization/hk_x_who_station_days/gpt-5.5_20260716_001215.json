@@ -1,0 +1,43 @@
+{
+  "hk_x_who_station_days": {
+    "scenario": "hk_x_who_station_days",
+    "conversations": [
+      {
+        "id": "hk_x_who_station_days",
+        "turns": [
+          {
+            "query": "Over June 2025 (2025-06-01 to 2025-06-30), across all 18 air-quality stations, compute each station-day's daily mean PM2.5 (average of that station's non-NULL hourly PM2.5 values on that calendar date). How many station-days STRICTLY exceeded the World Health Organization 2021 Air Quality Guideline value for 24-hour mean PM2.5? Return the count.",
+            "actual_response": "35 station-days exceeded the WHO 2021 24-hour PM2.5 guideline in June 2025.",
+            "actual_calls": [],
+            "validation_errors": [],
+            "metrics": {
+              "steps": 2,
+              "prompt_tokens": 10723,
+              "completion_tokens": 583,
+              "total_tokens": 11306
+            },
+            "success": true,
+            "variables_not_set": false,
+            "error": null,
+            "code_snippets": [
+              "import pandas as pd\nfrom sqlalchemy import text\n\n# Check scoped hourly row volume first, then aggregate daily station means and count exceedances.\nrow_count = pd.read_sql(text(\"\"\"\nSELECT COUNT(*) AS n\nFROM hourly_station_air_quality\nWHERE datetime >= TIMESTAMP '2025-06-01 00:00:00'\n  AND datetime <  TIMESTAMP '2025-07-01 00:00:00'\n  AND pm2_5 IS NOT NULL\n\"\"\"), engine).iloc[0, 0]\n\nres = pd.read_sql(text(\"\"\"\nWITH daily AS (\n  SELECT station_id, datetime::date AS day, AVG(pm2_5) AS daily_mean_pm25\n  FROM hourly_station_air_quality\n  WHERE datetime >= TIMESTAMP '2025-06-01 00:00:00'\n    AND datetime <  TIMESTAMP '2025-07-01 00:00:00'\n    AND pm2_5 IS NOT NULL\n  GROUP BY station_id, datetime::date\n)\nSELECT\n  COUNT(*) FILTER (WHERE daily_mean_pm25 > 15.0) AS exceed_station_days,\n  COUNT(*) AS station_days_with_pm25,\n  MIN(daily_mean_pm25) AS min_daily_mean,\n  AVG(daily_mean_pm25) AS avg_daily_mean,\n  MAX(daily_mean_pm25) AS max_daily_mean\nFROM daily\n\"\"\"), engine)\n\nwho_exceed_station_days = int(res.loc[0, \"exceed_station_days\"])\nprint({\n    \"non_null_hourly_pm25_readings_in_scope\": int(row_count),\n    \"station_days_with_pm25\": int(res.loc[0, \"station_days_with_pm25\"]),\n    \"who_exceed_station_days\": who_exceed_station_days,\n    \"min_daily_mean_pm25\": round(float(res.loc[0, \"min_daily_mean\"]), 3),\n    \"avg_daily_mean_pm25\": round(float(res.loc[0, \"avg_daily_mean\"]), 3),\n    \"max_daily_mean_pm25\": round(float(res.loc[0, \"max_daily_mean\"]), 3)\n})"
+            ],
+            "runtime_variables": {
+              "who_exceed_station_days": 35
+            }
+          }
+        ]
+      }
+    ],
+    "metrics": {
+      "total_turns": 1,
+      "successful_turns": 1,
+      "failed_turns": 0,
+      "total_steps": 2,
+      "success_rate": 1.0,
+      "total_prompt_tokens": 10723,
+      "total_completion_tokens": 583,
+      "total_tokens": 11306
+    }
+  }
+}

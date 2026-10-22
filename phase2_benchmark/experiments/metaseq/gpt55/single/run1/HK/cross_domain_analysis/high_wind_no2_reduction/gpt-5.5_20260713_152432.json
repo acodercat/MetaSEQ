@@ -1,0 +1,43 @@
+{
+  "hk_high_wind_no2_reduction": {
+    "scenario": "hk_high_wind_no2_reduction",
+    "conversations": [
+      {
+        "id": "high_wind_no2_reduction",
+        "turns": [
+          {
+            "query": "On October 5, 2025, identify the hour when any weather station recorded the highest wind speed of the day. For the air quality monitoring station closest to that windiest weather station, by what percentage was the NO2 concentration at that peak-wind hour lower than the station's daily average NO2? (Round to 1 decimal place, positive value means reduction)",
+            "actual_response": "On October 5, 2025, the highest wind speed was recorded at 09:00 at Ngong Ping. The closest air quality monitoring station was Tung Chung.\n\nAt Tung Chung, the daily average NO\u2082 concentration was 4.592 \u00b5g/m\u00b3, while the NO\u2082 concentration at 09:00 was 3.5 \u00b5g/m\u00b3.\n\nTherefore, the NO\u2082 concentration at the peak-wind hour was 23.8% lower than the station\u2019s daily average.",
+            "actual_calls": [],
+            "validation_errors": [],
+            "metrics": {
+              "steps": 2,
+              "prompt_tokens": 11134,
+              "completion_tokens": 1567,
+              "total_tokens": 12701
+            },
+            "success": true,
+            "variables_not_set": false,
+            "error": null,
+            "code_snippets": [
+              "import pandas as pd\nfrom sqlalchemy import text\n\nstart, end = \"2025-10-05 00:00:00\", \"2025-10-06 00:00:00\"\n\n# Count eligible weather readings and identify peak-wind candidates for the day\nweather_count = pd.read_sql(text(\"\"\"\nSELECT COUNT(*) AS n\nFROM hourly_station_weather\nWHERE datetime >= :start AND datetime < :end AND wind_speed IS NOT NULL\n\"\"\"), engine, params={\"start\": start, \"end\": end})\n\npeak_rows = pd.read_sql(text(\"\"\"\nWITH mx AS (\n  SELECT MAX(wind_speed) AS max_wind_speed\n  FROM hourly_station_weather\n  WHERE datetime >= :start AND datetime < :end AND wind_speed IS NOT NULL\n)\nSELECT hsw.station_id AS weather_station_id, ws.name_en AS weather_station, hsw.datetime, hsw.wind_speed\nFROM hourly_station_weather hsw\nJOIN weather_station ws ON ws.id = hsw.station_id\nJOIN mx ON hsw.wind_speed = mx.max_wind_speed\nWHERE hsw.datetime >= :start AND hsw.datetime < :end\nORDER BY hsw.datetime, hsw.station_id\nLIMIT 10\n\"\"\"), engine, params={\"start\": start, \"end\": end})\n\npeak_tie_count = pd.read_sql(text(\"\"\"\nWITH mx AS (\n  SELECT MAX(wind_speed) AS max_wind_speed\n  FROM hourly_station_weather\n  WHERE datetime >= :start AND datetime < :end AND wind_speed IS NOT NULL\n)\nSELECT COUNT(*) AS n_peak_ties\nFROM hourly_station_weather hsw\nJOIN mx ON hsw.wind_speed = mx.max_wind_speed\nWHERE hsw.datetime >= :start AND hsw.datetime < :end\n\"\"\"), engine, params={\"start\": start, \"end\": end})\n\n# Use the unique peak-wind reading if unique; otherwise use the first chronological candidate and report tie count\npeak = peak_rows.iloc[0]\nnearest_aq = pd.read_sql(text(\"\"\"\nSELECT aqs.id AS aq_station_id, aqs.name_en AS aq_station,\n       ST_Distance(aqs.coordinate, ws.coordinate) AS distance_m\nFROM air_quality_station aqs\nJOIN weather_station ws ON ws.id = :weather_station_id\nORDER BY aqs.coordinate <-> ws.coordinate\nLIMIT 1\n\"\"\"), engine, params={\"weather_station_id\": int(peak.weather_station_id)})\n\naq_id = int(nearest_aq.iloc[0].aq_station_id)\npeak_dt = pd.to_datetime(peak.datetime).strftime(\"%Y-%m-%d %H:%M:%S\")\n\naq_summary = pd.read_sql(text(\"\"\"\nSELECT\n  COUNT(no2) AS daily_no2_count,\n  AVG(no2) AS daily_avg_no2,\n  MAX(CASE WHEN datetime = :peak_dt THEN no2 END) AS peak_hour_no2\nFROM hourly_station_air_quality\nWHERE station_id = :aq_id AND datetime >= :start AND datetime < :end\n\"\"\"), engine, params={\"aq_id\": aq_id, \"peak_dt\": peak_dt, \"start\": start, \"end\": end})\n\ndaily_avg = float(aq_summary.iloc[0].daily_avg_no2)\npeak_no2 = float(aq_summary.iloc[0].peak_hour_no2)\nno2_pct_reduction = round((daily_avg - peak_no2) / daily_avg * 100, 1)\n\nprint({\n    \"weather_readings_checked\": int(weather_count.iloc[0].n),\n    \"peak_wind_tie_count\": int(peak_tie_count.iloc[0].n_peak_ties),\n    \"selected_peak_wind_time\": peak_dt,\n    \"selected_weather_station\": peak.weather_station,\n    \"peak_wind_speed\": float(peak.wind_speed),\n    \"nearest_air_quality_station\": nearest_aq.iloc[0].aq_station,\n    \"distance_m\": round(float(nearest_aq.iloc[0].distance_m), 1),\n    \"daily_no2_readings\": int(aq_summary.iloc[0].daily_no2_count),\n    \"daily_average_no2\": round(daily_avg, 3),\n    \"peak_hour_no2\": round(peak_no2, 3),\n    \"no2_pct_reduction\": no2_pct_reduction\n})"
+            ],
+            "runtime_variables": {
+              "no2_pct_reduction": 23.8
+            }
+          }
+        ]
+      }
+    ],
+    "metrics": {
+      "total_turns": 1,
+      "successful_turns": 1,
+      "failed_turns": 0,
+      "total_steps": 2,
+      "success_rate": 1.0,
+      "total_prompt_tokens": 11134,
+      "total_completion_tokens": 1567,
+      "total_tokens": 12701
+    }
+  }
+}

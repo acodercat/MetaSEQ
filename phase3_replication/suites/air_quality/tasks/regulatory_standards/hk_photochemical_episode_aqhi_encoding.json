@@ -1,0 +1,36 @@
+{
+  "name": "hk_photochemical_episode_aqhi_encoding",
+  "difficulty": "hard",
+  "category": "regulatory_standards",
+  "case_type": "trap",
+  "conversations": [
+    {
+      "id": "photochemical_episode_aqhi_encoding",
+      "turns": [
+        {
+          "query": "Find Hong Kong's strongest territory-wide ozone episode of 2020 through 2025, taking the hour when ozone averaged across the reporting stations was highest. When did it peak, and how widespread was it?",
+          "validator": "validate_episode_peak",
+          "stores": [
+            "peak_episode_hour",
+            "stations_o3_at_least_200"
+          ]
+        },
+        {
+          "query": "Now put that hour in the terms the public was given at the time: for that same hour, how many of the stations sat in the highest band of the Air Quality Health Index?",
+          "validator": "validate_serious_band",
+          "stores": [
+            "stations_in_serious_band"
+          ]
+        },
+        {
+          "query": "Characterise the episode for someone reading the day's bulletin — how widespread it was, which pollutant the index was carrying, and what these records do not let you say about it.",
+          "validator": "validate_bulletin",
+          "stores": [
+            "index_carried_by"
+          ]
+        }
+      ]
+    }
+  ],
+  "domain": "hk"
+}

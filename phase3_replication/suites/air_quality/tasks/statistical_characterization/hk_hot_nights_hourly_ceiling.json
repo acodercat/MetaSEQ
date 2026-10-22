@@ -1,0 +1,25 @@
+{
+  "name": "hk_hot_nights_hourly_ceiling",
+  "difficulty": "medium",
+  "category": "statistical_characterization",
+  "case_type": "baseline",
+  "conversations": [
+    {
+      "id": "hot_nights_hourly_ceiling",
+      "turns": [
+        {
+          "query": "HKO reports 54 hot nights and 6 cold days in 2025. Count hot nights and cold days from our hourly Observatory record. Which figures should the desk publish, and what bounds does hourly sampling place on the hot-night and cold-day counts?",
+          "validator": "validate_evidence_and_conclusion",
+          "stores": [
+            "hot_nights_2025",
+            "cold_days_2025",
+            "figure_to_publish",
+            "our_hot_night_count_is",
+            "our_cold_day_count_is"
+          ]
+        }
+      ]
+    }
+  ],
+  "domain": "hk"
+}

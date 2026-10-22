@@ -1,0 +1,104 @@
+{
+  "hk_regulatory_compliance_investigation": {
+    "scenario": "hk_regulatory_compliance_investigation",
+    "conversations": [
+      {
+        "id": "compliance_investigation",
+        "turns": [
+          {
+            "query": "On December 30, 2025, which air quality monitoring stations had a daily average PM2.5 exceeding the WHO 24-hour guideline of 15 \u00b5g/m\u00b3? How many stations exceeded it, and which had the highest daily average?",
+            "actual_response": "Based on the data for December 30, 2025:\n\n**18 stations** exceeded the WHO 24-hour PM2.5 guideline of 15 \u00b5g/m\u00b3.\n\nThe station with the highest daily average PM2.5 was **Tung Chung** with **78.0 \u00b5g/m\u00b3**.\n\nAll 18 monitoring stations in Hong Kong recorded PM2.5 levels well above the WHO guideline on this day, indicating widespread poor air quality across the region.",
+            "actual_calls": [],
+            "validation_errors": [
+              "Custom validator failed: exceedance_station_count not set"
+            ],
+            "metrics": {
+              "steps": 2,
+              "prompt_tokens": 12158,
+              "completion_tokens": 534,
+              "total_tokens": 12692
+            },
+            "success": false,
+            "variables_not_set": true,
+            "error": null,
+            "code_snippets": [
+              "from sqlalchemy import text\nimport pandas as pd\n\n# Define the date range for December 30, 2025 (00:00 to 23:59)\nstart_date = '2025-12-30 00:00:00'\nend_date = '2025-12-31 00:00:00'\n\n# Query to calculate daily average PM2.5 for each station on that day\nquery = text(f\"\"\"\nSELECT \n    aqs.id as station_id,\n    aqs.name_en as station_name,\n    AVG(hsaq.pm2_5) as avg_pm25\nFROM hourly_station_air_quality hsaq\nJOIN air_quality_station aqs ON hsaq.station_id = aqs.id\nWHERE hsaq.datetime >= '{start_date}' \n  AND hsaq.datetime < '{end_date}'\nGROUP BY aqs.id, aqs.name_en\nORDER BY avg_pm25 DESC\n\"\"\")\n\ndf = pd.read_sql(query, engine)\ndf['avg_pm25'] = df['avg_pm25'].round(1)\n\n# Filter stations exceeding WHO guideline of 15 \u00b5g/m\u00b3\nexceeding = df[df['avg_pm25'] > 15.0]\n\nprint(\"All stations daily avg PM2.5 on 2025-12-30:\")\nprint(df.to_string(index=False))\nprint(f\"\\nStations exceeding WHO guideline (>15 \u00b5g/m\u00b3): {len(exceeding)}\")\nif len(exceeding) > 0:\n    print(\"Exceeding stations:\")\n    print(exceeding.to_string(index=False))"
+            ],
+            "runtime_variables": {
+              "exceedance_station_count": null,
+              "worst_station_name": null,
+              "worst_station_pm25": null,
+              "residential_count": null,
+              "educational_count": null,
+              "residential_in_residential_zone_pct": null
+            }
+          },
+          {
+            "query": "For the station with the highest exceedance, how many residential area and educational institution sensitive areas are within 2 km?",
+            "actual_response": "Within 2 km of the Tung Chung station (the station with the highest PM2.5 exceedance):\n\n- **31** residential area sensitive areas\n- **62** educational institution sensitive areas",
+            "actual_calls": [],
+            "validation_errors": [],
+            "metrics": {
+              "steps": 2,
+              "prompt_tokens": 13992,
+              "completion_tokens": 461,
+              "total_tokens": 14453
+            },
+            "success": true,
+            "variables_not_set": false,
+            "error": null,
+            "code_snippets": [
+              "from sqlalchemy import text\nimport pandas as pd\n\n# Get Tung Chung station coordinates\nquery = text(\"\"\"\nSELECT ST_X(coordinate::geometry) as lon, ST_Y(coordinate::geometry) as lat\nFROM air_quality_station\nWHERE name_en = 'Tung Chung'\n\"\"\")\nstation_coords = pd.read_sql(query, engine)\nlon = station_coords['lon'].values[0]\nlat = station_coords['lat'].values[0]\n\n# Count residential areas within 2km\nquery_residential = text(f\"\"\"\nSELECT COUNT(*) as count\nFROM sensitive_area\nWHERE category = 'RESIDENTIAL_AREA'\nAND ST_Distance(\n    geometry::geography,\n    ST_SetSRID(ST_MakePoint({lon}, {lat}), 4326)::geography\n) <= 2000\n\"\"\")\nresidential_count = pd.read_sql(query_residential, engine)['count'].values[0]\n\n# Count educational institutions within 2km\nquery_educational = text(f\"\"\"\nSELECT COUNT(*) as count\nFROM sensitive_area\nWHERE category = 'EDUCATIONAL_INSTITUTION'\nAND ST_Distance(\n    geometry::geography,\n    ST_SetSRID(ST_MakePoint({lon}, {lat}), 4326)::geography\n) <= 2000\n\"\"\")\neducational_count = pd.read_sql(query_educational, engine)['count'].values[0]\n\nprint(f\"Residential areas within 2km: {residential_count}\")\nprint(f\"Educational institutions within 2km: {educational_count}\")\n\nresidential_count = int(residential_count)\neducational_count = int(educational_count)"
+            ],
+            "runtime_variables": {
+              "exceedance_station_count": null,
+              "worst_station_name": null,
+              "worst_station_pm25": null,
+              "residential_count": 31,
+              "educational_count": 62,
+              "residential_in_residential_zone_pct": null
+            }
+          },
+          {
+            "query": "Of the residential areas within 2 km of that station, what percentage have their centroid located in a land use zone categorized as 'Residential'?",
+            "actual_response": "Based on the analysis of residential areas within 2 km of the Tung Chung station:\n\n**0.0%** of the residential areas have their centroid located in a land use zone categorized as 'Residential'.\n\nThis means that none of the 31 residential area sensitive areas within 2 km of Tung Chung station have their centroids falling within officially designated Residential land use zones.",
+            "actual_calls": [],
+            "validation_errors": [
+              "Custom validator failed: residential_in_residential_zone_pct=0.0, expected \u2248 100.0 (\u00b12)"
+            ],
+            "metrics": {
+              "steps": 2,
+              "prompt_tokens": 15351,
+              "completion_tokens": 682,
+              "total_tokens": 16033
+            },
+            "success": false,
+            "variables_not_set": false,
+            "error": null,
+            "code_snippets": [
+              "from sqlalchemy import text\nimport pandas as pd\n\n# Get Tung Chung station coordinates (already have lon, lat from previous step)\n# Get residential areas within 2km and their centroids\nquery = text(f\"\"\"\nSELECT \n    sa.id as sa_id,\n    ST_Centroid(sa.geometry) as centroid\nFROM sensitive_area sa\nWHERE sa.category = 'RESIDENTIAL_AREA'\nAND ST_Distance(\n    sa.geometry::geography,\n    ST_SetSRID(ST_MakePoint({lon}, {lat}), 4326)::geography\n) <= 2000\n\"\"\")\nresidential_areas = pd.read_sql(query, engine)\n\ntotal_residential = len(residential_areas)\nprint(f\"Total residential areas within 2km: {total_residential}\")\n\n# Now check which centroids fall within 'Residential' land use zones\n# We need to check each centroid against land_use_zone table\ncount_in_residential_zone = 0\n\nfor idx, row in residential_areas.iterrows():\n    # Get centroid coordinates\n    centroid_geom = row['centroid']\n    # Extract coordinates from the geometry string\n    # The centroid is in format: POINT(x y)\n    centroid_str = str(centroid_geom)\n    # Parse the POINT coordinates\n    import re\n    match = re.search(r'POINT\\(([-\\d.]+)\\s+([-\\d.]+)\\)', centroid_str)\n    if match:\n        c_lon = float(match.group(1))\n        c_lat = float(match.group(2))\n        \n        # Check if this point is within any Residential land use zone\n        check_query = text(f\"\"\"\n        SELECT COUNT(*) as cnt\n        FROM land_use_zone\n        WHERE land_category = 'Residential'\n        AND ST_Contains(\n            geometry,\n            ST_SetSRID(ST_MakePoint({c_lon}, {c_lat}), 4326)\n        )\n        \"\"\")\n        result = pd.read_sql(check_query, engine)['cnt'].values[0]\n        if result > 0:\n            count_in_residential_zone += 1\n\npct = (count_in_residential_zone / total_residential * 100) if total_residential > 0 else 0.0\npct = round(pct, 1)\n\nprint(f\"Residential areas with centroid in Residential land use zone: {count_in_residential_zone}\")\nprint(f\"Percentage: {pct}%\")\n\nresidential_in_residential_zone_pct = float(pct)"
+            ],
+            "runtime_variables": {
+              "exceedance_station_count": null,
+              "worst_station_name": null,
+              "worst_station_pm25": null,
+              "residential_count": 31,
+              "educational_count": 62,
+              "residential_in_residential_zone_pct": 0.0
+            }
+          }
+        ]
+      }
+    ],
+    "metrics": {
+      "total_turns": 3,
+      "successful_turns": 1,
+      "failed_turns": 2,
+      "total_steps": 6,
+      "success_rate": 0.3333333333333333,
+      "total_prompt_tokens": 41501,
+      "total_completion_tokens": 1677,
+      "total_tokens": 43178
+    }
+  }
+}

@@ -1,0 +1,25 @@
+[
+  {
+    "name": "hk_vor_area_shatin",
+    "module": "evals.neuroair.spatial_analysis.HK.hk_vor_area_shatin",
+    "requirements": "Sha Tin Voronoi cell area (bbox-clipped, geodesic km²). Store shatin_cell_km2 (float, 1dp).",
+    "conversations": [
+      {
+        "id": "hk_vor_area_shatin",
+        "turns": [
+          {
+            "query": "Compute the Voronoi (Thiessen) tessellation of all 18 air-quality monitoring stations and clip each cell to the axis-aligned bounding box of all station coordinates. Use geodesic area (cast to geography) in km². Return the area (km², 1 dp) of the Voronoi cell belonging to the Sha Tin station (station_id 11).",
+            "validator": "validate_hk_vor_area_shatin"
+          }
+        ]
+      }
+    ],
+    "difficulty": "hard",
+    "category": "spatial_analysis",
+    "_source": {
+      "benchmark": "hk-voronoi-hard",
+      "original_query_id": "hk_vor_area_shatin",
+      "verbatim": false
+    }
+  }
+]

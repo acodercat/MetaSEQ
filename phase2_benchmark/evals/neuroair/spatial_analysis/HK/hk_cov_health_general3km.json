@@ -1,0 +1,25 @@
+[
+  {
+    "name": "hk_cov_health_general3km",
+    "module": "evals.neuroair.spatial_analysis.HK.hk_cov_health_general3km",
+    "requirements": "Distinct healthcare institutions with centroid within 3000 m of ANY general station. Store health_general_3km (int).",
+    "conversations": [
+      {
+        "id": "hk_cov_health_general3km",
+        "turns": [
+          {
+            "query": "How many distinct 'HEALTH_CARE_INSTITUTION' sensitive areas have their polygon centroid within 3000 metres of at least one GENERAL-type air-quality station? Count each institution once. Return the count.",
+            "validator": "validate_hk_cov_health_general3km"
+          }
+        ]
+      }
+    ],
+    "difficulty": "hard",
+    "category": "spatial_analysis",
+    "_source": {
+      "benchmark": "hk-coverage-hard",
+      "original_query_id": "hk_cov_health_general3km",
+      "verbatim": false
+    }
+  }
+]

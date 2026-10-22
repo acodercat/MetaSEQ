@@ -1,0 +1,46 @@
+{
+  "hk_cov_schools_roadside5km": {
+    "scenario": "hk_cov_schools_roadside5km",
+    "conversations": [
+      {
+        "id": "hk_cov_schools_roadside5km",
+        "turns": [
+          {
+            "query": "How many distinct 'EDUCATIONAL_INSTITUTION' sensitive areas have their polygon centroid within 5000 metres of at least one roadside air-quality station (station_id 14, 16, or 17)? The three stations are close together and their catchments overlap heavily; count each institution only once. Return the count.",
+            "actual_response": "The query has returned the count of distinct 'EDUCATIONAL_INSTITUTION' sensitive areas whose centroid is within 5000 meters of at least one of the three roadside air quality stations (Mong Kok, Central, or Causeway Bay).\n\n**Answer: 1598**\n\nThere are 1,598 distinct educational institution sensitive areas with their polygon centroid within 5000 metres of at least one roadside air-quality station (station_id 14, 16, or 17).",
+            "actual_calls": [],
+            "validation_errors": [
+              "Custom validator failed: schools_roadside_5km not set"
+            ],
+            "metrics": {
+              "steps": 3,
+              "prompt_tokens": 16986,
+              "completion_tokens": 544,
+              "total_tokens": 17530
+            },
+            "success": false,
+            "variables_not_set": true,
+            "error": null,
+            "code_snippets": [
+              "import pandas as pd\nfrom sqlalchemy import text\n\n# First, let's verify the roadside stations (14, 16, 17)\nquery = text(\"\"\"\nSELECT id, name_en, station_type\nFROM air_quality_station\nWHERE id IN (14, 16, 17)\n\"\"\")\nstations = pd.read_sql(query, engine)\nprint(stations)",
+              "import pandas as pd\nfrom sqlalchemy import text\n\n# Query to find distinct educational institutions within 5000m of any roadside station\nquery = text(\"\"\"\nSELECT COUNT(DISTINCT sa.id) as count\nFROM sensitive_area sa\nWHERE sa.category = 'EDUCATIONAL_INSTITUTION'\nAND EXISTS (\n    SELECT 1\n    FROM air_quality_station aqs\n    WHERE aqs.id IN (14, 16, 17)\n    AND ST_DWithin(\n        ST_Centroid(sa.geometry)::geography,\n        aqs.coordinate::geography,\n        5000\n    )\n)\n\"\"\")\nresult = pd.read_sql(query, engine)\nprint(result)"
+            ],
+            "runtime_variables": {
+              "schools_roadside_5km": null
+            }
+          }
+        ]
+      }
+    ],
+    "metrics": {
+      "total_turns": 1,
+      "successful_turns": 0,
+      "failed_turns": 1,
+      "total_steps": 3,
+      "success_rate": 0.0,
+      "total_prompt_tokens": 16986,
+      "total_completion_tokens": 544,
+      "total_tokens": 17530
+    }
+  }
+}

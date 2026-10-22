@@ -1,0 +1,56 @@
+{
+  "hk_network_deviation_outlier": {
+    "scenario": "hk_network_deviation_outlier",
+    "conversations": [
+      {
+        "id": "network_deviation",
+        "turns": [
+          {
+            "query": "On October 5, 2025, for each hour compute the network-wide mean and standard deviation of PM2.5 across all general air quality stations. Then find the single station-hour with the largest absolute z-score deviation, where z-score equals the station PM2.5 minus the network mean divided by the network standard deviation. Return the station name, the hour of day, the station's PM2.5 value rounded to 1 decimal place, the network mean at that hour rounded to 1 decimal place, and the z-score rounded to 2 decimal places.",
+            "actual_response": "The analysis is complete. The station-hour with the largest absolute z-score deviation from the network mean PM2.5 on October 5, 2025 is:\n\n- **Station**: Tseung Kwan O\n- **Hour**: 5 (5:00 AM)\n- **Station PM2.5**: 12.4 \u00b5g/m\u00b3\n- **Network Mean at that hour**: 5.4 \u00b5g/m\u00b3\n- **Z-score**: 2.83\n\nThis means that at 5:00 AM on October 5, 2025, Tseung Kwan O station recorded a PM2.5 level of 12.4 \u00b5g/m\u00b3, which was 2.83 standard deviations above the network-wide mean of 5.4 \u00b5g/m\u00b3 for that hour \u2013 the largest deviation observed across all stations and hours on that day.",
+            "actual_calls": [],
+            "validation_errors": [],
+            "metrics": {
+              "steps": 14,
+              "prompt_tokens": 101643,
+              "completion_tokens": 3992,
+              "total_tokens": 105635
+            },
+            "success": true,
+            "variables_not_set": false,
+            "error": null,
+            "code_snippets": [
+              "import pandas as pd\nfrom sqlalchemy import text\n\n# Query hourly PM2.5 data for all general stations on October 5, 2025\n# General stations have station_type = 'GENERAL'\nquery = text(\"\"\"\nSELECT \n    aqs.id as station_id,\n    aqs.name_en as station_name,\n    aqs.station_type,\n    hsaq.datetime,\n    hsaq.pm2_5\nFROM hourly_station_air_quality hsaq\nJOIN air_quality_station aqs ON hsaq.station_id = aqs.id\nWHERE aqs.station_type = 'GENERAL'\nAND hsaq.datetime >= '2025-10-05 00:00:00'\nAND hsaq.datetime < '2025-10-06 00:00:00'\nAND hsaq.pm2_5 IS NOT NULL\nORDER BY aqs.id, hsaq.datetime\n\"\"\")\n\npm25_df = pd.read_sql(query, engine)\nprint(f\"Total rows fetched: {len(pm25_df)}\")\nprint(f\"Number of unique stations: {pm25_df['station_id'].nunique()}\")\nprint(f\"Number of unique hours: {pm25_df['datetime'].nunique()}\")\nprint(\"\\nStation breakdown:\")\nprint(pm25_df.groupby('station_name').agg({'pm2_5': 'count'}).reset_index())\nprint(\"\\nSample data:\")\nprint(pm25_df.head(10))\nprint(\"\\nPM2.5 statistics:\")\nprint(pm25_df['pm2_5'].describe())",
+              "import pandas as pd\nfrom sqlalchemy import text\n\n# Query PM2.5 data for October 5, 2025 (whole day: 00:00 to 23:59)\nquery = text(\"\"\"\nSELECT hsaq.station_id, aqs.name_en, hsaq.datetime, hsaq.pm2_5\nFROM hourly_station_air_quality hsaq\nJOIN air_quality_station aqs ON hsaq.station_id = aqs.id\nWHERE hsaq.datetime >= '2025-10-05 00:00:00'\nAND hsaq.datetime < '2025-10-06 00:00:00'\nAND hsaq.pm2_5 IS NOT NULL\nORDER BY hsaq.datetime, hsaq.station_id\n\"\"\")\npm25_oct5 = pd.read_sql(query, engine)\nprint(f\"Total records: {len(pm25_oct5)}\")\nprint(f\"Stations: {pm25_oct5['name_en'].unique()}\")\nprint(pm25_oct5.head(10))",
+              "import numpy as np\n\n# Convert datetime to hour for grouping\npm25_oct5['datetime'] = pd.to_datetime(pm25_oct5['datetime'])\npm25_oct5['hour'] = pm25_oct5['datetime'].dt.hour\n\n# Calculate hourly network-wide mean and std for PM2.5\nhourly_stats = pm25_oct5.groupby('hour')['pm2_5'].agg(['mean', 'std']).reset_index()\nhourly_stats.columns = ['hour', 'network_mean', 'network_std']\nprint(\"Hourly network statistics:\")\nprint(hourly_stats)\n\n# Merge stats back to original data\npm25_oct5 = pm25_oct5.merge(hourly_stats, on='hour')\n\n# Calculate z-score for each record\npm25_oct5['zscore'] = (pm25_oct5['pm2_5'] - pm25_oct5['network_mean']) / pm25_oct5['network_std']\n\n# Find the record with the largest absolute z-score\npm25_oct5['abs_zscore'] = pm25_oct5['zscore'].abs()\noutlier_idx = pm25_oct5['abs_zscore'].idxmax()\noutlier_record = pm25_oct5.loc[outlier_idx]\n\nprint(f\"\\nOutlier record:\")\nprint(f\"Station: {outlier_record['name_en']}\")\nprint(f\"Hour: {outlier_record['hour']}\")\nprint(f\"PM2.5: {outlier_record['pm2_5']}\")\nprint(f\"Network mean: {outlier_record['network_mean']}\")\nprint(f\"Z-score: {outlier_record['zscore']}\")",
+              "# Format and store the results\noutlier_station = str(outlier_record['name_en'])\noutlier_hour = int(outlier_record['hour'])\nstation_pm25 = round(float(outlier_record['pm2_5']), 1)\nnetwork_mean = round(float(outlier_record['network_mean']), 1)\nzscore = round(float(outlier_record['zscore']), 2)\n\nprint(f\"outlier_station: {outlier_station}\")\nprint(f\"outlier_hour: {outlier_hour}\")\nprint(f\"station_pm25: {station_pm25}\")\nprint(f\"network_mean: {network_mean}\")\nprint(f\"zscore: {zscore}\")",
+              "# Reuse the intermediate variables already staged in the shared runtime\n# The task states these are already computed and correct:\n# outlier_record (Series) contains the outlier row data\n# hourly_stats (DataFrame) contains the network statistics per hour\n\n# Extract values from the already-computed outlier_record Series\noutlier_station = str(outlier_record['station_name'])\noutlier_hour = int(outlier_record['hour'])\nstation_pm25 = round(float(outlier_record['pm2_5']), 1)\n\n# Get the network mean for that specific hour from hourly_stats\nhour_network_mean = hourly_stats[hourly_stats['hour'] == outlier_hour]['network_mean_pm25'].values[0]\nnetwork_mean = round(float(hour_network_mean), 1)\n\n# Calculate z-score: (station_pm25 - network_mean) / network_std\nhour_network_std = hourly_stats[hourly_stats['hour'] == outlier_hour]['network_std_pm25'].values[0]\nzscore = round((float(outlier_record['pm2_5']) - hour_network_mean) / hour_network_std, 2)\n\n# Assign and print the required output variables\nprint(f\"outlier_station: {outlier_station}\")\nprint(f\"outlier_hour: {outlier_hour}\")\nprint(f\"station_pm25: {station_pm25}\")\nprint(f\"network_mean: {network_mean}\")\nprint(f\"zscore: {zscore}\")",
+              "# Check the actual column names in outlier_record and hourly_stats\nprint(\"outlier_record index/columns:\")\nprint(outlier_record.index.tolist())\nprint(\"\\noutlier_record values:\")\nprint(outlier_record)\nprint(\"\\nhourly_stats columns:\")\nprint(hourly_stats.columns.tolist())\nprint(\"\\nhourly_stats sample:\")\nprint(hourly_stats.head())",
+              "# Extract values from the already-computed outlier_record Series using correct column names\noutlier_station = str(outlier_record['name_en'])\noutlier_hour = int(outlier_record['hour'])\nstation_pm25 = round(float(outlier_record['pm2_5']), 1)\n\n# Get the network mean for that specific hour from hourly_stats\nhour_network_mean = hourly_stats[hourly_stats['hour'] == outlier_hour]['network_mean'].values[0]\nnetwork_mean = round(float(hour_network_mean), 1)\n\n# Get z-score directly from outlier_record (already computed)\nzscore = round(float(outlier_record['zscore']), 2)\n\n# Assign and print the required output variables\nprint(f\"outlier_station: {outlier_station}\")\nprint(f\"outlier_hour: {outlier_hour}\")\nprint(f\"station_pm25: {station_pm25}\")\nprint(f\"network_mean: {network_mean}\")\nprint(f\"zscore: {zscore}\")",
+              "import pandas as pd\nfrom sqlalchemy import text\n\n# Query PM2.5 data for October 5, 2025 from general stations\nquery = text(\"\"\"\nSELECT \n    aqs.name_en,\n    hsaq.datetime,\n    hsaq.pm2_5,\n    EXTRACT(HOUR FROM hsaq.datetime) as hour\nFROM hourly_station_air_quality hsaq\nJOIN air_quality_station aqs ON hsaq.station_id = aqs.id\nWHERE aqs.station_type = 'GENERAL'\nAND hsaq.datetime >= '2025-10-05 00:00:00'\nAND hsaq.datetime < '2025-10-06 00:00:00'\nAND hsaq.pm2_5 IS NOT NULL\nORDER BY hsaq.datetime, aqs.name_en\n\"\"\")\npm25_df = pd.read_sql(query, engine)\nprint(f\"Total records: {len(pm25_df)}\")\nprint(pm25_df.head(10))",
+              "import numpy as np\n\n# Group by hour and compute network mean and std for each hour\nhourly_stats = pm25_df.groupby('hour').agg(\n    network_mean=('pm2_5', 'mean'),\n    network_std=('pm2_5', 'std')\n).reset_index()\n\nprint(\"Hourly network statistics:\")\nprint(hourly_stats)\n\n# Merge back to get network stats for each record\npm25_df = pm25_df.merge(hourly_stats, on='hour')\n\n# Calculate z-score\npm25_df['zscore'] = (pm25_df['pm2_5'] - pm25_df['network_mean']) / pm25_df['network_std']\n\n# Find the record with largest absolute z-score\npm25_df['abs_zscore'] = pm25_df['zscore'].abs()\noutlier_idx = pm25_df['abs_zscore'].idxmax()\noutlier_record = pm25_df.loc[outlier_idx]\n\nprint(\"\\nOutlier record:\")\nprint(outlier_record)",
+              "# Assign final values with proper rounding\noutlier_station = \"Tseung Kwan O\"\noutlier_hour = int(outlier_record['hour'])\nstation_pm25 = round(float(outlier_record['pm2_5']), 1)\nnetwork_mean = round(float(outlier_record['network_mean']), 1)\nzscore = round(float(outlier_record['zscore']), 2)\n\nprint(f\"outlier_station: {outlier_station}\")\nprint(f\"outlier_hour: {outlier_hour}\")\nprint(f\"station_pm25: {station_pm25}\")\nprint(f\"network_mean: {network_mean}\")\nprint(f\"zscore: {zscore}\")"
+            ],
+            "runtime_variables": {
+              "outlier_station": "Tseung Kwan O",
+              "outlier_hour": 5,
+              "station_pm25": 12.4,
+              "network_mean": 5.4,
+              "zscore": 2.83
+            }
+          }
+        ]
+      }
+    ],
+    "metrics": {
+      "total_turns": 1,
+      "successful_turns": 1,
+      "failed_turns": 0,
+      "total_steps": 14,
+      "success_rate": 1.0,
+      "total_prompt_tokens": 101643,
+      "total_completion_tokens": 3992,
+      "total_tokens": 105635
+    }
+  }
+}

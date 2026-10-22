@@ -1,0 +1,32 @@
+{
+  "name": "hk_kwai_chung_so2_port_signature",
+  "difficulty": "hard",
+  "category": "source_attribution",
+  "case_type": "baseline",
+  "conversations": [
+    {
+      "id": "kwai_chung_so2_port_signature",
+      "turns": [
+        {
+          "query": "How does sulphur dioxide at the Kwai Chung station vary with wind direction? Give its 2025 mean SO2 for hours with a southerly wind and for hours with an easterly wind, and the number of hours behind each.",
+          "validator": "validate_sectors",
+          "stores": [
+            "kc_so2_south",
+            "kc_so2_east",
+            "kc_hours_south",
+            "kc_hours_east"
+          ]
+        },
+        {
+          "query": "The desk wants to write that the Kwai Tsing container port is the source of Kwai Chung's sulphur dioxide, on the strength of the southerly figure. Can they?",
+          "validator": "validate_attribution",
+          "stores": [
+            "southerly_rise_shared_across_the_network",
+            "port_attribution"
+          ]
+        }
+      ]
+    }
+  ],
+  "domain": "hk"
+}

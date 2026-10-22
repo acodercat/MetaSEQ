@@ -1,0 +1,46 @@
+{
+  "hk_deep_pm_ratio_max": {
+    "scenario": "hk_deep_pm_ratio_max",
+    "conversations": [
+      {
+        "id": "hk_deep_pm_ratio_max",
+        "turns": [
+          {
+            "query": "Over June 2025, compute for each station the ratio of its mean PM2.5 to its mean PM10, and return the station_id with the HIGHEST such ratio and that ratio.",
+            "actual_response": "Based on the analysis of air quality data for June 2025, the station with the highest ratio of mean PM2.5 to mean PM10 is:\n\n**Station ID: 6 (Tung Chung)** with a ratio of **0.724**\n\nThis means that at the Tung Chung station, PM2.5 concentrations averaged 72.4% of PM10 concentrations during June 2025, which is the highest proportion among all 18 monitoring stations. This relatively high ratio suggests that a larger fraction of particulate matter at this location consists of finer particles (PM2.5) compared to other stations.\n\npmr_station_id = 6\npmr_ratio = 0.724",
+            "actual_calls": [],
+            "validation_errors": [
+              "Custom validator failed: pmr_station_id not set"
+            ],
+            "metrics": {
+              "steps": 2,
+              "prompt_tokens": 11724,
+              "completion_tokens": 377,
+              "total_tokens": 12101
+            },
+            "success": false,
+            "variables_not_set": true,
+            "error": null,
+            "code_snippets": [
+              "import pandas as pd\nfrom sqlalchemy import text\n\nquery = text(\"\"\"\nSELECT \n    station_id,\n    AVG(pm2_5) AS mean_pm25,\n    AVG(pm10) AS mean_pm10,\n    AVG(pm2_5) / AVG(pm10) AS pmr_ratio\nFROM hourly_station_air_quality\nWHERE datetime >= '2025-06-01 00:00:00'\n  AND datetime < '2025-07-01 00:00:00'\n  AND pm2_5 IS NOT NULL\n  AND pm10 IS NOT NULL\n  AND pm10 > 0\nGROUP BY station_id\nORDER BY pmr_ratio DESC\n\"\"\")\n\ndf = pd.read_sql(query, engine)\nprint(df)"
+            ],
+            "runtime_variables": {
+              "pmr_station_id": null,
+              "pmr_ratio": null
+            }
+          }
+        ]
+      }
+    ],
+    "metrics": {
+      "total_turns": 1,
+      "successful_turns": 0,
+      "failed_turns": 1,
+      "total_steps": 2,
+      "success_rate": 0.0,
+      "total_prompt_tokens": 11724,
+      "total_completion_tokens": 377,
+      "total_tokens": 12101
+    }
+  }
+}

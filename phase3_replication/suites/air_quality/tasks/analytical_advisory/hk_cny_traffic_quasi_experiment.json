@@ -1,0 +1,46 @@
+{
+  "name": "hk_cny_traffic_quasi_experiment",
+  "difficulty": "hard",
+  "category": "analytical_advisory",
+  "case_type": "baseline",
+  "conversations": [
+    {
+      "id": "cny_traffic_quasi_experiment",
+      "turns": [
+        {
+          "query": "For Hong Kong's 17–19 February 2026 holidays, quantify the roadside-minus-general NO2 change and shared network change against the specified nearby-week baseline, with sample sizes. What can this comparison establish about traffic?",
+          "validator": "validate_event_contrast",
+          "stores": [
+            "roadside_increment_change",
+            "shared_no2_drop_pct",
+            "matched_event_hours",
+            "baseline_no2_hours"
+          ],
+          "evaluation_tier": "execution"
+        },
+        {
+          "query": "Using the same baseline, report changes in congestion, traffic speed and King's Park wind, with the matched-hour count. Do these data identify how much NO2 a unit reduction in congestion would remove?",
+          "validator": "validate_confounds",
+          "stores": [
+            "congestion_index_change",
+            "traffic_speed_change_kmh",
+            "kings_park_wind_change_kmh",
+            "matched_covariate_hours"
+          ],
+          "evaluation_tier": "execution"
+        },
+        {
+          "query": "Report the roadside ozone change against the same baseline, its matched-hour count and represented holiday days. Assess the desk's claim that the traffic change improved Hong Kong's air quality.",
+          "validator": "validate_three_pollutants",
+          "stores": [
+            "roadside_ozone_change",
+            "matched_ozone_hours",
+            "treated_days"
+          ],
+          "evaluation_tier": "execution"
+        }
+      ]
+    }
+  ],
+  "domain": "hk"
+}

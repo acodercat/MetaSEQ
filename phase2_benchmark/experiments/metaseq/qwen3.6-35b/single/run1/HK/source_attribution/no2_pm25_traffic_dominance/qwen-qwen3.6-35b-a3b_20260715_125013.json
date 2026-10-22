@@ -1,0 +1,78 @@
+{
+  "hk_no2_pm25_traffic_dominance": {
+    "scenario": "hk_no2_pm25_traffic_dominance",
+    "conversations": [
+      {
+        "id": "traffic_dominance",
+        "turns": [
+          {
+            "query": "In October 2025, compute the ratio of average NO2 at roadside stations to average NO2 at general stations, and the same ratio for PM2.5. A higher roadside-to-general ratio indicates stronger local traffic source contribution. Which pollutant shows a larger roadside enhancement, indicating it is more dominated by local traffic sources? Return both ratios rounded to 2 decimal places and the more traffic-dominated pollutant name.",
+            "actual_response": "Based on the October 2025 data:\n- **NO2 roadside-to-general ratio**: 2.26\n- **PM2.5 roadside-to-general ratio**: 1.42\n- **More traffic-dominated pollutant**: NO2\n\nNO2 exhibits a significantly higher roadside enhancement ratio compared to PM2.5, indicating that NO2 concentrations are more strongly influenced by local traffic emissions.",
+            "actual_calls": [],
+            "validation_errors": [],
+            "metrics": {
+              "steps": 4,
+              "prompt_tokens": 24416,
+              "completion_tokens": 5694,
+              "total_tokens": 30110
+            },
+            "success": true,
+            "variables_not_set": false,
+            "error": null,
+            "code_snippets": [
+              "import pandas as pd\nfrom sqlalchemy import text\n\n# Query to get average NO2 and PM2.5 for roadside and general stations in October 2025\nquery = \"\"\"\nSELECT \n    aqs.station_type,\n    AVG(hsaq.no2) as avg_no2,\n    AVG(hsaq.pm2_5) as avg_pm25,\n    COUNT(hsaq.id) as num_readings\nFROM hourly_station_air_quality hsaq\nJOIN air_quality_station aqs ON hsaq.station_id = aqs.id\nWHERE hsaq.datetime >= '2025-10-01' \n  AND hsaq.datetime < '2025-11-01'\nGROUP BY aqs.station_type\n\"\"\"\n\ndf = pd.read_sql(query, engine)\nprint(\"Station type averages for October 2025:\")\nprint(df)",
+              "# Calculate the ratios\nroadside_avg_no2 = 57.919184\ngeneral_avg_no2 = 25.626186\nroadside_avg_pm25 = 18.054739\ngeneral_avg_pm25 = 12.681646\n\nno2_roadside_general_ratio = round(roadside_avg_no2 / general_avg_no2, 2)\npm25_roadside_general_ratio = round(roadside_avg_pm25 / general_avg_pm25, 2)\n\n# Determine which pollutant has larger roadside enhancement\nif no2_roadside_general_ratio > pm25_roadside_general_ratio:\n    more_traffic_dominated = \"NO2\"\nelse:\n    more_traffic_dominated = \"PM2.5\"\n\nprint(f\"NO2 roadside/general ratio: {no2_roadside_general_ratio}\")\nprint(f\"PM2.5 roadside/general ratio: {pm25_roadside_general_ratio}\")\nprint(f\"More traffic-dominated pollutant: {more_traffic_dominated}\")",
+              "no2_roadside_general_ratio = 2.26\npm25_roadside_general_ratio = 1.42\nmore_traffic_dominated = \"NO2\"\nprint(f\"NO2 roadside/general ratio: {no2_roadside_general_ratio}\")\nprint(f\"PM2.5 roadside/general ratio: {pm25_roadside_general_ratio}\")\nprint(f\"More traffic-dominated pollutant: {more_traffic_dominated}\")"
+            ],
+            "runtime_variables": {
+              "no2_roadside_general_ratio": 2.26,
+              "pm25_roadside_general_ratio": 1.42,
+              "more_traffic_dominated": "NO2",
+              "rush_no2_pm25_ratio": null,
+              "offpeak_no2_pm25_ratio": null
+            }
+          },
+          {
+            "query": "For roadside stations in October 2025, compute the average NO2 to PM2.5 concentration ratio during rush hours (08:00-09:00, 17:00-19:00) versus off-peak hours (00:00-05:00, 10:00-15:00). A higher ratio during rush hours would confirm that traffic peaks disproportionately elevate NO2 relative to PM2.5. Return both ratios rounded to 2 decimal places.",
+            "actual_response": "Based on the October 2025 data:\n- NO2 roadside-to-general ratio: 2.26\n- PM2.5 roadside-to-general ratio: 1.42\n- More traffic-dominated pollutant: NO2\n- Rush hour NO2/PM2.5 ratio: 3.94\n- Off-peak NO2/PM2.5 ratio: 3.05",
+            "actual_calls": [],
+            "validation_errors": [
+              "Custom validator failed: rush_no2_pm25_ratio=3.94, expected \u2248 4.48; offpeak_no2_pm25_ratio=3.05, expected \u2248 4.21"
+            ],
+            "metrics": {
+              "steps": 4,
+              "prompt_tokens": 34548,
+              "completion_tokens": 5964,
+              "total_tokens": 40512
+            },
+            "success": false,
+            "variables_not_set": false,
+            "error": null,
+            "code_snippets": [
+              "import pandas as pd\nfrom sqlalchemy import text\n\nquery = \"\"\"\nSELECT \n    CASE \n        WHEN EXTRACT(HOUR FROM hsaq.datetime) IN (8, 17, 18) THEN 'rush'\n        WHEN EXTRACT(HOUR FROM hsaq.datetime) IN (0, 1, 2, 3, 4, 10, 11, 12, 13, 14) THEN 'offpeak'\n    END as period,\n    AVG(hsaq.no2 / hsaq.pm2_5) as avg_no2_pm25_ratio,\n    COUNT(*) as num_readings\nFROM hourly_station_air_quality hsaq\nJOIN air_quality_station aqs ON hsaq.station_id = aqs.id\nWHERE hsaq.datetime >= '2025-10-01' \n  AND hsaq.datetime < '2025-11-01'\n  AND aqs.station_type = 'ROADSIDE'\n  AND EXTRACT(HOUR FROM hsaq.datetime) IN (8, 17, 18, 0, 1, 2, 3, 4, 10, 11, 12, 13, 14)\nGROUP BY period\nORDER BY period\n\"\"\"\n\ndf = pd.read_sql(query, engine)\nprint(\"NO2/PM2.5 ratio by period for roadside stations in Oct 2025:\")\nprint(df)",
+              "import pandas as pd\nfrom sqlalchemy import text\n\nquery = \"\"\"\nSELECT \n    CASE \n        WHEN EXTRACT(HOUR FROM hsaq.datetime) IN (8, 17, 18) THEN 'rush'\n        WHEN EXTRACT(HOUR FROM hsaq.datetime) IN (0, 1, 2, 3, 4, 10, 11, 12, 13, 14) THEN 'offpeak'\n    END as period,\n    AVG(hsaq.no2) / AVG(hsaq.pm2_5) as avg_no2_pm25_ratio,\n    COUNT(*) as num_readings\nFROM hourly_station_air_quality hsaq\nJOIN air_quality_station aqs ON hsaq.station_id = aqs.id\nWHERE hsaq.datetime >= '2025-10-01' \n  AND hsaq.datetime < '2025-11-01'\n  AND aqs.station_type = 'ROADSIDE'\n  AND EXTRACT(HOUR FROM hsaq.datetime) IN (8, 17, 18, 0, 1, 2, 3, 4, 10, 11, 12, 13, 14)\n  AND hsaq.pm2_5 > 0\nGROUP BY period\nORDER BY period\n\"\"\"\n\ndf = pd.read_sql(query, engine)\nprint(\"NO2/PM2.5 ratio by period for roadside stations in Oct 2025:\")\nprint(df)\n\n# Assign to variables\nrush_ratio = df[df['period'] == 'rush']['avg_no2_pm25_ratio'].values[0]\noffpeak_ratio = df[df['period'] == 'offpeak']['avg_no2_pm25_ratio'].values[0]\n\nrush_no2_pm25_ratio = round(float(rush_ratio), 2)\noffpeak_no2_pm25_ratio = round(float(offpeak_ratio), 2)\n\nprint(f\"Rush hour ratio: {rush_no2_pm25_ratio}\")\nprint(f\"Off-peak ratio: {offpeak_no2_pm25_ratio}\")",
+              "rush_no2_pm25_ratio = 3.94\noffpeak_no2_pm25_ratio = 3.05\nprint(f\"Rush hour NO2/PM2.5 ratio: {rush_no2_pm25_ratio}\")\nprint(f\"Off-peak NO2/PM2.5 ratio: {offpeak_no2_pm25_ratio}\")"
+            ],
+            "runtime_variables": {
+              "no2_roadside_general_ratio": 2.26,
+              "pm25_roadside_general_ratio": 1.42,
+              "more_traffic_dominated": "NO2",
+              "rush_no2_pm25_ratio": 3.94,
+              "offpeak_no2_pm25_ratio": 3.05
+            }
+          }
+        ]
+      }
+    ],
+    "metrics": {
+      "total_turns": 2,
+      "successful_turns": 1,
+      "failed_turns": 1,
+      "total_steps": 8,
+      "success_rate": 0.5,
+      "total_prompt_tokens": 58964,
+      "total_completion_tokens": 11658,
+      "total_tokens": 70622
+    }
+  }
+}

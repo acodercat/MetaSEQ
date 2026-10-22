@@ -1,0 +1,22 @@
+{
+  "name": "beijing_so2_reporting_floor",
+  "difficulty": "medium",
+  "category": "statistical_characterization",
+  "case_type": "baseline",
+  "conversations": [
+    {
+      "id": "so2_reporting_floor",
+      "turns": [
+        {
+          "query": "A colleague wants to rank Beijing's twelve stations by 2023 SO2. Report the number of distinct hourly values and the spread between the highest and lowest station annual means. Explain what reporting resolution and possible floor effects do, and do not, establish about a ranking of actual concentrations.",
+          "validator": "validate_reporting_floor",
+          "stores": [
+            "so2_distinct_values",
+            "station_annual_so2_spread"
+          ]
+        }
+      ]
+    }
+  ],
+  "domain": "beijing"
+}

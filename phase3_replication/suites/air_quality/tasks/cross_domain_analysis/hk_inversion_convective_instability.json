@@ -1,0 +1,28 @@
+{
+  "name": "hk_inversion_convective_instability",
+  "difficulty": "hard",
+  "category": "cross_domain_analysis",
+  "case_type": "baseline",
+  "conversations": [
+    {
+      "id": "hk_inversion_convective_instability",
+      "turns": [
+        {
+          "query": "For King's Park's 2020-2025 morning soundings, assess whether an elevated inversion rules out convective instability. Report the joint launch counts and the strongest negative-Lifted-Index example with an inversion, including its inversion strength and height. Does that example establish afternoon mixing or a thunderstorm?",
+          "validator": "validate_evidence",
+          "stores": [
+            "li_valid_morning_launches",
+            "inversion_morning_launches",
+            "negative_li_morning_launches",
+            "inversion_negative_li_launches",
+            "strongest_coexistence_launch",
+            "coexistence_lifted_index",
+            "coexistence_inversion_strength_k",
+            "coexistence_inversion_height_m"
+          ]
+        }
+      ]
+    }
+  ],
+  "domain": "hk"
+}

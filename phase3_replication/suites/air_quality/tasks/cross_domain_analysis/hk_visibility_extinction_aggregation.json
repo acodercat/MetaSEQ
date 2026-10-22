@@ -1,0 +1,30 @@
+{
+  "name": "hk_visibility_extinction_aggregation",
+  "difficulty": "hard",
+  "category": "cross_domain_analysis",
+  "case_type": "trap",
+  "conversations": [
+    {
+      "id": "visibility_extinction_aggregation",
+      "turns": [
+        {
+          "query": "For 2025 airport weather paired with Tung Chung PM2.5 of at least 10 and below 15 ug/m3, compare humid hours (RH at least 90%) with dry hours (RH below 75%). Using Koschmieder at 2% contrast, report humid-hour mean extinction and sample size.",
+          "validator": "validate_humid_extinction",
+          "stores": [
+            "humid_extinction_km",
+            "humid_hours"
+          ]
+        },
+        {
+          "query": "Now the dry hours: report their mean extinction coefficient the same way and how many hours it rests on. Then tell me what the two group means together do and do not establish about using particulate mass to anticipate visibility.",
+          "validator": "validate_dry_extinction",
+          "stores": [
+            "dry_extinction_km",
+            "dry_hours"
+          ]
+        }
+      ]
+    }
+  ],
+  "domain": "hk"
+}

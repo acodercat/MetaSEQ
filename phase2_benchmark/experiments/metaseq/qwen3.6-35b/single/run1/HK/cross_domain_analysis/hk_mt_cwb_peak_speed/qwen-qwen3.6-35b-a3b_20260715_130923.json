@@ -1,0 +1,46 @@
+{
+  "hk_mt_cwb_peak_speed": {
+    "scenario": "hk_mt_cwb_peak_speed",
+    "conversations": [
+      {
+        "id": "hk_mt_cwb_peak_speed",
+        "turns": [
+          {
+            "query": "At Causeway Bay station (station_id 17) over June 2025, find the single hour timestamp with the highest NO2. Then compute the mean traffic speed (from the hourly road-segment traffic records) at that same timestamp across the road segments whose geometry lies within 300 metres of the station (non-NULL speed). Return that peak NO2 value (1 dp) and the mean speed (2 dp).",
+            "actual_response": "Based on the analysis of Causeway Bay station (station_id 17) data for June 2025:\n\n- **Peak NO2**: 178.9 \u00b5g/m\u00b3 occurred at 2025-06-03 19:00:00\n- **Mean traffic speed**: 38.62 km/h at that timestamp, calculated across road segments \u2264300m in length within 300 metres of the station\n\nFinal results stored:\n- `cwb_peak_no2` = 178.9\n- `cwb_peak_speed` = 38.62",
+            "actual_calls": [],
+            "validation_errors": [],
+            "metrics": {
+              "steps": 4,
+              "prompt_tokens": 25032,
+              "completion_tokens": 1819,
+              "total_tokens": 26851
+            },
+            "success": true,
+            "variables_not_set": false,
+            "error": null,
+            "code_snippets": [
+              "import pandas as pd\nfrom sqlalchemy import text\n\n# Step 1: Find peak NO2 at Causeway Bay station (id=17) in June 2025\n# June 2025: from 2025-06-01 00:00 to 2025-07-01 00:00 (exclusive end)\nquery_peak_no2 = text(\"\"\"\nSELECT no2, datetime\nFROM hourly_station_air_quality\nWHERE station_id = 17\nAND datetime >= '2025-06-01 00:00:00'\nAND datetime < '2025-07-01 00:00:00'\nORDER BY no2 DESC\nLIMIT 1\n\"\"\")\npeak_df = pd.read_sql(query_peak_no2, engine)\nprint(\"Peak NO2 data:\")\nprint(peak_df)\n\n# Step 2: Get station coordinates\nquery_coords = text(\"\"\"\nSELECT id, name_en, coordinate\nFROM air_quality_station\nWHERE id = 17\n\"\"\")\nstation_df = pd.read_sql(query_coords, engine)\nprint(\"\\nStation coordinates:\")\nprint(station_df[['id', 'name_en']])\nprint(f\"Coordinate: {station_df['coordinate'].values[0]}\")\n\n# Store results\npeak_no2 = peak_df['no2'].values[0]\npeak_datetime = peak_df['datetime'].values[0]\nstation_coord = station_df['coordinate'].values[0]\n\nprint(f\"\\nPeak NO2: {peak_no2}\")\nprint(f\"Peak datetime: {peak_datetime}\")",
+              "import pandas as pd\nfrom sqlalchemy import text\n\n# Check what NO2 values are available at Causeway Bay in June 2025\nquery_check = text(\"\"\"\nSELECT no2, datetime\nFROM hourly_station_air_quality\nWHERE station_id = 17\nAND datetime >= '2025-06-01 00:00:00'\nAND datetime < '2025-07-01 00:00:00'\nAND no2 IS NOT NULL\nORDER BY no2 DESC\nLIMIT 5\n\"\"\")\ncheck_df = pd.read_sql(query_check, engine)\nprint(\"Top 5 NO2 values (non-null):\")\nprint(check_df)\n\n# Also check how many records have NO2 data\nquery_count = text(\"\"\"\nSELECT COUNT(*) as total, COUNT(no2) as with_no2\nFROM hourly_station_air_quality\nWHERE station_id = 17\nAND datetime >= '2025-06-01 00:00:00'\nAND datetime < '2025-07-01 00:00:00'\n\"\"\")\ncount_df = pd.read_sql(query_count, engine)\nprint(\"\\nRecord counts:\")\nprint(count_df)",
+              "import pandas as pd\nfrom sqlalchemy import text\n\n# Peak NO2 is 178.9 at 2025-06-03 19:00:00\npeak_datetime = '2025-06-03 19:00:00'\npeak_no2 = 178.9\n\n# Get station coordinates\nquery_coords = text(\"\"\"\nSELECT coordinate\nFROM air_quality_station\nWHERE id = 17\n\"\"\")\nstation_df = pd.read_sql(query_coords, engine)\nstation_coord = station_df['coordinate'].values[0]\n\n# Find road segments within 300m of station AND with length <= 300m\n# Then get mean speed at peak timestamp\nquery_speed = text(f\"\"\"\nSELECT AVG(hrt.speed) as mean_speed\nFROM hourly_road_segment_traffic hrt\nJOIN road_segment rs ON hrt.road_segment_id = rs.id\nWHERE hrt.datetime = '{peak_datetime}'\nAND hrt.speed IS NOT NULL\nAND rs.length <= 300\nAND ST_DWithin(\n    rs.geometry::geography,\n    '{station_coord}'::geography,\n    300\n)\n\"\"\")\nspeed_df = pd.read_sql(query_speed, engine)\nprint(f\"Mean speed at peak NO2 timestamp: {speed_df['mean_speed'].values[0]}\")\n\n# Store results\ncwb_peak_no2 = round(peak_no2, 1)\ncwb_peak_speed = round(float(speed_df['mean_speed'].values[0]), 2)\n\nprint(f\"\\nFinal results:\")\nprint(f\"cwb_peak_no2: {cwb_peak_no2}\")\nprint(f\"cwb_peak_speed: {cwb_peak_speed}\")"
+            ],
+            "runtime_variables": {
+              "cwb_peak_no2": 178.9,
+              "cwb_peak_speed": 38.62
+            }
+          }
+        ]
+      }
+    ],
+    "metrics": {
+      "total_turns": 1,
+      "successful_turns": 1,
+      "failed_turns": 0,
+      "total_steps": 4,
+      "success_rate": 1.0,
+      "total_prompt_tokens": 25032,
+      "total_completion_tokens": 1819,
+      "total_tokens": 26851
+    }
+  }
+}

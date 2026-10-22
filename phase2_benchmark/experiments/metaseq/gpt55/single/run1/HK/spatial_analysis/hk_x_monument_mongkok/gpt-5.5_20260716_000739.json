@@ -1,0 +1,44 @@
+{
+  "hk_x_monument_mongkok": {
+    "scenario": "hk_x_monument_mongkok",
+    "conversations": [
+      {
+        "id": "hk_x_monument_mongkok",
+        "turns": [
+          {
+            "query": "Which sensitive area of category 'DECLARED_MONUMENT' lies closest to the Mong Kok air-quality station (station_id 14), measuring distance from the monument polygon's centroid to the station coordinate? Return the monument's name exactly as stored, and the distance in metres.",
+            "actual_response": "Lui Seng Chun \u2014 414.288242 metres",
+            "actual_calls": [],
+            "validation_errors": [],
+            "metrics": {
+              "steps": 2,
+              "prompt_tokens": 10435,
+              "completion_tokens": 507,
+              "total_tokens": 10942
+            },
+            "success": true,
+            "variables_not_set": false,
+            "error": null,
+            "code_snippets": [
+              "import pandas as pd\nfrom sqlalchemy import text\n\n# Count available declared monuments, then compute nearest centroid-to-station distance for station 14.\ncount_q = text(\"\"\"\nSELECT COUNT(*) AS n\nFROM sensitive_area\nWHERE category = 'DECLARED_MONUMENT'\n\"\"\")\nn_monuments = int(pd.read_sql(count_q, engine).loc[0, \"n\"])\n\nnearest_q = text(\"\"\"\nSELECT\n  sa.name AS monument_name,\n  ST_Distance(ST_Centroid(sa.geometry)::geography, aqs.coordinate) AS dist_m\nFROM sensitive_area sa\nCROSS JOIN air_quality_station aqs\nWHERE sa.category = 'DECLARED_MONUMENT'\n  AND aqs.id = 14\nORDER BY dist_m ASC\nLIMIT 1\n\"\"\")\nnearest_df = pd.read_sql(nearest_q, engine)\n\nnearest_monument = str(nearest_df.loc[0, \"monument_name\"])\nmonument_dist_m = float(nearest_df.loc[0, \"dist_m\"])\n\nprint(f\"Declared monuments evaluated: {n_monuments}\")\nprint(f\"Nearest declared monument: {nearest_monument}\")\nprint(f\"Centroid-to-station distance (m): {monument_dist_m:.6f}\")"
+            ],
+            "runtime_variables": {
+              "nearest_monument": "Lui Seng Chun",
+              "monument_dist_m": 414.28824249
+            }
+          }
+        ]
+      }
+    ],
+    "metrics": {
+      "total_turns": 1,
+      "successful_turns": 1,
+      "failed_turns": 0,
+      "total_steps": 2,
+      "success_rate": 1.0,
+      "total_prompt_tokens": 10435,
+      "total_completion_tokens": 507,
+      "total_tokens": 10942
+    }
+  }
+}

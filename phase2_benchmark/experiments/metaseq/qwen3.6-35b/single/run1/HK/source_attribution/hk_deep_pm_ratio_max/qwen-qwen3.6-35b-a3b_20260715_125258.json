@@ -1,0 +1,46 @@
+{
+  "hk_deep_pm_ratio_max": {
+    "scenario": "hk_deep_pm_ratio_max",
+    "conversations": [
+      {
+        "id": "hk_deep_pm_ratio_max",
+        "turns": [
+          {
+            "query": "Over June 2025, compute for each station the ratio of its mean PM2.5 to its mean PM10, and return the station_id with the HIGHEST such ratio and that ratio.",
+            "actual_response": "Based on the analysis of hourly air quality data for June 2025, the station with the highest mean PM2.5 to mean PM10 ratio is:\n\n- **Station ID**: 6\n- **PMR Ratio**: 0.724",
+            "actual_calls": [],
+            "validation_errors": [],
+            "metrics": {
+              "steps": 4,
+              "prompt_tokens": 26489,
+              "completion_tokens": 1420,
+              "total_tokens": 27909
+            },
+            "success": true,
+            "variables_not_set": false,
+            "error": null,
+            "code_snippets": [
+              "from sqlalchemy import text\n\nquery = text(\"\"\"\nSELECT \n    station_id,\n    ROUND(AVG(pm2_5) / AVG(pm10), 3) as pmr_ratio\nFROM hourly_station_air_quality\nWHERE datetime >= '2025-06-01 00:00:00'\n  AND datetime < '2025-07-01 00:00:00'\n  AND pm2_5 IS NOT NULL\n  AND pm10 IS NOT NULL\n  AND pm10 > 0\nGROUP BY station_id\nORDER BY pmr_ratio DESC\nLIMIT 1\n\"\"\")\n\nresult = pd.read_sql(query, engine)\nprint(result)\n\n# Store results in the required variables\npmr_station_id = int(result['station_id'].values[0])\npmr_ratio = float(result['pmr_ratio'].values[0])\nprint(f\"Station ID: {pmr_station_id}, Ratio: {pmr_ratio}\")",
+              "import pandas as pd\nfrom sqlalchemy import text\n\nquery = text(\"\"\"\nSELECT \n    station_id,\n    ROUND(AVG(pm2_5) / AVG(pm10), 3) as pmr_ratio\nFROM hourly_station_air_quality\nWHERE datetime >= '2025-06-01 00:00:00'\n  AND datetime < '2025-07-01 00:00:00'\n  AND pm2_5 IS NOT NULL\n  AND pm10 IS NOT NULL\n  AND pm10 > 0\nGROUP BY station_id\nORDER BY pmr_ratio DESC\nLIMIT 1\n\"\"\")\n\nresult = pd.read_sql(query, engine)\nprint(result)\n\n# Store results in the required variables\npmr_station_id = int(result['station_id'].values[0])\npmr_ratio = float(result['pmr_ratio'].values[0])\nprint(f\"Station ID: {pmr_station_id}, Ratio: {pmr_ratio}\")",
+              "import pandas as pd\nfrom sqlalchemy import text\n\nquery = text(\"\"\"\nSELECT \n    station_id,\n    AVG(pm2_5) / AVG(pm10) as pmr_ratio\nFROM hourly_station_air_quality\nWHERE datetime >= '2025-06-01 00:00:00'\n  AND datetime < '2025-07-01 00:00:00'\n  AND pm2_5 IS NOT NULL\n  AND pm10 IS NOT NULL\n  AND pm10 > 0\nGROUP BY station_id\nORDER BY pmr_ratio DESC\nLIMIT 1\n\"\"\")\n\nresult = pd.read_sql(query, engine)\nprint(result)\n\n# Store results in the required variables\npmr_station_id = int(result['station_id'].values[0])\npmr_ratio = round(float(result['pmr_ratio'].values[0]), 3)\nprint(f\"Station ID: {pmr_station_id}, Ratio: {pmr_ratio}\")"
+            ],
+            "runtime_variables": {
+              "pmr_station_id": 6,
+              "pmr_ratio": 0.724
+            }
+          }
+        ]
+      }
+    ],
+    "metrics": {
+      "total_turns": 1,
+      "successful_turns": 1,
+      "failed_turns": 0,
+      "total_steps": 4,
+      "success_rate": 1.0,
+      "total_prompt_tokens": 26489,
+      "total_completion_tokens": 1420,
+      "total_tokens": 27909
+    }
+  }
+}

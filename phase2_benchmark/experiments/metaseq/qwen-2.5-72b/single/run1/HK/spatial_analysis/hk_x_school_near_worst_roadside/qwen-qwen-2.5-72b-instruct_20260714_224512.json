@@ -1,0 +1,44 @@
+{
+  "hk_x_school_near_worst_roadside": {
+    "scenario": "hk_x_school_near_worst_roadside",
+    "conversations": [
+      {
+        "id": "hk_x_school_near_worst_roadside",
+        "turns": [
+          {
+            "query": "First identify which of the three roadside air-quality stations (station_id 14, 16, 17) had the highest mean NO2 over June 2025 (2025-06-01 to 2025-06-30, non-NULL hourly values). Then count how many sensitive areas of category 'EDUCATIONAL_INSTITUTION' have their polygon centroid within 1000 metres of that station's coordinate. Return the winning station_id and the school count.",
+            "actual_response": "The roadside station with the highest mean NO2 over June 2025 is station ID 14. There are 115 educational institutions within 1000 meters of this station.",
+            "actual_calls": [],
+            "validation_errors": [],
+            "metrics": {
+              "steps": 2,
+              "prompt_tokens": 11118,
+              "completion_tokens": 468,
+              "total_tokens": 11586
+            },
+            "success": true,
+            "variables_not_set": false,
+            "error": null,
+            "code_snippets": [
+              "import pandas as pd\nfrom sqlalchemy import text\n\n# Query to find the mean NO2 for the specified stations in June 2025\nquery = text(\"\"\"\nSELECT station_id, AVG(no2) as mean_no2\nFROM hourly_station_air_quality\nWHERE station_id IN (14, 16, 17)\nAND datetime >= '2025-06-01 00:00:00'\nAND datetime < '2025-07-01 00:00:00'\nAND no2 IS NOT NULL\nGROUP BY station_id\n\"\"\")\n\n# Execute the query and load the results into a DataFrame\ndf = pd.read_sql(query, engine)\n\n# Find the station with the highest mean NO2\nworst_road_station_id = df.loc[df['mean_no2'].idxmax()]['station_id']\nprint(f\"Worst road station ID: {worst_road_station_id}\")\n\n# Query to find the number of EDUCATIONAL_INSTITUTION sensitive areas within 1000m of the worst station\nquery_schools = text(\"\"\"\nSELECT COUNT(*) as school_count\nFROM sensitive_area\nJOIN air_quality_station ON ST_DWithin(air_quality_station.coordinate::geography, ST_Centroid(sensitive_area.geometry)::geography, 1000)\nWHERE sensitive_area.category = 'EDUCATIONAL_INSTITUTION'\nAND air_quality_station.id = :station_id\n\"\"\")\n\n# Execute the query and load the results into a DataFrame\ndf_schools = pd.read_sql(query_schools, engine, params={\"station_id\": worst_road_station_id})\n\n# Extract the school count\nschool_count_1km = df_schools['school_count'].iloc[0]\nprint(f\"Number of schools within 1000m: {school_count_1km}\")\n\n# Assign the results to the provided variables\nworst_road_station_id = int(worst_road_station_id)\nschool_count_1km = int(school_count_1km)"
+            ],
+            "runtime_variables": {
+              "worst_road_station_id": 14,
+              "school_count_1km": 115
+            }
+          }
+        ]
+      }
+    ],
+    "metrics": {
+      "total_turns": 1,
+      "successful_turns": 1,
+      "failed_turns": 0,
+      "total_steps": 2,
+      "success_rate": 1.0,
+      "total_prompt_tokens": 11118,
+      "total_completion_tokens": 468,
+      "total_tokens": 11586
+    }
+  }
+}

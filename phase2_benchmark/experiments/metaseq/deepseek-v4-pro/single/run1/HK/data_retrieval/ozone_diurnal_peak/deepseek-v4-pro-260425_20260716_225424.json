@@ -1,0 +1,44 @@
+{
+  "hk_ozone_diurnal_peak": {
+    "scenario": "hk_ozone_diurnal_peak",
+    "conversations": [
+      {
+        "id": "ozone_diurnal_peak",
+        "turns": [
+          {
+            "query": "At the Tap Mun background monitoring station, what was the peak hourly ozone concentration on July 5, 2025, and at what hour of the day did it occur?",
+            "actual_response": "At the Tap Mun background monitoring station on July 5, 2025, the peak hourly ozone concentration was **152.8 \u00b5g/m\u00b3**, occurring at **14:00** (2:00 PM).",
+            "actual_calls": [],
+            "validation_errors": [],
+            "metrics": {
+              "steps": 2,
+              "prompt_tokens": 11020,
+              "completion_tokens": 335,
+              "total_tokens": 11355
+            },
+            "success": true,
+            "variables_not_set": false,
+            "error": null,
+            "code_snippets": [
+              "import pandas as pd\nfrom sqlalchemy import text\n\n# Tap Mun station_id = 8\n# Query hourly O3 for July 5, 2025 (whole day: 2025-07-05 00:00 to 2025-07-06 00:00 exclusive)\nquery = text(\"\"\"\nSELECT datetime, o3\nFROM hourly_station_air_quality\nWHERE station_id = 8\n  AND datetime >= '2025-07-05 00:00:00'\n  AND datetime < '2025-07-06 00:00:00'\nORDER BY datetime\n\"\"\")\ndf = pd.read_sql(query, engine)\n\nif df.empty:\n    print(\"No data found for Tap Mun on July 5, 2025.\")\nelse:\n    df['datetime'] = pd.to_datetime(df['datetime'])\n    peak_row = df.loc[df['o3'].idxmax()]\n    tap_mun_peak_o3 = float(peak_row['o3'])\n    tap_mun_peak_o3_hour = int(peak_row['datetime'].hour)\n    print(f\"Peak O3: {tap_mun_peak_o3} \u00b5g/m\u00b3\")\n    print(f\"Hour: {tap_mun_peak_o3_hour}:00\")\n    print(f\"Full datetime: {peak_row['datetime']}\")"
+            ],
+            "runtime_variables": {
+              "tap_mun_peak_o3": 152.8,
+              "tap_mun_peak_o3_hour": 14
+            }
+          }
+        ]
+      }
+    ],
+    "metrics": {
+      "total_turns": 1,
+      "successful_turns": 1,
+      "failed_turns": 0,
+      "total_steps": 2,
+      "success_rate": 1.0,
+      "total_prompt_tokens": 11020,
+      "total_completion_tokens": 335,
+      "total_tokens": 11355
+    }
+  }
+}

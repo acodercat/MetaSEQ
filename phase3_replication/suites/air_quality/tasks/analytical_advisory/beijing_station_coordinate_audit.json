@@ -1,0 +1,23 @@
+{
+  "name": "beijing_station_coordinate_audit",
+  "difficulty": "easy",
+  "category": "analytical_advisory",
+  "case_type": "baseline",
+  "conversations": [
+    {
+      "id": "coordinate_audit",
+      "turns": [
+        {
+          "query": "A desk wants to assign each Beijing station's readings automatically to an administrative district. Report the table's largest coordinate discrepancy and district-identity mismatch count, and advise whether unresolved conflicts permit that assignment.",
+          "validator": "validate_coordinate_audit",
+          "stores": [
+            "max_coordinate_separation_km",
+            "district_mismatch_stations"
+          ],
+          "evaluation_tier": "execution"
+        }
+      ]
+    }
+  ],
+  "domain": "beijing"
+}

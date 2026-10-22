@@ -1,0 +1,27 @@
+{
+  "aliases": [
+    {
+      "made": {
+        "api_model": "qwen3.8-flash",
+        "base_url": "https://llm-svwc2s9uraxxnhof.cn-beijing.maas.aliyuncs.com/compatible-mode/v1",
+        "config": "qwen3.8-flash",
+        "extra_body": {
+          "enable_thinking": false
+        },
+        "max_tokens": 32768,
+        "temperature": 0.3
+      },
+      "counts_as": {
+        "api_model": "qwen3.8-flash",
+        "base_url": "https://external-api-platform.hkgai.net/v1",
+        "config": "qwen3.8-flash",
+        "extra_body": {
+          "enable_thinking": false
+        },
+        "max_tokens": 32768,
+        "temperature": 0.3
+      },
+      "why": "qwen3.8-flash on DashScope's own endpoint: the relay rejected these requests on every attempt (400 bad_response_status_code) while this endpoint answered the same request byte for byte; same model, parameters and code, base_url the only difference. Five runs of beijing_no3_production_kinetics (C r1-r3, D r2-r3), 2026-10-11. docs/deviations.md 18."
+    }
+  ]
+}

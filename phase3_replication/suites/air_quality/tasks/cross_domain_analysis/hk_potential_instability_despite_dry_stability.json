@@ -1,0 +1,26 @@
+{
+  "name": "hk_potential_instability_despite_dry_stability",
+  "difficulty": "hard",
+  "category": "cross_domain_analysis",
+  "case_type": "baseline",
+  "conversations": [
+    {
+      "id": "hk_potential_instability_despite_dry_stability",
+      "turns": [
+        {
+          "query": "Screen King's Park's 2025 morning 925–700 hPa layers for potential instability despite dry static stability. Report eligible and qualifying counts, and the strongest equivalent-potential-temperature decrease with its launch and dry-potential-temperature change. Distinguish this screen from conditional instability and observed convection.",
+          "stores": [
+            "eligible_moist_layers",
+            "potentially_unstable_layers",
+            "strongest_moist_launch",
+            "selected_delta_thetae_k",
+            "selected_delta_theta_k"
+          ],
+          "validator": "validate_evidence",
+          "evaluation_tier": "execution"
+        }
+      ]
+    }
+  ],
+  "domain": "hk"
+}

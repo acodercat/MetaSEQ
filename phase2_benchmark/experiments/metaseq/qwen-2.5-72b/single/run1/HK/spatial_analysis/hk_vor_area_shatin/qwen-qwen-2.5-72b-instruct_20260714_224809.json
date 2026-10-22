@@ -1,0 +1,45 @@
+{
+  "hk_vor_area_shatin": {
+    "scenario": "hk_vor_area_shatin",
+    "conversations": [
+      {
+        "id": "hk_vor_area_shatin",
+        "turns": [
+          {
+            "query": "Compute the Voronoi (Thiessen) tessellation of all 18 air-quality monitoring stations and clip each cell to the axis-aligned bounding box of all station coordinates. Use geodesic area (cast to geography) in km\u00b2. Return the area (km\u00b2, 1 dp) of the Voronoi cell belonging to the Sha Tin station (station_id 11).",
+            "actual_response": "The area of Sha Tin's bbox-clipped Voronoi cell is 48.2 km\u00b2.",
+            "actual_calls": [],
+            "validation_errors": [
+              "Custom validator failed: Custom validator failed: shatin_cell_km2=48.2, expected ~84.023 (tol 6.0)"
+            ],
+            "metrics": {
+              "steps": 2,
+              "prompt_tokens": 10973,
+              "completion_tokens": 491,
+              "total_tokens": 11464
+            },
+            "success": false,
+            "variables_not_set": false,
+            "error": null,
+            "code_snippets": [
+              "import geopandas as gpd\nfrom shapely.geometry import Point, box\nfrom shapely.ops import voronoi_diagram\nfrom sqlalchemy import text\nimport pandas as pd\n\n# Query the coordinates of all air quality stations\nquery = text(\"\"\"\nSELECT id, ST_X(coordinate::geometry) as longitude, ST_Y(coordinate::geometry) as latitude\nFROM air_quality_station\n\"\"\")\nstations_df = pd.read_sql(query, engine)\n\n# Convert the DataFrame to a GeoDataFrame\nstations_gdf = gpd.GeoDataFrame(stations_df, geometry=gpd.points_from_xy(stations_df.longitude, stations_df.latitude), crs=\"EPSG:4326\")\n\n# Compute the bounding box of all station coordinates\nbbox = box(stations_gdf.total_bounds[0], stations_gdf.total_bounds[1], stations_gdf.total_bounds[2], stations_gdf.total_bounds[3])\n\n# Compute the Voronoi tessellation\nvoronoi = voronoi_diagram(stations_gdf.unary_union)\n\n# Clip each Voronoi cell to the bounding box\nclipped_voronoi = [cell.intersection(bbox) for cell in voronoi.geoms]\n\n# Create a GeoDataFrame for the clipped Voronoi cells\nclipped_voronoi_gdf = gpd.GeoDataFrame(geometry=clipped_voronoi, crs=\"EPSG:4326\")\n\n# Match each Voronoi cell to the corresponding station\nclipped_voronoi_gdf['station_id'] = stations_gdf.apply(lambda row: clipped_voronoi_gdf.geometry.apply(lambda cell: cell.contains(row.geometry)).idxmax(), axis=1)\n\n# Compute the geodesic area of each Voronoi cell in km\u00b2\nclipped_voronoi_gdf['area_km2'] = clipped_voronoi_gdf.geometry.to_crs(epsg=3857).area / 1e6\n\n# Find the Voronoi cell for the Sha Tin station (station_id 11)\nshatin_cell_km2 = clipped_voronoi_gdf.loc[clipped_voronoi_gdf.station_id == 11, 'area_km2'].values[0].round(1)\nshatin_cell_km2"
+            ],
+            "runtime_variables": {
+              "shatin_cell_km2": 48.2
+            }
+          }
+        ]
+      }
+    ],
+    "metrics": {
+      "total_turns": 1,
+      "successful_turns": 0,
+      "failed_turns": 1,
+      "total_steps": 2,
+      "success_rate": 0.0,
+      "total_prompt_tokens": 10973,
+      "total_completion_tokens": 491,
+      "total_tokens": 11464
+    }
+  }
+}

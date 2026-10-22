@@ -1,0 +1,47 @@
+{
+  "hk_cov_health_general3km": {
+    "scenario": "hk_cov_health_general3km",
+    "conversations": [
+      {
+        "id": "hk_cov_health_general3km",
+        "turns": [
+          {
+            "query": "How many distinct 'HEALTH_CARE_INSTITUTION' sensitive areas have their polygon centroid within 3000 metres of at least one GENERAL-type air-quality station? Count each institution once. Return the count.",
+            "actual_response": "The number of distinct healthcare institutions within 3000 meters of at least one GENERAL-type air-quality station is 1117.",
+            "actual_calls": [],
+            "validation_errors": [
+              "Custom validator failed: Custom validator failed: health_general_3km=1117.0, expected ~883.0 (tol 25.0)"
+            ],
+            "metrics": {
+              "steps": 4,
+              "prompt_tokens": 25935,
+              "completion_tokens": 1263,
+              "total_tokens": 27198
+            },
+            "success": false,
+            "variables_not_set": false,
+            "error": null,
+            "code_snippets": [
+              "from sqlalchemy import text\nimport pandas as pd\n\n# Query to get the centroids of HEALTH_CARE_INSTITUTION sensitive areas\nquery = text(\"\"\"\nSELECT \n    id, \n    ST_Centroid(geometry) AS centroid\nFROM \n    sensitive_area\nWHERE \n    category = 'HEALTH_CARE_INSTITUTION'\n\"\"\")\n\n# Execute the query and store the results in a DataFrame\nhealthcare_centroids = pd.read_sql(query, engine)\n\n# Query to get the coordinates of GENERAL-type air-quality stations\nquery = text(\"\"\"\nSELECT \n    id, \n    coordinate\nFROM \n    air_quality_station\nWHERE \n    station_type = 'GENERAL'\n\"\"\")\n\n# Execute the query and store the results in a DataFrame\ngeneral_stations = pd.read_sql(query, engine)\n\n# Function to check if a centroid is within 3000 meters of any general station\ndef is_within_3km(centroid, general_stations):\n    for _, station in general_stations.iterrows():\n        distance = centroid.distance(station['coordinate'])\n        if distance <= 3000:\n            return True\n    return False\n\n# Convert the centroids to a GeoSeries\nhealthcare_centroids['centroid'] = healthcare_centroids['centroid'].apply(lambda x: x if x is not None else None)\n\n# Filter healthcare institutions within 3000 meters of any general station\nhealthcare_within_3km = healthcare_centroids[healthcare_centroids['centroid'].apply(lambda centroid: is_within_3km(centroid, general_stations))]\n\n# Count the number of distinct healthcare institutions\nhealth_general_3km = healthcare_within_3km.shape[0]\nprint(f\"Number of distinct healthcare institutions within 3000 meters of at least one GENERAL-type air-quality station: {health_general_3km}\")",
+              "from sqlalchemy import text\nimport pandas as pd\nfrom shapely.geometry import Point\n\n# Query to get the centroids of HEALTH_CARE_INSTITUTION sensitive areas\nquery = text(\"\"\"\nSELECT \n    id, \n    ST_AsText(ST_Centroid(geometry)) AS centroid\nFROM \n    sensitive_area\nWHERE \n    category = 'HEALTH_CARE_INSTITUTION'\n\"\"\")\n\n# Execute the query and store the results in a DataFrame\nhealthcare_centroids = pd.read_sql(query, engine)\n\n# Convert the centroid strings to Shapely Point objects\nhealthcare_centroids['centroid'] = healthcare_centroids['centroid'].apply(lambda x: Point(x))\n\n# Query to get the coordinates of GENERAL-type air-quality stations\nquery = text(\"\"\"\nSELECT \n    id, \n    ST_AsText(coordinate) AS coordinate\nFROM \n    air_quality_station\nWHERE \n    station_type = 'GENERAL'\n\"\"\")\n\n# Execute the query and store the results in a DataFrame\ngeneral_stations = pd.read_sql(query, engine)\n\n# Convert the coordinate strings to Shapely Point objects\ngeneral_stations['coordinate'] = general_stations['coordinate'].apply(lambda x: Point(x))\n\n# Function to check if a centroid is within 3000 meters of any general station\ndef is_within_3km(centroid, general_stations):\n    for _, station in general_stations.iterrows():\n        distance = centroid.distance(station['coordinate'])\n        if distance <= 3000:\n            return True\n    return False\n\n# Filter healthcare institutions within 3000 meters of any general station\nhealthcare_within_3km = healthcare_centroids[healthcare_centroids['centroid'].apply(lambda centroid: is_within_3km(centroid, general_stations))]\n\n# Count the number of distinct healthcare institutions\nhealth_general_3km = healthcare_within_3km.shape[0]\nprint(f\"Number of distinct healthcare institutions within 3000 meters of at least one GENERAL-type air-quality station: {health_general_3km}\")",
+              "from sqlalchemy import text\nimport pandas as pd\nfrom shapely.geometry import Point\nfrom shapely.wkt import loads\n\n# Query to get the centroids of HEALTH_CARE_INSTITUTION sensitive areas\nquery = text(\"\"\"\nSELECT \n    id, \n    ST_AsText(ST_Centroid(geometry)) AS centroid\nFROM \n    sensitive_area\nWHERE \n    category = 'HEALTH_CARE_INSTITUTION'\n\"\"\")\n\n# Execute the query and store the results in a DataFrame\nhealthcare_centroids = pd.read_sql(query, engine)\n\n# Convert the centroid strings to Shapely Point objects\nhealthcare_centroids['centroid'] = healthcare_centroids['centroid'].apply(lambda x: loads(x))\n\n# Query to get the coordinates of GENERAL-type air-quality stations\nquery = text(\"\"\"\nSELECT \n    id, \n    ST_AsText(coordinate) AS coordinate\nFROM \n    air_quality_station\nWHERE \n    station_type = 'GENERAL'\n\"\"\")\n\n# Execute the query and store the results in a DataFrame\ngeneral_stations = pd.read_sql(query, engine)\n\n# Convert the coordinate strings to Shapely Point objects\ngeneral_stations['coordinate'] = general_stations['coordinate'].apply(lambda x: loads(x))\n\n# Function to check if a centroid is within 3000 meters of any general station\ndef is_within_3km(centroid, general_stations):\n    for _, station in general_stations.iterrows():\n        distance = centroid.distance(station['coordinate'])\n        if distance <= 3000:\n            return True\n    return False\n\n# Filter healthcare institutions within 3000 meters of any general station\nhealthcare_within_3km = healthcare_centroids[healthcare_centroids['centroid'].apply(lambda centroid: is_within_3km(centroid, general_stations))]\n\n# Count the number of distinct healthcare institutions\nhealth_general_3km = healthcare_within_3km.shape[0]\nprint(f\"Number of distinct healthcare institutions within 3000 meters of at least one GENERAL-type air-quality station: {health_general_3km}\")"
+            ],
+            "runtime_variables": {
+              "health_general_3km": 1117
+            }
+          }
+        ]
+      }
+    ],
+    "metrics": {
+      "total_turns": 1,
+      "successful_turns": 0,
+      "failed_turns": 1,
+      "total_steps": 4,
+      "success_rate": 0.0,
+      "total_prompt_tokens": 25935,
+      "total_completion_tokens": 1263,
+      "total_tokens": 27198
+    }
+  }
+}

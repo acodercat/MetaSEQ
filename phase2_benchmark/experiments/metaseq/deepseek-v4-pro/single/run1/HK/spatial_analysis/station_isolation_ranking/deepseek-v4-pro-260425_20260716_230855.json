@@ -1,0 +1,50 @@
+{
+  "hk_station_isolation_ranking": {
+    "scenario": "hk_station_isolation_ranking",
+    "conversations": [
+      {
+        "id": "isolation_ranking",
+        "turns": [
+          {
+            "query": "For each air quality monitoring station, compute the distance to its nearest fellow air quality monitoring station. Return the top 3 most isolated stations (largest nearest-neighbor distance) with their names and distances in meters.",
+            "actual_response": "Based on the analysis, the top 3 most isolated air quality monitoring stations in Hong Kong, ranked by their nearest-neighbor distance, are:\n\n1. **Tap Mun** \u2014 19,952 meters (nearest neighbor: Tseung Kwan O)\n2. **Tung Chung** \u2014 11,824 meters (nearest neighbor: Tuen Mun)\n3. **Yuen Long** \u2014 7,624 meters (nearest neighbor: Tuen Mun)\n\nTap Mun is by far the most isolated station, located on a remote island in the northeastern waters of Hong Kong, with its nearest fellow station nearly 20 km away. Tung Chung on Lantau Island is the second most isolated at about 11.8 km from its nearest neighbor. Yuen Long in the northwestern New Territories ranks third at approximately 7.6 km.",
+            "actual_calls": [],
+            "validation_errors": [
+              "Custom validator failed: isolated_3_name='Yuen Long ', expected 'Tuen Mun'"
+            ],
+            "metrics": {
+              "steps": 2,
+              "prompt_tokens": 12101,
+              "completion_tokens": 709,
+              "total_tokens": 12810
+            },
+            "success": false,
+            "variables_not_set": false,
+            "error": null,
+            "code_snippets": [
+              "import pandas as pd\nfrom sqlalchemy import text\n\n# Get all air quality stations with their coordinates\nquery = text(\"\"\"\nSELECT id, name_en, ST_X(coordinate::geometry) as lon, ST_Y(coordinate::geometry) as lat\nFROM air_quality_station\nORDER BY id\n\"\"\")\nstations = pd.read_sql(query, engine)\nprint(f\"Total stations: {len(stations)}\")\nprint(stations[['id', 'name_en']].to_string(index=False))\n\n# Compute pairwise distances using PostGIS, then find nearest neighbor for each\nquery = text(\"\"\"\nWITH station_coords AS (\n    SELECT id, name_en, coordinate\n    FROM air_quality_station\n),\npairwise AS (\n    SELECT \n        a.id AS station_id,\n        a.name_en AS station_name,\n        b.id AS other_id,\n        b.name_en AS other_name,\n        ST_Distance(a.coordinate::geography, b.coordinate::geography) AS distance_m\n    FROM station_coords a\n    CROSS JOIN station_coords b\n    WHERE a.id != b.id\n),\nnearest AS (\n    SELECT DISTINCT ON (station_id)\n        station_id,\n        station_name,\n        other_name AS nearest_neighbor,\n        distance_m\n    FROM pairwise\n    ORDER BY station_id, distance_m ASC\n)\nSELECT * FROM nearest\nORDER BY distance_m DESC\n\"\"\")\nnearest_df = pd.read_sql(query, engine)\nprint(\"\\nAll stations ranked by nearest-neighbor distance (descending):\")\nprint(nearest_df.to_string(index=False))\n\n# Store top 3\ntop3 = nearest_df.head(3)\nisolated_1_name = top3.iloc[0]['station_name']\nisolated_1_distance = float(top3.iloc[0]['distance_m'])\nisolated_2_name = top3.iloc[1]['station_name']\nisolated_2_distance = float(top3.iloc[1]['distance_m'])\nisolated_3_name = top3.iloc[2]['station_name']\nisolated_3_distance = float(top3.iloc[2]['distance_m'])\n\nprint(f\"\\nTop 3 most isolated stations:\")\nprint(f\"1. {isolated_1_name}: {isolated_1_distance:.0f} m\")\nprint(f\"2. {isolated_2_name}: {isolated_2_distance:.0f} m\")\nprint(f\"3. {isolated_3_name}: {isolated_3_distance:.0f} m\")"
+            ],
+            "runtime_variables": {
+              "isolated_1_name": "Tap Mun",
+              "isolated_1_distance": 19952.20365173,
+              "isolated_2_name": "Tung Chung",
+              "isolated_2_distance": 11824.47485051,
+              "isolated_3_name": "Yuen Long ",
+              "isolated_3_distance": 7623.99933966
+            }
+          }
+        ]
+      }
+    ],
+    "metrics": {
+      "total_turns": 1,
+      "successful_turns": 0,
+      "failed_turns": 1,
+      "total_steps": 2,
+      "success_rate": 0.0,
+      "total_prompt_tokens": 12101,
+      "total_completion_tokens": 709,
+      "total_tokens": 12810
+    }
+  }
+}

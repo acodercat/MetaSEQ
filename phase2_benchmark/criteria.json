@@ -1,0 +1,56 @@
+{
+  "dimensions": [
+    {
+      "id": "problem_framing",
+      "name": "Problem Framing",
+      "description": "Are the analysis objective, spatial/temporal scope, target audience, and expected deliverable correctly identified?",
+      "weight": 1.5,
+      "anchors": {
+        "1": "Completely misunderstands the task objective, or the response is irrelevant to what was asked.",
+        "2": "Partially understands the task but misses a critical constraint (e.g., wrong time window, wrong geographic scope, wrong audience).",
+        "3": "Correctly identifies the task objective, but shows minor imprecision in scope or audience understanding.",
+        "4": "Accurately understands the task objective, scope, and audience; the analysis is directed correctly.",
+        "5": "Accurate understanding with insight — identifies implicit constraints or potential ambiguities and proactively clarifies them."
+      }
+    },
+    {
+      "id": "analytical_approach",
+      "name": "Analytical Approach",
+      "description": "Is the chosen analytical method sound and appropriate for the specific scenario conditions? Does the reasoning conform to atmospheric/environmental science methodology?",
+      "weight": 1.5,
+      "anchors": {
+        "1": "Fundamentally inappropriate method (e.g., wrong metric, reversed causality, model inapplicable to the problem type).",
+        "2": "Uses a seemingly relevant method but fails to verify whether its key assumptions hold in the current scenario (e.g., applying a steady-state Gaussian dispersion model under calm-wind or complex-terrain conditions; using spatial interpolation methods that require dense monitoring networks in a data-sparse region; applying annual statistics to characterize episodic pollution events).",
+        "3": "Method is generally appropriate, but the response does not sufficiently discuss its validity conditions — fails to state under what circumstances the conclusions might not hold.",
+        "4": "Method is appropriate and explicitly acknowledges its applicability conditions; the reasoning path is consistent with the available data and scenario conditions.",
+        "5": "Method is appropriate with explicit assumptions, AND proactively discusses alternative approaches or known limitations of the chosen method in this specific context."
+      }
+    },
+    {
+      "id": "interpretation",
+      "name": "Interpretation of Results",
+      "description": "Is the interpretation of computed results accurate? Is it placed in the correct spatial, temporal, scientific, and regulatory context?",
+      "weight": 2.0,
+      "anchors": {
+        "1": "No meaningful interpretation of results, or the interpretation contradicts what the data shows.",
+        "2": "Mentions result values but without contextualization — e.g., reports model output without discussing whether the result is plausible given current meteorological/geographic conditions; states a number without comparison to relevant standards or baselines.",
+        "3": "Provides a basically correct interpretation, but lacks depth — e.g., describes a trend without explaining possible causes; identifies an exceedance without discussing severity or frequency context.",
+        "4": "Accurately interprets results in appropriate context — compares against relevant standards, considers meteorological conditions, identifies anomalies, and assesses result reliability.",
+        "5": "Deep interpretation — correctly identifies causal mechanisms, cross-factor interactions, or non-obvious patterns (e.g., recognizing a sea-breeze recirculation signature, identifying weekend effects in traffic-related pollutants, distinguishing local sources from regional transport)."
+      }
+    },
+    {
+      "id": "synthesis_and_communication",
+      "name": "Synthesis & Communication",
+      "description": "Is the final conclusion supported by the preceding analysis? Is it communicated appropriately for the target audience? Are limitations honestly discussed? N/A handling for non-advisory tasks: if the task does not call for a recommendation/decision (e.g., pure data_retrieval benchmarks that ask for a single computed value), score this dimension based on whether the response clearly states the final answer — concise statement of the answer earns ≥3; padding, repetition, or trailing off earns ≤2.",
+      "weight": 1.0,
+      "anchors": {
+        "1": "Conclusion is disconnected from the analysis, or no conclusion is provided.",
+        "2": "Has a conclusion but it lacks analytical support, or ignores obvious limitations of the data/method.",
+        "3": "Conclusion is generally supported by the analysis, but is overly generic or does not discuss limitations.",
+        "4": "Conclusion is clearly supported by the analysis, discusses major limitations, and is appropriate for the target audience.",
+        "5": "Conclusion is precise, well-supported, discusses limitations, and provides the audience with clear next steps, decision triggers, or criteria for judgment."
+      }
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+[
+  {
+    "name": "hk_vor_roadside_total",
+    "module": "evals.neuroair.spatial_analysis.HK.hk_vor_roadside_total",
+    "requirements": "Sum of the 3 roadside stations' Voronoi cell areas. Store roadside_cells_km2 (float, 1dp).",
+    "conversations": [
+      {
+        "id": "hk_vor_roadside_total",
+        "turns": [
+          {
+            "query": "Compute the Voronoi (Thiessen) tessellation of all 18 air-quality monitoring stations and clip each cell to the axis-aligned bounding box of all station coordinates. Use geodesic area (cast to geography) in km². Return the TOTAL area (km², 1 dp) of the Voronoi cells belonging to the three roadside stations (station_id 14, 16, 17).",
+            "validator": "validate_hk_vor_roadside_total"
+          }
+        ]
+      }
+    ],
+    "difficulty": "hard",
+    "category": "spatial_analysis",
+    "_source": {
+      "benchmark": "hk-voronoi-hard",
+      "original_query_id": "hk_vor_roadside_total",
+      "verbatim": false
+    }
+  }
+]

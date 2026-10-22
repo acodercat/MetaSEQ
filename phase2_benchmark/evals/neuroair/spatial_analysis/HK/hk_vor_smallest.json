@@ -1,0 +1,25 @@
+[
+  {
+    "name": "hk_vor_smallest",
+    "module": "evals.neuroair.spatial_analysis.HK.hk_vor_smallest",
+    "requirements": "Station with smallest Voronoi cell + area. Store smallest_cell_station (str) and smallest_cell_km2 (float,1dp).",
+    "conversations": [
+      {
+        "id": "hk_vor_smallest",
+        "turns": [
+          {
+            "query": "Compute the Voronoi (Thiessen) tessellation of all 18 air-quality monitoring stations and clip each cell to the axis-aligned bounding box of all station coordinates. Use geodesic area (cast to geography) in km². Which station has the SMALLEST Voronoi cell, and what is its area (km², 1 dp)? Return the station name and area.",
+            "validator": "validate_hk_vor_smallest"
+          }
+        ]
+      }
+    ],
+    "difficulty": "hard",
+    "category": "spatial_analysis",
+    "_source": {
+      "benchmark": "hk-voronoi-hard",
+      "original_query_id": "hk_vor_smallest",
+      "verbatim": false
+    }
+  }
+]

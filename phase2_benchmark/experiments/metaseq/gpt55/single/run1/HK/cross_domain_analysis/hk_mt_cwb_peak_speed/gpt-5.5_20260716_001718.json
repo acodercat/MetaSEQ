@@ -1,0 +1,44 @@
+{
+  "hk_mt_cwb_peak_speed": {
+    "scenario": "hk_mt_cwb_peak_speed",
+    "conversations": [
+      {
+        "id": "hk_mt_cwb_peak_speed",
+        "turns": [
+          {
+            "query": "At Causeway Bay station (station_id 17) over June 2025, find the single hour timestamp with the highest NO2. Then compute the mean traffic speed (from the hourly road-segment traffic records) at that same timestamp across the road segments whose geometry lies within 300 metres of the station (non-NULL speed). Return that peak NO2 value (1 dp) and the mean speed (2 dp).",
+            "actual_response": "Peak NO2: 178.9\n\nMean traffic speed: 40.06",
+            "actual_calls": [],
+            "validation_errors": [],
+            "metrics": {
+              "steps": 2,
+              "prompt_tokens": 11017,
+              "completion_tokens": 894,
+              "total_tokens": 11911
+            },
+            "success": true,
+            "variables_not_set": false,
+            "error": null,
+            "code_snippets": [
+              "import pandas as pd\nfrom sqlalchemy import text\n\n# Peak NO2 at Causeway Bay in June 2025, then mean speed for road segments within 300m at that timestamp.\npeak_q = text(\"\"\"\nSELECT datetime, no2\nFROM hourly_station_air_quality\nWHERE station_id = 17\n  AND datetime >= TIMESTAMP '2025-06-01 00:00:00'\n  AND datetime <  TIMESTAMP '2025-07-01 00:00:00'\n  AND no2 IS NOT NULL\nORDER BY no2 DESC, datetime ASC\nLIMIT 1\n\"\"\")\npeak_df = pd.read_sql(peak_q, engine)\n\nif peak_df.empty:\n    cwb_peak_no2 = None\n    cwb_peak_speed = None\n    print(\"No non-NULL NO2 readings found for Causeway Bay in June 2025.\")\nelse:\n    peak_ts = pd.to_datetime(peak_df.loc[0, \"datetime\"]).to_pydatetime()\n    peak_no2_val = float(peak_df.loc[0, \"no2\"])\n\n    count_q = text(\"\"\"\n    WITH st AS (\n      SELECT coordinate\n      FROM air_quality_station\n      WHERE id = 17\n    ),\n    nearby AS (\n      SELECT rs.id\n      FROM road_segment rs, st\n      WHERE ST_DWithin(rs.geometry::geography, st.coordinate, 300)\n    )\n    SELECT\n      (SELECT COUNT(*) FROM nearby) AS nearby_segment_count,\n      COUNT(*) AS traffic_record_count,\n      COUNT(hrt.speed) AS nonnull_speed_count\n    FROM hourly_road_segment_traffic hrt\n    JOIN nearby n ON hrt.road_segment_id = n.id\n    WHERE hrt.datetime = :peak_ts\n    \"\"\")\n    counts = pd.read_sql(count_q, engine, params={\"peak_ts\": peak_ts})\n\n    avg_q = text(\"\"\"\n    WITH st AS (\n      SELECT coordinate\n      FROM air_quality_station\n      WHERE id = 17\n    ),\n    nearby AS (\n      SELECT rs.id\n      FROM road_segment rs, st\n      WHERE ST_DWithin(rs.geometry::geography, st.coordinate, 300)\n    )\n    SELECT AVG(hrt.speed)::float AS mean_speed\n    FROM hourly_road_segment_traffic hrt\n    JOIN nearby n ON hrt.road_segment_id = n.id\n    WHERE hrt.datetime = :peak_ts\n      AND hrt.speed IS NOT NULL\n    \"\"\")\n    avg_df = pd.read_sql(avg_q, engine, params={\"peak_ts\": peak_ts})\n\n    cwb_peak_no2 = round(peak_no2_val, 1)\n    mean_speed = avg_df.loc[0, \"mean_speed\"]\n    cwb_peak_speed = None if pd.isna(mean_speed) else round(float(mean_speed), 2)\n\n    print(\"Peak-NO2 timestamp:\", peak_ts)\n    print(\"Peak NO2 (1 dp):\", cwb_peak_no2)\n    print(\"Nearby road-segment count:\", int(counts.loc[0, \"nearby_segment_count\"]))\n    print(\"Traffic records at timestamp:\", int(counts.loc[0, \"traffic_record_count\"]))\n    print(\"Non-NULL speed records:\", int(counts.loc[0, \"nonnull_speed_count\"]))\n    print(\"Mean speed (2 dp):\", cwb_peak_speed)"
+            ],
+            "runtime_variables": {
+              "cwb_peak_no2": 178.9,
+              "cwb_peak_speed": 40.06
+            }
+          }
+        ]
+      }
+    ],
+    "metrics": {
+      "total_turns": 1,
+      "successful_turns": 1,
+      "failed_turns": 0,
+      "total_steps": 2,
+      "success_rate": 1.0,
+      "total_prompt_tokens": 11017,
+      "total_completion_tokens": 894,
+      "total_tokens": 11911
+    }
+  }
+}

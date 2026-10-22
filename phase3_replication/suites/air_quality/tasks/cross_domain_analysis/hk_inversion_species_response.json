@@ -1,0 +1,36 @@
+{
+  "name": "hk_inversion_species_response",
+  "difficulty": "hard",
+  "category": "cross_domain_analysis",
+  "case_type": "baseline",
+  "conversations": [
+    {
+      "id": "inversion_species_response",
+      "turns": [
+        {
+          "query": "Using the King's Park radiosonde record for 2020 through 2025, and counting only the 08:00 launches, report what share of the launches made in December, January and February carried an elevated inversion.",
+          "validator": "validate_winter_inversion_rate",
+          "stores": [
+            "winter_inversion_rate"
+          ]
+        },
+        {
+          "query": "Now widen back out from those three months to every 08:00 launch of 2020 through 2025, all twelve months, and pair each with the territory NO2 at that same hour. How much more NO2 did the mornings with an elevated inversion carry?",
+          "validator": "validate_no2_inversion_excess",
+          "stores": [
+            "no2_inversion_excess"
+          ]
+        },
+        {
+          "query": "Does the same contrast hold for PM2.5 and for the composite health index? Say what the comparison implies.",
+          "validator": "validate_species",
+          "stores": [
+            "pm25_responds_like_no2",
+            "index_follows"
+          ]
+        }
+      ]
+    }
+  ],
+  "domain": "hk"
+}

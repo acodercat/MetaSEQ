@@ -1,0 +1,25 @@
+[
+  {
+    "name": "hk_cov_pop_general5km",
+    "module": "evals.neuroair.exposure_assessment.HK.hk_cov_pop_general5km",
+    "requirements": "Union population within 5000 m of ANY general station. Store pop_near_general (int).",
+    "conversations": [
+      {
+        "id": "hk_cov_pop_general5km",
+        "turns": [
+          {
+            "query": "Using the HK_population_1km grid, what is the total population living within 5000 metres of at least one GENERAL-type air-quality station? Each grid cell (by its point) is counted once regardless of how many stations are nearby. Return the total population.",
+            "validator": "validate_hk_cov_pop_general5km"
+          }
+        ]
+      }
+    ],
+    "difficulty": "hard",
+    "category": "exposure_assessment",
+    "_source": {
+      "benchmark": "hk-coverage-hard",
+      "original_query_id": "hk_cov_pop_general5km",
+      "verbatim": false
+    }
+  }
+]

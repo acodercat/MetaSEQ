@@ -1,0 +1,39 @@
+{
+  "name": "hk_stuck_analyser_constant_run",
+  "difficulty": "medium",
+  "category": "data_retrieval",
+  "case_type": "baseline",
+  "conversations": [
+    {
+      "id": "stuck_analyser_constant_run",
+      "turns": [
+        {
+          "query": "A colleague is building daily PM2.5 series for Hong Kong's eighteen stations from the hourly record for December 2023, to compare the stations against each other. How many of the month's station-days survive the usual 75 per cent data-capture rule, and is what survives ready to compare?",
+          "validator": "validate_capture_screen",
+          "stores": [
+            "usable_station_days"
+          ]
+        },
+        {
+          "query": "Before comparing stations, inspect December's hourly PM2.5 for suspicious repeated runs. Which station has the longest run, how long does it last, and on which day is every reported hour the same? Compare its other pollutants and explain what the pattern establishes about the measurement.",
+          "validator": "validate_the_day",
+          "stores": [
+            "station_with_suspicious_pm25_run",
+            "unusable_day",
+            "latched_hours",
+            "other_pollutants_varied_that_day"
+          ]
+        },
+        {
+          "query": "Run the same test on sulphur dioxide across the whole record, 2020 through 2025. How many station-days does it flag, and should those be dropped for the same reason? Report where the particulate value you found sits in that station's own record too.",
+          "validator": "validate_so2_confounder",
+          "stores": [
+            "so2_flat_days",
+            "pm25_flat_value_percentile"
+          ]
+        }
+      ]
+    }
+  ],
+  "domain": "hk"
+}

@@ -1,0 +1,85 @@
+# Model registry: the eight backbones of experiment 2, with the settings recorded in their
+# runs (Supplementary Table 19). Copy to models.toml (gitignored) and fill in credentials.
+# An endpoint speaks Chat Completions (OpenAI-compatible), OpenAI's Responses API or
+# Anthropic's Messages API. The section header is the name an experiment config and
+# `--model` refer to, and the directory results land in.
+#
+# Required:  api_model, api_key
+# Optional:  base_url, max_tokens, timeout (s), temperature (default 0.3),
+#            extra_body (provider passthrough, e.g. reasoning switches),
+#            provider ("openai_compatible", default, "openai_responses" or "anthropic"),
+#            reasoning_effort (Responses API: reasoning.effort; Messages API:
+#            output_config.effort)
+
+[deepseek-v4-flash]
+api_model = "deepseek-v4-flash"
+api_key = "sk-your-key"
+base_url = "https://dashscope.aliyuncs.com/compatible-mode/v1"
+max_tokens = 65536
+timeout = 600.0
+
+["qwen3.8-flash"]
+api_model = "qwen3.8-flash"
+api_key = "sk-your-key"
+base_url = "https://dashscope.aliyuncs.com/compatible-mode/v1"
+max_tokens = 32768
+timeout = 600.0
+extra_body = { enable_thinking = false }
+
+# Qwen3.8-27B is self-hosted (vLLM, OpenAI-compatible); the two entries differ only in
+# the reasoning switch.
+["qwen3.8-27b"]
+api_model = "Qwen3.8-27B"
+api_key = "sk-your-key"
+base_url = "http://your-vllm-host:8000/v1"
+max_tokens = 32768
+timeout = 600.0
+extra_body = { chat_template_kwargs = { enable_thinking = false } }
+
+["qwen3.8-27b-thinking"]
+api_model = "Qwen3.8-27B"
+api_key = "sk-your-key"
+base_url = "http://your-vllm-host:8000/v1"
+max_tokens = 32768
+timeout = 600.0
+extra_body = { chat_template_kwargs = { enable_thinking = true } }
+
+[deepseek-v4-flash-thinking]
+api_model = "deepseek-v4-flash"
+api_key = "sk-your-key"
+base_url = "https://dashscope.aliyuncs.com/compatible-mode/v1"
+max_tokens = 65536
+timeout = 600.0
+extra_body = { chat_template_kwargs = { thinking = true } }
+
+[deepseek-v4-pro-0813]
+api_model = "deepseek-v4-pro-0813"
+api_key = "sk-your-key"
+base_url = "https://dashscope.aliyuncs.com/compatible-mode/v1"
+max_tokens = 65536
+timeout = 600.0
+extra_body = { thinking = { type = "disabled" } }
+
+# GPT-6 Luna speaks the Responses API (llm/responses.py); reasoning off, as the other
+# backbones run without thinking.
+[gpt-6-luna]
+api_model = "gpt-6-luna"
+api_key = "sk-your-key"
+base_url = "https://external-api-platform.hkgai.net/v1"
+provider = "openai_responses"
+reasoning_effort = "none"
+max_tokens = 32768
+timeout = 600.0
+
+
+# Claude speaks the Messages API (llm/tool_gateway.py, AnthropicConversation); thinking
+# off, at the API's default temperature.
+[claude-sonnet-5-5]
+api_model = "claude-sonnet-5-5"
+api_key = "sk-your-key"
+base_url = "https://external-api-platform.hkgai.net"
+provider = "anthropic"
+temperature = 1.0
+max_tokens = 64000
+timeout = 600.0
+extra_body = { thinking = { type = "disabled" } }

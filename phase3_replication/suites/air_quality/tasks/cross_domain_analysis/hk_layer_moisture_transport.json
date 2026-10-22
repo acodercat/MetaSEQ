@@ -1,0 +1,27 @@
+{
+  "name": "hk_layer_moisture_transport",
+  "difficulty": "hard",
+  "category": "cross_domain_analysis",
+  "case_type": "baseline",
+  "conversations": [
+    {
+      "id": "hk_layer_moisture_transport",
+      "turns": [
+        {
+          "query": "Screen King's Park's 2025 morning soundings for northward moisture transport through 925–700 hPa. Report the strongest three-level estimate, its launch, eastward component and layer water, plus eligible and southward-profile counts. What does this establish about rainfall supply?",
+          "stores": [
+            "moisture_transport_launch",
+            "northward_layer_transport",
+            "eastward_layer_transport",
+            "layer_water_kg_m2",
+            "moisture_transport_profiles",
+            "southward_profiles"
+          ],
+          "validator": "validate_turn_1",
+          "evaluation_tier": "execution"
+        }
+      ]
+    }
+  ],
+  "domain": "hk"
+}

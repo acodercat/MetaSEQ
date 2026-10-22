@@ -1,0 +1,20 @@
+[
+    {
+        "name": "hk_thiessen_polygon_area",
+        "module": "evals.spatial_analysis.HK.thiessen_polygon_area",
+        "requirements": "Compute Voronoi/Thiessen polygon areas for monitoring stations. Please store the results in: largest_cell_station_name (str), largest_cell_area_km2 (float, rounded to 1 decimal place), smallest_cell_station_name (str), smallest_cell_area_km2 (float, rounded to 1 decimal place).",
+        "conversations": [
+            {
+                "id": "thiessen_area",
+                "turns": [
+                    {
+                        "query": "Compute the Voronoi (Thiessen) tessellation for all air quality monitoring stations. Clip the Voronoi polygons to the bounding box of all stations. Which station has the largest Voronoi cell area (in km²), and which has the smallest? Return both station names and their cell areas rounded to 1 decimal place.",
+                        "validator": "validate_thiessen"
+                    }
+                ]
+            }
+        ],
+        "difficulty": "hard",
+        "category": "spatial_analysis"
+    }
+]

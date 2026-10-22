@@ -1,0 +1,44 @@
+{
+  "name": "hk_lur_coefficient_identifiability",
+  "difficulty": "hard",
+  "category": "spatial_analysis",
+  "case_type": "baseline",
+  "conversations": [
+    {
+      "id": "lur_coefficient_identifiability",
+      "turns": [
+        {
+          "query": "A planning desk wants a land-use regression for NO2 across our eighteen stations, to screen unmonitored sites and to quote the effect of industrial land in a submission. Fit the specification the desk has fixed and report how well it fits and what it says the roadside location adds.",
+          "validator": "validate_model_fit",
+          "stores": [
+            "coef_roadside_whole",
+            "insample_r2_1dp"
+          ],
+          "evaluation_tier": "execution"
+        },
+        {
+          "query": "Before interpreting the industrial term, report its fitted coefficient and leave-one-station-out range. Identify any station whose removal reverses its sign and the most stable predictor. What do these diagnostics establish about a causal industrial-emission effect?",
+          "validator": "validate_sensitivity",
+          "stores": [
+            "industrial_coefficient",
+            "industrial_loo_min",
+            "industrial_loo_max",
+            "station_that_decides_the_industrial_sign",
+            "most_stable_term"
+          ],
+          "evaluation_tier": "execution"
+        },
+        {
+          "query": "Inspect the industrial polygons near the influential station: report their count and land-use identity. Would holding out whole stations in cross-validation resolve the industrial interpretation? Recommend what the desk should verify before making a source-effect claim.",
+          "validator": "validate_layer_and_diagnosis",
+          "stores": [
+            "industrial_layer_near_that_station",
+            "grouped_cv_would_fix_the_industrial_term",
+            "industrial_polygons_near_station"
+          ]
+        }
+      ]
+    }
+  ],
+  "domain": "hk"
+}

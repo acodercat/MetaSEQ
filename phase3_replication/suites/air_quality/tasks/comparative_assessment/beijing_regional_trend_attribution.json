@@ -1,0 +1,23 @@
+{
+  "name": "beijing_regional_trend_attribution",
+  "difficulty": "hard",
+  "category": "comparative_assessment",
+  "case_type": "baseline",
+  "conversations": [
+    {
+      "id": "regional_trend_attribution",
+      "turns": [
+        {
+          "query": "Compare pooled station-hour PM2.5 at Beijing's twelve stations between December 2021–February 2022 and December 2024–February 2025. Report the later-minus-earlier change and compare it with the other cities in the regional record. Did Beijing outperform the regional change, and what does the comparison establish about cause?",
+          "validator": "validate_evidence_and_conclusion_full_review",
+          "stores": [
+            "beijing_winter_change",
+            "beijing_relative_to_region",
+            "comparison_establishes_cause"
+          ]
+        }
+      ]
+    }
+  ],
+  "domain": "beijing"
+}

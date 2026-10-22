@@ -1,0 +1,20 @@
+[
+    {
+        "name": "hk_network_deviation_outlier",
+        "module": "evals.exceedance_anomaly_detection.HK.network_deviation_outlier",
+        "requirements": "Find the station-hour with the largest z-score deviation from the network mean PM2.5 on October 5, 2025. Please store the results in: outlier_station (str), outlier_hour (int), station_pm25 (float, 1dp), network_mean (float, 1dp), zscore (float, 2dp).",
+        "conversations": [
+            {
+                "id": "network_deviation",
+                "turns": [
+                    {
+                        "query": "On October 5, 2025, for each hour compute the network-wide mean and standard deviation of PM2.5 across all general air quality stations. Then find the single station-hour with the largest absolute z-score deviation, where z-score equals the station PM2.5 minus the network mean divided by the network standard deviation. Return the station name, the hour of day, the station's PM2.5 value rounded to 1 decimal place, the network mean at that hour rounded to 1 decimal place, and the z-score rounded to 2 decimal places.",
+                        "validator": "validate_network_outlier"
+                    }
+                ]
+            }
+        ],
+        "difficulty": "medium",
+        "category": "exceedance_anomaly_detection"
+    }
+]

@@ -1,0 +1,47 @@
+{
+  "hk_directional_quadrant": {
+    "scenario": "hk_directional_quadrant",
+    "conversations": [
+      {
+        "id": "quadrant_from_central",
+        "turns": [
+          {
+            "query": "From the Central air quality monitoring station, classify all other air quality monitoring stations into four quadrants (NE/NW/SE/SW) based on their relative latitude and longitude. How many stations fall into each quadrant?",
+            "actual_response": "Based on the Central air quality monitoring station as the reference point, all other 17 stations have been classified into four quadrants:\n\n- **Northeast (NE)**: 8 stations\n- **Northwest (NW)**: 7 stations\n- **Southeast (SE)**: 2 stations\n- **Southwest (SW)**: 0 stations\n\nThe classification is based on comparing each station's latitude and longitude relative to Central station (latitude: 22.281814, longitude: 114.158127). Stations with higher latitude and higher longitude are in the NE quadrant, higher latitude and lower longitude are in the NW quadrant, lower latitude and higher longitude are in the SE quadrant, and lower latitude and lower longitude are in the SW quadrant.",
+            "actual_calls": [],
+            "validation_errors": [],
+            "metrics": {
+              "steps": 3,
+              "prompt_tokens": 18184,
+              "completion_tokens": 762,
+              "total_tokens": 18946
+            },
+            "success": true,
+            "variables_not_set": false,
+            "error": null,
+            "code_snippets": [
+              "import pandas as pd\nfrom sqlalchemy import text\n\n# Get coordinates of all air quality monitoring stations\nquery = text(\"\"\"\nSELECT id, name_en, ST_Y(coordinate::geometry) as latitude, ST_X(coordinate::geometry) as longitude\nFROM air_quality_station\nORDER BY id\n\"\"\")\nstations_df = pd.read_sql(query, engine)\nprint(stations_df)",
+              "# Central station coordinates (station_id = 16)\ncentral_lat = 22.281814\ncentral_lng = 114.158127\n\n# Filter out Central station itself and classify others into quadrants\nother_stations = stations_df[stations_df['id'] != 16].copy()\n\n# Classify into quadrants based on relative position to Central\n# NE: latitude > central_lat AND longitude > central_lng\n# NW: latitude > central_lat AND longitude < central_lng\n# SE: latitude < central_lat AND longitude > central_lng\n# SW: latitude < central_lat AND longitude < central_lng\n\nne_count = len(other_stations[(other_stations['latitude'] > central_lat) & (other_stations['longitude'] > central_lng)])\nnw_count = len(other_stations[(other_stations['latitude'] > central_lat) & (other_stations['longitude'] < central_lng)])\nse_count = len(other_stations[(other_stations['latitude'] < central_lat) & (other_stations['longitude'] > central_lng)])\nsw_count = len(other_stations[(other_stations['latitude'] < central_lat) & (other_stations['longitude'] < central_lng)])\n\nprint(f\"NE: {ne_count}, NW: {nw_count}, SE: {se_count}, SW: {sw_count}\")\nprint(f\"Total classified: {ne_count + nw_count + se_count + sw_count}\")\nprint(f\"Total other stations: {len(other_stations)}\")"
+            ],
+            "runtime_variables": {
+              "ne_count": 8,
+              "nw_count": 7,
+              "se_count": 2,
+              "sw_count": 0
+            }
+          }
+        ]
+      }
+    ],
+    "metrics": {
+      "total_turns": 1,
+      "successful_turns": 1,
+      "failed_turns": 0,
+      "total_steps": 3,
+      "success_rate": 1.0,
+      "total_prompt_tokens": 18184,
+      "total_completion_tokens": 762,
+      "total_tokens": 18946
+    }
+  }
+}

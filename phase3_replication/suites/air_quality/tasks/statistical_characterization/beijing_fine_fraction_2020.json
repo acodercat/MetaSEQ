@@ -1,0 +1,21 @@
+{
+  "name": "beijing_fine_fraction_2020",
+  "difficulty": "hard",
+  "category": "statistical_characterization",
+  "case_type": "baseline",
+  "conversations": [
+    {
+      "id": "fine_fraction",
+      "turns": [
+        {
+          "query": "How much of Beijing's particulate mass was in the fine fraction during 2020? Give the year's figure, and your reading of what it says about the composition of Beijing's particulate pollution that year.",
+          "validator": "validate_mean_fine_fraction",
+          "stores": [
+            "fine_share_2020"
+          ]
+        }
+      ]
+    }
+  ],
+  "domain": "beijing"
+}

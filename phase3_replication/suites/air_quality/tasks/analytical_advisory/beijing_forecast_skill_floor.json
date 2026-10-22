@@ -1,0 +1,26 @@
+{
+  "name": "beijing_forecast_skill_floor",
+  "difficulty": "hard",
+  "category": "analytical_advisory",
+  "case_type": "baseline",
+  "conversations": [
+    {
+      "id": "forecast_skill_floor",
+      "turns": [
+        {
+          "query": "Establish Beijing's 2023 daily PM2.5 forecast benchmark. Compare persistence and a historical monthly climatology for the full year and for days above 75 µg/m³; quantify episode errors and missed episodes. Does winning on annual MAE establish a useful pollution-warning forecast?",
+          "validator": "validate_harder_turn_1",
+          "stores": [
+            "harder_reference",
+            "bar_mae",
+            "episode_persistence_mae",
+            "episode_climatology_mae",
+            "episode_days",
+            "persistence_missed_episode_days"
+          ]
+        }
+      ]
+    }
+  ],
+  "domain": "beijing"
+}

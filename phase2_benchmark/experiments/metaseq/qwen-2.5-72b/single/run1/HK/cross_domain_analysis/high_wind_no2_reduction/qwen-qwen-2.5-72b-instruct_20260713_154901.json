@@ -1,0 +1,45 @@
+{
+  "hk_high_wind_no2_reduction": {
+    "scenario": "hk_high_wind_no2_reduction",
+    "conversations": [
+      {
+        "id": "high_wind_no2_reduction",
+        "turns": [
+          {
+            "query": "On October 5, 2025, identify the hour when any weather station recorded the highest wind speed of the day. For the air quality monitoring station closest to that windiest weather station, by what percentage was the NO2 concentration at that peak-wind hour lower than the station's daily average NO2? (Round to 1 decimal place, positive value means reduction)",
+            "actual_response": "The percentage reduction in NO2 concentration at the windiest hour compared to the daily average on October 5, 2025, is 33.5%.",
+            "actual_calls": [],
+            "validation_errors": [
+              "Custom validator failed: no2_pct_reduction: 33.5, expected \u2248 23.7"
+            ],
+            "metrics": {
+              "steps": 2,
+              "prompt_tokens": 11041,
+              "completion_tokens": 587,
+              "total_tokens": 11628
+            },
+            "success": false,
+            "variables_not_set": false,
+            "error": null,
+            "code_snippets": [
+              "import pandas as pd\nfrom sqlalchemy import text\nimport datetime as dt\n\n# Query the weather station data for the highest wind speed on 2025-10-05\nquery = text(\"\"\"\nSELECT station_id, datetime, wind_speed\nFROM hourly_station_weather\nWHERE datetime >= '2025-10-05 00:00:00' AND datetime < '2025-10-06 00:00:00'\nORDER BY wind_speed DESC\nLIMIT 1\n\"\"\")\nwindy_station = pd.read_sql(query, engine)\n\n# Extract the station ID and datetime of the highest wind speed\nwindy_station_id = windy_station['station_id'].iloc[0]\nwindy_datetime = windy_station['datetime'].iloc[0]\n\n# Find the air quality station closest to the windiest weather station\nquery = text(f\"\"\"\nSELECT aqs.id, aqs.name_en, ST_Distance(\n    aqs.coordinate::geography,\n    ws.coordinate::geography\n) as distance\nFROM air_quality_station aqs, weather_station ws\nWHERE ws.id = {windy_station_id}\nORDER BY distance\nLIMIT 1\n\"\"\")\nclosest_aq_station = pd.read_sql(query, engine)\n\n# Extract the air quality station ID\nclosest_aq_station_id = closest_aq_station['id'].iloc[0]\n\n# Query the air quality data for the closest air quality station on 2025-10-05\nquery = text(f\"\"\"\nSELECT datetime, no2\nFROM hourly_station_air_quality\nWHERE station_id = {closest_aq_station_id}\nAND datetime >= '2025-10-05 00:00:00' AND datetime < '2025-10-06 00:00:00'\nORDER BY datetime\n\"\"\")\naq_data = pd.read_sql(query, engine)\n\n# Calculate the daily average NO2 concentration\ndaily_avg_no2 = aq_data['no2'].mean()\n\n# Extract the NO2 concentration at the peak-wind hour\npeak_wind_no2 = aq_data.loc[aq_data['datetime'] == windy_datetime, 'no2'].iloc[0]\n\n# Calculate the percentage reduction in NO2 concentration\nno2_pct_reduction = ((daily_avg_no2 - peak_wind_no2) / daily_avg_no2) * 100\n\n# Round to 1 decimal place\nno2_pct_reduction = round(no2_pct_reduction, 1)\n\n# Print the result\nprint(f\"Percentage reduction in NO2 concentration: {no2_pct_reduction}%\")"
+            ],
+            "runtime_variables": {
+              "no2_pct_reduction": 33.5
+            }
+          }
+        ]
+      }
+    ],
+    "metrics": {
+      "total_turns": 1,
+      "successful_turns": 0,
+      "failed_turns": 1,
+      "total_steps": 2,
+      "success_rate": 0.0,
+      "total_prompt_tokens": 11041,
+      "total_completion_tokens": 587,
+      "total_tokens": 11628
+    }
+  }
+}

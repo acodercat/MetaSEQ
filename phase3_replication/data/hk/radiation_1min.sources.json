@@ -1,0 +1,69 @@
+{
+  "dataset_version": "1.0.0",
+  "created_at": "2026-08-09",
+  "scope": "Solar radiation at King's Park and Kau Sai Chau, sampled hourly from a one-minute feed, 2024-12 onward. Produced by scripts/ingest/fetch_hko_solar_1min.py. Added because the daily file next to it cannot answer three things: when during the day the sun reached the ground, how much of it arrived as direct beam rather than scattered, and whether one site represents the territory.",
+  "files": {
+    "radiation_1min_hko.csv": "One row per station per sampled hour: global, direct and diffuse radiation in W/m2, with the archive snapshot each reading came from."
+  },
+  "relationship_to_radiation_hko": {
+    "summary": "Two radiation files sit in this directory, both from King's Park, overlapping on 576 days. They are not redundant and are not interchangeable.",
+    "radiation_hko.csv": "Daily totals in MJ/m2 from 2020. Use it for anything spanning seasons or years, and for day-level questions — it is the longer record and it is a true daily integral.",
+    "radiation_1min_hko.csv": "Hourly samples in W/m2 from 2024-12. Use it when the question is about time of day, about the direct/diffuse split, or about two stations. It is the shorter record and each value is an instant, not an integral.",
+    "do_not": "Do not sum this file's W/m2 values and compare the number to the daily file's MJ/m2 without converting: one hourly sample stands for 3600 s, so the sum times 3600/1e6 is the MJ/m2 equivalent. Done that way the two agree (see verification below); done naively they differ by three orders of magnitude."
+  },
+  "sources": [
+    {
+      "id": "hko_1min_solar_via_datagovhk_archive",
+      "authority": "Hong Kong Observatory (HKO), archived by DATA.GOV.HK",
+      "title": "Latest one-minute solar radiation, regional weather feed",
+      "live_feed": "https://data.weather.gov.hk/weatherAPI/hko_data/regional-weather/latest_1min_solar.csv",
+      "archive_api": "https://api.data.gov.hk/v1/historical-archive/get-file",
+      "accessed": "2026-08-09",
+      "supports": [
+        "global_radiation_wm2",
+        "direct_radiation_wm2",
+        "diffuse_radiation_wm2"
+      ],
+      "notes": "HKO publishes only the latest reading — there is no historical endpoint for this feed. DATA.GOV.HK snapshots it about every ten minutes and keeps the snapshots, which is what makes a time series possible. The archive holds roughly 165 snapshots a day for this feed and begins in 2023; its `end` parameter is refused for any date later than yesterday, in plain text rather than JSON."
+    }
+  ],
+  "stations": [
+    {
+      "name": "King's Park",
+      "note": "Kowloon. Same site as the soundings and the daily radiation file."
+    },
+    {
+      "name": "Kau Sai Chau",
+      "note": "Sai Kung, about 20 km east. The second site is what makes single-station representativeness measurable rather than assumed."
+    }
+  ],
+  "conventions": {
+    "time": "Hong Kong local standard time. The feed's own timestamp carries no timezone marker, so this was verified rather than assumed: the median diurnal cycle peaks at hour 12 and is zero at hours 0 and 6, which places it in local time — under UTC the peak would fall at hour 4.",
+    "sampling": "One snapshot per hour, the first the archive holds in that hour, so a reading can sit up to about ten minutes after the hour it is filed under. Each value is an instantaneous one-minute mean, NOT an hourly average. `snapshot_time` records the snapshot each row came from. `--all-snapshots` rebuilds at the archive's full ~10-minute cadence for about six times the cost.",
+    "missing": "Non-numeric placeholders in the feed become nulls rather than being dropped, so an out-of-service sensor stays visible as a gap."
+  },
+  "verification": {
+    "against_the_daily_file": "Summing a day's hourly samples as W/m2 x 3600 s and comparing with the independent daily CIS totals over 577 complete days: r = 0.986, median ratio 1.002. This is the strongest check available, because the two files come from different HKO products by different routes.",
+    "diurnal_cycle": "Median global radiation is 0 at 06:00, peaks at 12:00, and returns to single digits by 18:00.",
+    "completeness": "616 days spanned, 616 days present — no missing day. 23 to 25 samples per day (median 24).",
+    "sensor_gaps": "294 of 29,590 readings are null.",
+    "direct_diffuse_closure": "Median ratio (direct + diffuse) / global = 1.000 across 12,134 daytime readings, but the interquartile range of the difference is -9 to +138 W/m2 and 944 of 29,284 readings (3.2 %) report diffuse strictly above global, which is impossible on a horizontal surface — 265 of them by more than 1 W/m2, the rest within instrument noise. See the first entry under known_limits."
+  },
+  "coverage": {
+    "first": "2024-12-01 01:00:00 local",
+    "last": "2026-08-08 23:00:00 local",
+    "rows": 29590,
+    "days": 616,
+    "stations": 2
+  },
+  "known_features_that_are_not_errors": [
+    "One reading of 1425 W/m2 exceeds the solar constant (1361 W/m2). It is internally consistent — direct 841 plus diffuse 594 — which is the signature of cloud enhancement, where the direct beam adds to bright scattering off cloud edges. Real, brief, and documented in the literature. 12 readings exceed 1200 W/m2 and 333 exceed 1000.",
+    "1,357 night-time readings sit between 1 and 12 W/m2 where zero is expected. They concentrate in summer (257 in July, 231 in June) and nearly vanish in winter (1 in November, 2 in October), which is the thermal-offset signature of a pyranometer exchanging infrared with the sky. Two to three orders of magnitude below daytime values; left in place rather than zeroed, because it is a property of the instrument and suppressing it would be deciding for the analyst."
+  ],
+  "known_limits": [
+    "The direct column's reference plane is NOT established. Median (direct + diffuse) / global is exactly 1.000 over 12,134 daytime readings, which says direct is the horizontal component — but 29 % of readings overshoot global by more than 100 W/m2, those readings carry a mean direct of 585 against 264 overall, and the median deviation rises to +44 at 16:00 while sitting at -10 at noon. Rising overshoot at low sun with strong beam is the signature of normal-incidence direct, so the two conventions each have evidence and the data alone cannot decide. Use global_radiation_wm2 on its own, or the direct/diffuse pair only as a qualitative clear-versus-overcast indicator. Do NOT build a case that treats direct + diffuse as a decomposition of global; it does not reliably close.",
+    "Hourly samples, not hourly means. A passing cloud at the sampled minute moves the value in a way an hourly average would smooth.",
+    "Two sites, both of them meteorological stations rather than air-quality stations.",
+    "Begins 2024-12, so it cannot serve questions about earlier years; the daily file covers those."
+  ]
+}

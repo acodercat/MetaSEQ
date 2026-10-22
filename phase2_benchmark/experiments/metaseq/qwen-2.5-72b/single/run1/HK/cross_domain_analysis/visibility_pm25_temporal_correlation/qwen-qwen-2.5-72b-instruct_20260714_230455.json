@@ -1,0 +1,81 @@
+{
+  "hk_visibility_pm25_temporal_correlation": {
+    "scenario": "hk_visibility_pm25_temporal_correlation",
+    "conversations": [
+      {
+        "id": "vis_pm25_corr",
+        "turns": [
+          {
+            "query": "In October 2025, compute the Pearson correlation between hourly visibility at Chek Lap Kok weather station and hourly PM2.5 at Tung Chung air quality station (the nearest AQ station to Chek Lap Kok). Return the correlation rounded to 4 decimal places.",
+            "actual_response": "The Pearson correlation between hourly visibility at Chek Lap Kok weather station and hourly PM2.5 at Tung Chung air quality station for October 2025 is -0.6551.",
+            "actual_calls": [],
+            "validation_errors": [],
+            "metrics": {
+              "steps": 5,
+              "prompt_tokens": 30767,
+              "completion_tokens": 835,
+              "total_tokens": 31602
+            },
+            "success": true,
+            "variables_not_set": false,
+            "error": null,
+            "code_snippets": [
+              "import pandas as pd\nfrom sqlalchemy import text\nfrom scipy.stats import pearsonr\n\n# Query visibility data from Chek Lap Kok weather station for October 2025\nvisibility_query = text(\"\"\"\nSELECT datetime, visibility\nFROM hourly_station_weather\nJOIN weather_station ON hourly_station_weather.station_id = weather_station.id\nWHERE weather_station.name_en = 'Chek Lap Kok'\nAND datetime >= '2025-10-01 00:00:00'\nAND datetime < '2025-11-01 00:00:00'\n\"\"\")\n\nvisibility_df = pd.read_sql(visibility_query, engine)\n\n# Query PM2.5 data from Tung Chung air quality station for October 2025\npm25_query = text(\"\"\"\nSELECT datetime, pm2_5\nFROM hourly_station_air_quality\nJOIN air_quality_station ON hourly_station_air_quality.station_id = air_quality_station.id\nWHERE air_quality_station.name_en = 'Tung Chung'\nAND datetime >= '2025-10-01 00:00:00'\nAND datetime < '2025-11-01 00:00:00'\n\"\"\")\n\npm25_df = pd.read_sql(pm25_query, engine)\n\n# Merge the two datasets on datetime\nmerged_df = pd.merge(visibility_df, pm25_df, on='datetime', how='inner')\n\n# Calculate the Pearson correlation\nvis_pm25_corr, _ = pearsonr(merged_df['visibility'], merged_df['pm2_5'])\n\n# Round the correlation to 4 decimal places\nvis_pm25_corr = round(vis_pm25_corr, 4)\n\n# Print the correlation\nprint(f\"Pearson correlation between visibility and PM2.5: {vis_pm25_corr}\")",
+              "# Check for missing data in the merged DataFrame\nprint(merged_df.isnull().sum())\n\n# Check the number of rows in the merged DataFrame\nprint(f\"Number of rows in merged DataFrame: {len(merged_df)}\")\n\n# If there are no rows, it means there is no overlapping data for the given period\nif len(merged_df) == 0:\n    print(\"No overlapping data for the given period.\")\nelse:\n    # Calculate the Pearson correlation again to ensure it's not due to missing data\n    vis_pm25_corr, _ = pearsonr(merged_df['visibility'], merged_df['pm2_5'])\n    vis_pm25_corr = round(vis_pm25_corr, 4)\n    print(f\"Pearson correlation between visibility and PM2.5: {vis_pm25_corr}\")",
+              "# Drop rows with missing PM2.5 data\nmerged_df_clean = merged_df.dropna(subset=['pm2_5'])\n\n# Check the number of rows after dropping missing data\nprint(f\"Number of rows after dropping missing PM2.5 data: {len(merged_df_clean)}\")\n\n# Calculate the Pearson correlation again with the cleaned data\nif len(merged_df_clean) > 0:\n    vis_pm25_corr, _ = pearsonr(merged_df_clean['visibility'], merged_df_clean['pm2_5'])\n    vis_pm25_corr = round(vis_pm25_corr, 4)\n    print(f\"Pearson correlation between visibility and PM2.5: {vis_pm25_corr}\")\nelse:\n    print(\"No valid data for correlation calculation after dropping missing PM2.5 values.\")",
+              "# Assign the final correlation value to the variable\nvis_pm25_corr = -0.6551\n\n# Print the final result\nprint(f\"vis_pm25_corr: {vis_pm25_corr}\")"
+            ],
+            "runtime_variables": {
+              "vis_pm25_corr": -0.6551,
+              "low_vis_date": null,
+              "low_vis_value": null,
+              "low_vis_pm25": null,
+              "high_vis_date": null,
+              "high_vis_value": null,
+              "high_vis_pm25": null
+            }
+          },
+          {
+            "query": "On the day with the lowest average visibility in October 2025, what was the average PM2.5 at Tung Chung? On the day with the highest visibility, what was the PM2.5? Return both dates, visibility values, and PM2.5 values.",
+            "actual_response": "The day with the lowest average visibility in October 2025 was 2025-10-28, with an average visibility of 19829.5 km and an average PM2.5 of 39.1 \u03bcg/m\u00b3 at Tung Chung. \n\nThe day with the highest average visibility in October 2025 was 2025-10-01, with an average visibility of 50000.0 km and an average PM2.5 of 6.8 \u03bcg/m\u00b3 at Tung Chung.",
+            "actual_calls": [],
+            "validation_errors": [
+              "Custom validator failed: low_vis_value=19829.5, expected \u2248 22019.1"
+            ],
+            "metrics": {
+              "steps": 2,
+              "prompt_tokens": 13888,
+              "completion_tokens": 422,
+              "total_tokens": 14310
+            },
+            "success": false,
+            "variables_not_set": false,
+            "error": null,
+            "code_snippets": [
+              "# Calculate daily average visibility and PM2.5\nmerged_df_clean['date'] = merged_df_clean['datetime'].dt.date\ndaily_avg = merged_df_clean.groupby('date').agg({'visibility': 'mean', 'pm2_5': 'mean'}).reset_index()\n\n# Find the day with the lowest average visibility\nlow_vis_day = daily_avg.loc[daily_avg['visibility'].idxmin()]\nlow_vis_date = low_vis_day['date'].strftime('%Y-%m-%d')\nlow_vis_value = round(low_vis_day['visibility'], 1)\nlow_vis_pm25 = round(low_vis_day['pm2_5'], 1)\n\n# Find the day with the highest average visibility\nhigh_vis_day = daily_avg.loc[daily_avg['visibility'].idxmax()]\nhigh_vis_date = high_vis_day['date'].strftime('%Y-%m-%d')\nhigh_vis_value = round(high_vis_day['visibility'], 1)\nhigh_vis_pm25 = round(high_vis_day['pm2_5'], 1)\n\n# Print the results\nprint(f\"Lowest visibility date: {low_vis_date}, visibility: {low_vis_value} km, PM2.5: {low_vis_pm25} \u03bcg/m\u00b3\")\nprint(f\"Highest visibility date: {high_vis_date}, visibility: {high_vis_value} km, PM2.5: {high_vis_pm25} \u03bcg/m\u00b3\")"
+            ],
+            "runtime_variables": {
+              "vis_pm25_corr": -0.6551,
+              "low_vis_date": "2025-10-28",
+              "low_vis_value": 19829.5,
+              "low_vis_pm25": 39.1,
+              "high_vis_date": "2025-10-01",
+              "high_vis_value": 50000.0,
+              "high_vis_pm25": 6.8
+            }
+          }
+        ]
+      }
+    ],
+    "metrics": {
+      "total_turns": 2,
+      "successful_turns": 1,
+      "failed_turns": 1,
+      "total_steps": 7,
+      "success_rate": 0.5,
+      "total_prompt_tokens": 44655,
+      "total_completion_tokens": 1257,
+      "total_tokens": 45912
+    }
+  }
+}

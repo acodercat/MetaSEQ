@@ -1,0 +1,32 @@
+{
+  "name": "beijing_realtime_anomaly_lookahead",
+  "difficulty": "medium",
+  "category": "exceedance_anomaly_detection",
+  "case_type": "baseline",
+  "conversations": [
+    {
+      "id": "realtime_anomaly_lookahead",
+      "turns": [
+        {
+          "query": "Build the anomaly detector an operations desk could actually have run during 2024: score each day of Beijing's daily mean PM2.5 by how many standard deviations it sits above the 30 days before it, and flag the days that score above 3. Report how many days were flagged and the largest score reached.",
+          "validator": "validate_realtime_detector",
+          "stores": [
+            "realtime_alert_days",
+            "max_realtime_z"
+          ],
+          "evaluation_tier": "execution"
+        },
+        {
+          "query": "A colleague has built a version of the same detector that scores each day against a 30-day window centred on it rather than the 30 days before it, and says it is far less trigger-happy. Report how many days of 2024 theirs flags, and advise which of the two detectors the desk should run.",
+          "validator": "validate_lookahead_detector",
+          "stores": [
+            "centered_alert_days",
+            "detector_to_run"
+          ],
+          "evaluation_tier": "execution"
+        }
+      ]
+    }
+  ],
+  "domain": "beijing"
+}

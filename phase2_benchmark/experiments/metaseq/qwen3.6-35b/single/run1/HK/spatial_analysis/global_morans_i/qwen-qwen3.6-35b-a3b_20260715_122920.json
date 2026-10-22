@@ -1,0 +1,47 @@
+{
+  "hk_global_morans_i": {
+    "scenario": "hk_global_morans_i",
+    "conversations": [
+      {
+        "id": "morans_i_pm25",
+        "turns": [
+          {
+            "query": "On October 5, 2025, compute the daily average PM2.5 for each air quality monitoring station. Then calculate the Global Moran's I statistic using inverse distance weights. Return the Moran's I value (rounded to 4 decimal places) and whether the spatial pattern is 'clustered', 'dispersed', or 'random'.",
+            "actual_response": "morans_i: -0.0952\nspatial_pattern: 'random'",
+            "actual_calls": [],
+            "validation_errors": [
+              "Custom validator failed: morans_i=-0.0952, expected \u2248 -0.0734 (\u00b10.02)"
+            ],
+            "metrics": {
+              "steps": 3,
+              "prompt_tokens": 20130,
+              "completion_tokens": 2282,
+              "total_tokens": 22412
+            },
+            "success": false,
+            "variables_not_set": false,
+            "error": null,
+            "code_snippets": [
+              "import pandas as pd\nimport numpy as np\nfrom sqlalchemy import text\n\n# Step 1: Get daily average PM2.5 for each station on October 5, 2025\nquery = \"\"\"\nSELECT station_id, AVG(pm2_5) as avg_pm2_5\nFROM hourly_station_air_quality\nWHERE datetime >= '2025-10-05 00:00:00' AND datetime < '2025-10-06 00:00:00'\nGROUP BY station_id\nORDER BY station_id\n\"\"\"\ndf_pm25 = pd.read_sql(query, engine)\nprint(\"Daily average PM2.5 by station:\")\nprint(df_pm25)\n\n# Step 2: Get station coordinates\nquery = \"\"\"\nSELECT id, name_en, ST_X(coordinate::geometry) as longitude, ST_Y(coordinate::geometry) as latitude\nFROM air_quality_station\nORDER BY id\n\"\"\"\ndf_coords = pd.read_sql(query, engine)\nprint(\"\\nStation coordinates:\")\nprint(df_coords)",
+              "import pandas as pd\nimport numpy as np\nfrom scipy.spatial.distance import pdist, squareform\n\n# Merge PM2.5 data with coordinates\ndf = df_pm25.merge(df_coords, left_on='station_id', right_on='id')\nprint(\"Merged data:\")\nprint(df[['station_id', 'avg_pm2_5', 'longitude', 'latitude']])\n\n# Extract values\nn = len(df)\nvalues = df['avg_pm2_5'].values\ncoords = df[['longitude', 'latitude']].values\nmean_val = np.mean(values)\n\n# Calculate distance matrix (in degrees, then convert to approximate km using haversine)\n# For simplicity, use Euclidean distance on coordinates (sufficient for small area like HK)\n# But let's use haversine for accuracy\ndef haversine_distance(lat1, lon1, lat2, lon2):\n    R = 6371  # Earth radius in km\n    lat1, lon1, lat2, lon2 = map(np.radians, [lat1, lon1, lat2, lon2])\n    dlat = lat2 - lat1\n    dlon = lon2 - lon1\n    a = np.sin(dlat/2)**2 + np.cos(lat1) * np.cos(lat2) * np.sin(dlon/2)**2\n    c = 2 * np.arcsin(np.sqrt(a))\n    return R * c\n\n# Create distance matrix\ndist_matrix = np.zeros((n, n))\nfor i in range(n):\n    for j in range(n):\n        dist_matrix[i, j] = haversine_distance(coords[i, 0], coords[i, 1], coords[j, 0], coords[j, 1])\n\n# Set diagonal to 1 to avoid division by zero\nnp.fill_diagonal(dist_matrix, 1)\n\n# Calculate inverse distance weights\nw_matrix = 1.0 / dist_matrix\n\n# Set diagonal to 0 (no self-weight)\nnp.fill_diagonal(w_matrix, 0)\n\n# Calculate Moran's I\nW = np.sum(w_matrix)\ndiff = values - mean_val\nnumerator = np.sum(w_matrix * np.outer(diff, diff))\ndenominator = np.sum(diff**2)\n\nmorans_i = (n / W) * (numerator / denominator)\nmorans_i_rounded = round(morans_i, 4)\n\nprint(f\"\\nMoran's I: {morans_i_rounded}\")\n\n# Determine spatial pattern\nif morans_i_rounded > 0.25:\n    spatial_pattern = 'clustered'\nelif morans_i_rounded < -0.25:\n    spatial_pattern = 'dispersed'\nelse:\n    spatial_pattern = 'random'\n\nprint(f\"Spatial pattern: {spatial_pattern}\")\n\n# Store results\nmorans_i = morans_i_rounded\nspatial_pattern = spatial_pattern"
+            ],
+            "runtime_variables": {
+              "morans_i": -0.0952,
+              "spatial_pattern": "random"
+            }
+          }
+        ]
+      }
+    ],
+    "metrics": {
+      "total_turns": 1,
+      "successful_turns": 0,
+      "failed_turns": 1,
+      "total_steps": 3,
+      "success_rate": 0.0,
+      "total_prompt_tokens": 20130,
+      "total_completion_tokens": 2282,
+      "total_tokens": 22412
+    }
+  }
+}

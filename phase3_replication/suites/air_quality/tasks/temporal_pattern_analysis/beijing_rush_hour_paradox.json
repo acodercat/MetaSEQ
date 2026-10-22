@@ -1,0 +1,32 @@
+{
+  "name": "beijing_rush_hour_paradox",
+  "difficulty": "medium",
+  "category": "temporal_pattern_analysis",
+  "case_type": "baseline",
+  "conversations": [
+    {
+      "id": "rush_hour_paradox",
+      "turns": [
+        {
+          "query": "An office wants to target Beijing's worst winter PM2.5 hour with a traffic restriction. For January, February and December 2020-2025, report the means over morning stamps 07:00, 08:00, 09:00 and evening stamps 17:00, 18:00, 19:00, and identify the peak hour.",
+          "validator": "validate_rush_hours",
+          "stores": [
+            "morning_rush_pm25",
+            "evening_rush_pm25",
+            "peak_hour"
+          ]
+        },
+        {
+          "query": "They want to aim the restriction at that hour. Check what two other primary pollutants do through the winter day — report the hour sulphur dioxide peaks and the hour nitrogen dioxide bottoms out — and tell them what the restriction would achieve.",
+          "validator": "validate_restriction",
+          "stores": [
+            "winter_so2_peak_hour",
+            "winter_no2_trough_hour",
+            "curve_identifies_what_a_restriction_would_achieve"
+          ]
+        }
+      ]
+    }
+  ],
+  "domain": "beijing"
+}

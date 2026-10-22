@@ -1,0 +1,52 @@
+cff-version: 1.2.0
+message: "If you use MetaSEQ, its task suite or the evaluation results, please cite the paper below."
+title: "MetaSEQ: a multi-agent LLM system for air-quality analysis"
+type: software
+authors:
+  - family-names: Ran
+    given-names: Maohao
+    affiliation: "Department of Geography, Hong Kong Baptist University"
+  - family-names: Ma
+    given-names: Chendong
+    affiliation: "Department of Geography, Hong Kong Baptist University"
+  - family-names: Song
+    given-names: Jun
+    affiliation: "Department of Geography, Hong Kong Baptist University"
+    email: junsong@hkbu.edu.hk
+  - family-names: Gao
+    given-names: Meng
+    affiliation: "Department of Geography, Hong Kong Baptist University"
+repository-code: "https://github.com/acodercat/MetaSEQ"
+license: MIT
+preferred-citation:
+  type: article
+  title: "Orchestrating language-model agents improves the reliability of environmental data analysis"
+  authors:
+    - family-names: Ran
+      given-names: Maohao
+    - family-names: Ma
+      given-names: Chendong
+    - family-names: Song
+      given-names: Jun
+    - family-names: Gao
+      given-names: Meng
+  year: 2026
+  status: in-preparation
+references:
+  - type: article
+    title: "Multi-agent AI for end-to-end air quality analysis and decision support"
+    authors:
+      - family-names: Ma
+        given-names: Chendong
+      - family-names: Ran
+        given-names: Maohao
+      - family-names: Song
+        given-names: Jun
+      - family-names: Gao
+        given-names: Meng
+    journal: "npj Clean Air"
+    volume: 2
+    issue: 1
+    start: 59
+    year: 2026
+    doi: "10.1038/s44407-026-00102-4"

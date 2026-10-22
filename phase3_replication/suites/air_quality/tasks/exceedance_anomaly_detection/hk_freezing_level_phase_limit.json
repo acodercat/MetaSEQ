@@ -1,0 +1,26 @@
+{
+  "name": "hk_freezing_level_phase_limit",
+  "difficulty": "hard",
+  "category": "exceedance_anomaly_detection",
+  "case_type": "baseline",
+  "conversations": [
+    {
+      "id": "hk_freezing_level_phase_limit",
+      "turns": [
+        {
+          "query": "Screen King's Park's 2025 morning profiles for low freezing levels relevant to cold-phase sampling. Identify the lowest zero-degree level, its launch, height, crossing count, profile-level count and eligible-launch count. Does that profile alone establish surface snow or hail?",
+          "validator": "validate_evidence",
+          "stores": [
+            "freezing_valid_launches",
+            "lowest_freezing_launch",
+            "lowest_freezing_height_msl_m",
+            "freezing_selected_profile_levels",
+            "selected_launch_zero_crossings"
+          ],
+          "evaluation_tier": "execution"
+        }
+      ]
+    }
+  ],
+  "domain": "hk"
+}

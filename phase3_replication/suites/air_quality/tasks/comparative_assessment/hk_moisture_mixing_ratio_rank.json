@@ -1,0 +1,25 @@
+{
+  "name": "hk_moisture_mixing_ratio_rank",
+  "difficulty": "medium",
+  "category": "comparative_assessment",
+  "case_type": "trap",
+  "conversations": [
+    {
+      "id": "hk_moisture_mixing_ratio_rank",
+      "turns": [
+        {
+          "query": "Prioritise King's Park's 2025 lower-tropospheric moisture sampling: which month has the largest mean morning 925-hPa water-vapour mixing ratio? Report the mean, associated temperature and monthly and annual sample counts. Does this identify the largest column-water or rainfall burden?",
+          "validator": "validate_evidence",
+          "stores": [
+            "moisture_peak_month",
+            "peak_mean_mixing_ratio_gkg",
+            "peak_moisture_launches",
+            "annual_moisture_launches",
+            "peak_month_temperature_c"
+          ]
+        }
+      ]
+    }
+  ],
+  "domain": "hk"
+}

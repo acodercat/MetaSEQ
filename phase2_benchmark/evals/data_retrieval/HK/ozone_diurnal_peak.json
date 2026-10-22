@@ -1,0 +1,20 @@
+[
+    {
+        "name": "hk_ozone_diurnal_peak",
+        "module": "evals.data_retrieval.HK.ozone_diurnal_peak",
+        "requirements": "Analyze air quality health risk indicators including ozone peaks and particulate matter dominance.",
+        "conversations": [
+            {
+                "id": "ozone_diurnal_peak",
+                "turns": [
+                    {
+                        "query": "At the Tap Mun background monitoring station, what was the peak hourly ozone concentration on July 5, 2025, and at what hour of the day did it occur?",
+                        "validator": "validate_ozone_diurnal_peak"
+                    }
+                ]
+            }
+        ],
+        "difficulty": "easy",
+        "category": "data_retrieval"
+    }
+]

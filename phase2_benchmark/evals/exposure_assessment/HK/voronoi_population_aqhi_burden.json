@@ -1,0 +1,24 @@
+[
+    {
+        "name": "hk_voronoi_population_aqhi_burden",
+        "module": "evals.exposure_assessment.HK.voronoi_population_aqhi_burden",
+        "difficulty": "hard",
+        "category": "exposure_assessment",
+        "requirements": "Assign Hong Kong's population to nearest monitoring stations and compute AQHI-based health exposure burden. Please store the results in: most_served_station (str), most_served_pop (int), least_served_station (str), least_served_pop (int), highest_burden_station (str), highest_burden_value (int), highest_burden_pop (int), highest_burden_aqhi (float, 1dp).",
+        "conversations": [
+            {
+                "id": "voronoi_aqhi",
+                "turns": [
+                    {
+                        "query": "Assign each population grid cell in pop_df to its nearest air quality monitoring station using haversine distance. Which station serves the largest population? Which serves the smallest? Return both station names and their served population counts.",
+                        "validator": "validate_t1"
+                    },
+                    {
+                        "query": "Compute each station's July 2025 AQHI health burden as: (served population) multiplied by (monthly average AQHI). Which station has the highest health burden? Return the station name, the burden value (nearest integer), its served population, and its average AQHI (1dp).",
+                        "validator": "validate_t2"
+                    }
+                ]
+            }
+        ]
+    }
+]

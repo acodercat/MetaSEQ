@@ -1,0 +1,22 @@
+{
+  "name": "hk_aqhi_briefing_summary",
+  "difficulty": "medium",
+  "category": "exposure_assessment",
+  "case_type": "baseline",
+  "conversations": [
+    {
+      "id": "aqhi_briefing_summary",
+      "turns": [
+        {
+          "query": "Write the air-quality paragraph of a public-health briefing for Tuen Mun covering April 2025, from the station's hourly Air Quality Health Index record: how should the month be characterised, and what should the briefing highlight?",
+          "validator": "validate_briefing_figures",
+          "stores": [
+            "hours_high_or_worse",
+            "worst_hour_index"
+          ]
+        }
+      ]
+    }
+  ],
+  "domain": "hk"
+}

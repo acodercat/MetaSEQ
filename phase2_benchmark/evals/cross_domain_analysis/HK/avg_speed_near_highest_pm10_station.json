@@ -1,0 +1,20 @@
+[
+    {
+        "name": "hk_avg_speed_near_highest_pm10_station",
+        "module": "evals.cross_domain_analysis.HK.avg_speed_near_highest_pm10_station",
+        "requirements": "Analyze relationships between traffic conditions and air quality.",
+        "conversations": [
+            {
+                "id": "avg_speed_near_highest_pm10_station",
+                "turns": [
+                    {
+                        "query": "Identify the air quality monitoring station that recorded the highest PM10 concentration at 14:00:00 on October 5, 2025. What was the average recorded traffic speed across all road segments within 500 meters of this station at that exact same time (rounded to 1 decimal place)?",
+                        "validator": "validate_avg_speed_near_highest_pm10_station"
+                    }
+                ]
+            }
+        ],
+        "difficulty": "hard",
+        "category": "cross_domain_analysis"
+    }
+]

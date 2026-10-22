@@ -1,0 +1,46 @@
+{
+  "hk_deep_pm_ratio_max": {
+    "scenario": "hk_deep_pm_ratio_max",
+    "conversations": [
+      {
+        "id": "hk_deep_pm_ratio_max",
+        "turns": [
+          {
+            "query": "Over June 2025, compute for each station the ratio of its mean PM2.5 to its mean PM10, and return the station_id with the HIGHEST such ratio and that ratio.",
+            "actual_response": "pmr_station_id = 6  \npmr_ratio = 0.768",
+            "actual_calls": [],
+            "validation_errors": [
+              "Custom validator failed: Custom validator failed: pmr_ratio=0.768, expected ~0.724 (tol 0.02)"
+            ],
+            "metrics": {
+              "steps": 2,
+              "prompt_tokens": 10786,
+              "completion_tokens": 1159,
+              "total_tokens": 11945
+            },
+            "success": false,
+            "variables_not_set": false,
+            "error": null,
+            "code_snippets": [
+              "import pandas as pd\nfrom sqlalchemy import text\n\n# June 2025: start-inclusive, end-exclusive\nstart_ts = \"2025-06-01 00:00:00\"\nend_ts = \"2025-07-01 00:00:00\"\n\ncount_query = text(\"\"\"\nSELECT COUNT(*) AS n_rows,\n       COUNT(DISTINCT station_id) AS n_stations,\n       COUNT(pm2_5) AS n_pm25,\n       COUNT(pm10) AS n_pm10\nFROM hourly_station_air_quality\nWHERE datetime >= :start_ts AND datetime < :end_ts\n\"\"\")\nsummary = pd.read_sql(count_query, engine, params={\"start_ts\": start_ts, \"end_ts\": end_ts})\n\nratio_query = text(\"\"\"\nWITH station_ratios AS (\n    SELECT station_id,\n           AVG(pm2_5) AS mean_pm25,\n           AVG(pm10) AS mean_pm10,\n           AVG(pm2_5) / NULLIF(AVG(pm10), 0) AS ratio,\n           COUNT(*) AS n_rows,\n           COUNT(pm2_5) AS n_pm25,\n           COUNT(pm10) AS n_pm10\n    FROM hourly_station_air_quality\n    WHERE datetime >= :start_ts AND datetime < :end_ts\n    GROUP BY station_id\n    HAVING AVG(pm2_5) IS NOT NULL AND AVG(pm10) IS NOT NULL AND AVG(pm10) <> 0\n),\nranked AS (\n    SELECT *,\n           COUNT(*) OVER () AS valid_station_count\n    FROM station_ratios\n)\nSELECT station_id, ratio, valid_station_count,\n       MIN(ratio) OVER () AS min_ratio,\n       AVG(ratio) OVER () AS avg_ratio,\n       MAX(ratio) OVER () AS max_ratio\nFROM ranked\nORDER BY ratio DESC\nLIMIT 1\n\"\"\")\ntop = pd.read_sql(ratio_query, engine, params={\"start_ts\": start_ts, \"end_ts\": end_ts})\n\npmr_station_id = int(top.loc[0, \"station_id\"])\npmr_ratio = round(float(top.loc[0, \"ratio\"]), 3)\n\nprint({\n    \"june_2025_rows\": int(summary.loc[0, \"n_rows\"]),\n    \"stations_with_june_data\": int(summary.loc[0, \"n_stations\"]),\n    \"valid_station_ratios\": int(top.loc[0, \"valid_station_count\"]),\n    \"ratio_min\": round(float(top.loc[0, \"min_ratio\"]), 3),\n    \"ratio_mean\": round(float(top.loc[0, \"avg_ratio\"]), 3),\n    \"ratio_max\": round(float(top.loc[0, \"max_ratio\"]), 3),\n    \"pmr_station_id\": pmr_station_id,\n    \"pmr_ratio\": pmr_ratio\n})"
+            ],
+            "runtime_variables": {
+              "pmr_station_id": 6,
+              "pmr_ratio": 0.768
+            }
+          }
+        ]
+      }
+    ],
+    "metrics": {
+      "total_turns": 1,
+      "successful_turns": 0,
+      "failed_turns": 1,
+      "total_steps": 2,
+      "success_rate": 0.0,
+      "total_prompt_tokens": 10786,
+      "total_completion_tokens": 1159,
+      "total_tokens": 11945
+    }
+  }
+}

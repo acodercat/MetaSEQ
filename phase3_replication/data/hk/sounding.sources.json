@@ -1,0 +1,103 @@
+{
+  "dataset_version": "1.0.0",
+  "created_at": "2026-08-08",
+  "scope": "Radiosonde profiles over Hong Kong from 2020, at King's Park (WMO 45004), the territory's only upper-air station. Produced by scripts/ingest/fetch_igra.py. Added because the HK database has no vertical dimension: its meteorology is all at the surface, so nothing in it can answer a question about an inversion or about atmospheric stability.",
+  "files": {
+    "profile_sounding.csv": "One row per level per launch: pressure, geopotential height, temperature, relative humidity, potential temperature, wind direction and speed.",
+    "sounding_indices.csv": "One row per launch: precipitable water, elevated-inversion pressure/height/strength, lifted index, K index."
+  },
+  "sources": [
+    {
+      "id": "noaa_igra2_derived_hkm00045004",
+      "authority": "NOAA National Centers for Environmental Information (NCEI)",
+      "title": "Integrated Global Radiosonde Archive, version 2 — derived parameters, period of record",
+      "url": "https://www.ncei.noaa.gov/pub/data/igra/derived/derived-por/HKM00045004-drvd.txt.zip",
+      "format_spec": "https://www.ncei.noaa.gov/pub/data/igra/derived/igra2-derived-format.txt",
+      "accessed": "2026-08-07",
+      "supports": [
+        "geopotential_height_m",
+        "temperature_c",
+        "relative_humidity_pct",
+        "potential_temperature_k",
+        "wind_dir_deg",
+        "wind_speed_ms",
+        "precipitable_water_mm",
+        "inversion_pressure_hpa",
+        "inversion_height_agl_m",
+        "inversion_temp_diff_k",
+        "lifted_index",
+        "k_index"
+      ],
+      "notes": "The derived product is used rather than the reported one because for this station the reported product leaves geopotential height missing on 86% of levels and relative humidity on 100%. Height is IGRA's CALCGPH, humidity its CALCRH, potential temperature its PTEMP."
+    },
+    {
+      "id": "noaa_igra2_data_hkm00045004",
+      "authority": "NOAA NCEI",
+      "title": "IGRA v2 — reported values, period of record (verification only)",
+      "url": "https://www.ncei.noaa.gov/pub/data/igra/data/data-por/HKM00045004-data.txt.zip",
+      "accessed": "2026-08-07",
+      "supports": [],
+      "notes": "Not shipped. Regenerate with `--product data` to cross-check: every one of the 254,134 derived levels matches a reported level on (timestamp, pressure), which is how the temperature and wind defects recorded below were found."
+    }
+  ],
+  "station": {
+    "igra_id": "HKM00045004",
+    "wmo": 45004,
+    "name_en": "King's Park",
+    "name_zh": "京士柏",
+    "igra_label": "KOWLOON (45004-0)",
+    "longitude": 114.1728,
+    "latitude": 22.3119,
+    "elevation_m": 64.8,
+    "record_begins": 1949,
+    "notes": "Same site as the radiation record in radiation.sources.json, so the two join without a spatial assumption. Not one of the 18 EPD air-quality stations."
+  },
+  "conventions": {
+    "time": "Hong Kong local standard time (UTC+8, no daylight saving), matching the database and every other table in this corpus. IGRA stamps in UTC; `utc_hour` keeps the original so the conversion stays auditable.",
+    "inversion_heights": "Metres above the STATION, not above sea level, as IGRA defines them. King's Park stands at 64.8 m.",
+    "inversion_absence": "A null inversion column means no elevated inversion was present, not that the value is missing — IGRA reports these only when the warmest temperature lies above the surface. Absence is therefore usable as a finding: present on 22.3% of launches overall, 28.5% of winter mornings against 18.3% of summer mornings.",
+    "calm_wind_direction": "Direction is null where speed is zero. It is undefined there, and computing it from components that both round to zero yields exactly 180 degrees — a due-south wind on every calm level."
+  },
+  "verification": {
+    "temperature_against_reported_product": "254,134 of 254,134 levels agree exactly. Reaching that required converting kelvin with 273.2, the constant IGRA itself used; 273.15 leaves a uniform +0.1 C on every level that no range or plausibility check detects.",
+    "potential_temperature_self_consistency": "IGRA's PTEMP against the Poisson relation recomputed from this table's own temperature and pressure: median 0.038 K, 95th percentile 0.23 K, maximum 0.6 K.",
+    "hydrostatic_monotonicity": "Height increases as pressure falls on 249,439 of 249,443 adjacent level pairs (4 violations, 0.002%).",
+    "wind_against_reported_product": "Agrees within 1 degree and 0.1 m/s above 0.6 m/s across 85,668 levels; every larger discrepancy is the calm-direction artefact described above.",
+    "wind_speed_range": "0 to 72 m/s, with the upper tail at the 200 hPa jet level, where it belongs."
+  },
+  "coverage": {
+    "first": "2020-01-01 08:00 local",
+    "last": "2026-08-05 20:00 local",
+    "soundings": 4691,
+    "levels": 254134,
+    "levels_per_sounding_median": 54,
+    "launch_hours_local": [
+      8,
+      20
+    ],
+    "launch_hours_local_all": [
+      8,
+      11,
+      14,
+      20
+    ],
+    "off_schedule_soundings": 5,
+    "off_schedule_note": "2,352 launches at 08:00 and 2,334 at 20:00, plus five off-schedule ones at 11:00 and 14:00 (03Z and 06Z). They are real launches and are kept; a case that assumes exactly two per day would miscount by five.",
+    "top_of_sounding_median_hpa": 14,
+    "missing_fraction": {
+      "geopotential_height_m": 0.0,
+      "temperature_c": 0.0,
+      "relative_humidity_pct": 0.0,
+      "potential_temperature_k": 0.0,
+      "wind_speed_ms": 0.651,
+      "wind_dir_deg": 0.663
+    }
+  },
+  "known_limits": [
+    "No afternoon sounding. 08:00 and 20:00 local bracket the daytime mixed layer without sampling it, so the depth that governs daytime dilution is not observed here. IGRA's own mixed-layer columns are deliberately not ingested for that reason — see the note beside `_HEADER_FIELDS` in the ingest script.",
+    "Wind is absent on 65% of levels. This is the measurement, not the product choice: the reported product is missing wind on exactly the same levels, so backfilling from it changes nothing.",
+    "The derived product covers only the 00Z and 12Z synoptic times, halving the 9,473 launches the reported product holds for the same period.",
+    "One site, in Kowloon, and the profile's spatial reach depends on height. Above roughly 850 hPa the structure is synoptic — an inversion or a subsidence layer spans far more than Hong Kong's ~50 km, so it applies territory-wide. The lowest few hundred metres do not: that is Kowloon's urban surface layer, not Tap Mun's rural one. This split is physical reasoning, NOT measured — Hong Kong has no second sounding site to check it against. It could be tested from the database, by asking whether the 18 stations respond together on inversion days or only the Kowloon ones.",
+    "The HK database records begin 2024-12, so only the last ~1.7 years of this file (about 1,200 launches) has air-quality data to join to."
+  ]
+}

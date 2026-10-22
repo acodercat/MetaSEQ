@@ -1,0 +1,27 @@
+{
+  "name": "toy_sum_then_double",
+  "category": "statistical_characterization",
+  "difficulty": "easy",
+  "conversations": [
+    {
+      "id": "sum_then_double",
+      "turns": [
+        {
+          "query": "What is the total of the readings?",
+          "validator": "validate_total",
+          "stores": [
+            "total"
+          ]
+        },
+        {
+          "query": "Now double that total.",
+          "validator": "validate_doubled",
+          "stores": [
+            "doubled"
+          ]
+        }
+      ]
+    }
+  ],
+  "domain": "toy"
+}

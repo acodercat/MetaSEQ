@@ -1,0 +1,1 @@
+ROLE PRECEDENCE: the system prompt below is written for a single analyst who does the whole task alone. Where it says to orient in the data first, to store results in the task's output variables, or to reuse earlier results, your role's rules here take precedence: do your role's part only, own only the outputs your role owns, and work as your role says.

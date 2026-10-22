@@ -1,0 +1,25 @@
+[
+  {
+    "name": "hk_mt_worst_no2_context",
+    "module": "evals.neuroair.cross_domain_analysis.HK.hk_mt_worst_no2_context",
+    "requirements": "Highest-NO2 station -> name + dominant <=500m land_use + #healthcare <=1000m. Store worst_no2_station (str), worst_no2_landuse (str), worst_no2_health (int).",
+    "conversations": [
+      {
+        "id": "hk_mt_worst_no2_context",
+        "turns": [
+          {
+            "query": "Identify the air-quality station with the highest mean NO2 over June 2025 (all 18 stations, non-NULL hourly). For that station, return: its name; the land_use_zone land_category with the largest intersection area with a 500-metre buffer around it; and the number of 'HEALTH_CARE_INSTITUTION' sensitive areas whose centroid is within 1000 metres of it.",
+            "validator": "validate_hk_mt_worst_no2_context"
+          }
+        ]
+      }
+    ],
+    "difficulty": "hard",
+    "category": "cross_domain_analysis",
+    "_source": {
+      "benchmark": "hk-multitable-hard",
+      "original_query_id": "hk_mt_worst_no2_context",
+      "verbatim": false
+    }
+  }
+]

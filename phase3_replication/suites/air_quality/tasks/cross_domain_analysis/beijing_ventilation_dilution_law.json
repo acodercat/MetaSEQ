@@ -1,0 +1,27 @@
+{
+  "name": "beijing_ventilation_dilution_law",
+  "difficulty": "hard",
+  "category": "cross_domain_analysis",
+  "case_type": "baseline",
+  "conversations": [
+    {
+      "id": "ventilation_dilution_law",
+      "turns": [
+        {
+          "query": "The desk proposes a ventilation-only PM2.5 forecast. Test inverse scaling over 2020-2025, then fit log-OLS on 2020-2024 and evaluate 2025 with perfect ventilation forecasts. Compare naive exponentiation and Duan retransformation under MAE and RMSE. Which conclusions about predictive skill and emission controls survive?",
+          "validator": "validate_harder_turn_1",
+          "stores": [
+            "dilution_log_slope",
+            "inverse_law_holds",
+            "variance_explained_pct",
+            "naive_retransform_mae",
+            "smearing_retransform_mae",
+            "ventilation_test_days"
+          ],
+          "evaluation_tier": "execution"
+        }
+      ]
+    }
+  ],
+  "domain": "beijing"
+}

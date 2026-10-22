@@ -1,0 +1,35 @@
+{
+  "name": "beijing_spring_sector_tail",
+  "difficulty": "hard",
+  "category": "source_attribution",
+  "case_type": "baseline",
+  "conversations": [
+    {
+      "id": "spring_sector_tail",
+      "turns": [
+        {
+          "query": "Beijing's spring screening assumes southerly flow brings pollution and northerly flow clears it. Test that rule using March, April and May 2020-2025: report PM2.5 and PM10 in each sector and advise whether the evidence supports it.",
+          "validator": "validate_sector_contrast",
+          "stores": [
+            "northerly_hours",
+            "southerly_hours",
+            "northerly_mean_pm25",
+            "southerly_mean_pm25",
+            "northerly_mean_pm10",
+            "southerly_mean_pm10"
+          ]
+        },
+        {
+          "query": "A proposed spring trigger flags days with more southerly than northerly station-hours; ties stay unflagged. Over March-May 2020-2025, count PM10 Grade II daily exceedances and how many it misses. Which sector has dirtier typical hours, and should the desk adopt the trigger?",
+          "validator": "validate_tail_and_determination",
+          "stores": [
+            "typical_hour_dirtier_sector",
+            "spring_pm10_exceedance_days",
+            "rule_missed_exceedance_days"
+          ]
+        }
+      ]
+    }
+  ],
+  "domain": "beijing"
+}

@@ -1,0 +1,47 @@
+{
+  "hk_global_morans_i": {
+    "scenario": "hk_global_morans_i",
+    "conversations": [
+      {
+        "id": "morans_i_pm25",
+        "turns": [
+          {
+            "query": "On October 5, 2025, compute the daily average PM2.5 for each air quality monitoring station. Then calculate the Global Moran's I statistic using inverse distance weights. Return the Moran's I value (rounded to 4 decimal places) and whether the spatial pattern is 'clustered', 'dispersed', or 'random'.",
+            "actual_response": "The analysis is complete. The Global Moran's I statistic has been computed and stored.\n\n**Results:**\n\n- **Global Moran's I:** -0.0750\n- **Spatial Pattern:** dispersed\n\nThe negative Moran's I value indicates that stations with similar PM2.5 levels tend to be spatially separated rather than clustered together. Since the observed Moran's I (-0.0750) is less than the expected value under randomness (-0.0588), the spatial pattern is classified as **dispersed**. This suggests that on October 5, 2025, high-PM2.5 stations (like Causeway Bay and Central) were geographically separated from other high-PM2.5 stations, and low-PM2.5 stations were similarly dispersed across Hong Kong rather than forming contiguous clusters.",
+            "actual_calls": [],
+            "validation_errors": [
+              "Custom validator failed: spatial_pattern='dispersed', expected 'random'"
+            ],
+            "metrics": {
+              "steps": 3,
+              "prompt_tokens": 18403,
+              "completion_tokens": 982,
+              "total_tokens": 19385
+            },
+            "success": false,
+            "variables_not_set": false,
+            "error": null,
+            "code_snippets": [
+              "import pandas as pd\nimport numpy as np\nfrom sqlalchemy import text\n\n# Query daily average PM2.5 for each station on October 5, 2025\nquery = text(\"\"\"\nSELECT \n    aqs.id AS station_id,\n    aqs.name_en,\n    ST_X(aqs.coordinate::geometry) AS longitude,\n    ST_Y(aqs.coordinate::geometry) AS latitude,\n    AVG(hsaq.pm2_5) AS avg_pm2_5\nFROM hourly_station_air_quality hsaq\nJOIN air_quality_station aqs ON hsaq.station_id = aqs.id\nWHERE hsaq.datetime >= '2025-10-05 00:00:00'\n  AND hsaq.datetime < '2025-10-06 00:00:00'\nGROUP BY aqs.id, aqs.name_en, aqs.coordinate\nORDER BY aqs.id\n\"\"\")\n\ndf = pd.read_sql(query, engine)\nprint(f\"Number of stations with data: {len(df)}\")\nprint(df[['station_id', 'name_en', 'longitude', 'latitude', 'avg_pm2_5']].to_string(index=False))\nprint(f\"\\nPM2.5 stats: mean={df['avg_pm2_5'].mean():.2f}, std={df['avg_pm2_5'].std():.2f}\")",
+              "import numpy as np\nfrom scipy.spatial.distance import cdist\n\n# Extract data\ncoords = df[['longitude', 'latitude']].values\nvalues = df['avg_pm2_5'].values\nn = len(values)\n\n# Compute pairwise Euclidean distances (in degrees, but proportional to actual distances)\ndist_matrix = cdist(coords, coords)\n\n# Compute inverse distance weights (avoid division by zero for self-pairs)\nnp.fill_diagonal(dist_matrix, np.inf)\nweights = 1.0 / dist_matrix\n\n# Moran's I calculation\n# I = (n / S0) * (sum_i sum_j w_ij (x_i - x_bar)(x_j - x_bar)) / sum_i (x_i - x_bar)^2\nx_bar = np.mean(values)\nz = values - x_bar  # deviations from mean\n\n# Numerator: sum of weighted cross-products of deviations\nnumerator = np.sum(weights * np.outer(z, z))\n\n# Denominator: sum of squared deviations\ndenominator = np.sum(z ** 2)\n\n# S0: sum of all weights\nS0 = np.sum(weights)\n\n# Moran's I\nmorans_i = (n / S0) * (numerator / denominator)\n\nprint(f\"Global Moran's I: {morans_i:.6f}\")\nprint(f\"Rounded to 4 decimal places: {morans_i:.4f}\")\n\n# Determine spatial pattern\n# Expected value under null hypothesis: E(I) = -1/(n-1)\nexpected_i = -1 / (n - 1)\nprint(f\"Expected I under randomness: {expected_i:.6f}\")\n\nif morans_i > expected_i:\n    spatial_pattern = 'clustered'\nelif morans_i < expected_i:\n    spatial_pattern = 'dispersed'\nelse:\n    spatial_pattern = 'random'\n\nprint(f\"Spatial pattern: {spatial_pattern}\")\n\n# Store results\nmorans_i = round(morans_i, 4)"
+            ],
+            "runtime_variables": {
+              "morans_i": -0.075,
+              "spatial_pattern": "dispersed"
+            }
+          }
+        ]
+      }
+    ],
+    "metrics": {
+      "total_turns": 1,
+      "successful_turns": 0,
+      "failed_turns": 1,
+      "total_steps": 3,
+      "success_rate": 0.0,
+      "total_prompt_tokens": 18403,
+      "total_completion_tokens": 982,
+      "total_tokens": 19385
+    }
+  }
+}

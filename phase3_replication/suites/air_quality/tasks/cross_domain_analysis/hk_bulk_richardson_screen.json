@@ -1,0 +1,26 @@
+{
+  "name": "hk_bulk_richardson_screen",
+  "difficulty": "hard",
+  "category": "cross_domain_analysis",
+  "case_type": "trap",
+  "conversations": [
+    {
+      "id": "hk_bulk_richardson_screen",
+      "turns": [
+        {
+          "query": "Screen King's Park's 2025 morning 925–850 hPa layers for shear overcoming stable stratification. Find the statically stable launch with the smallest dry bulk Richardson number; report that number, wind-shear magnitude, potential-temperature increase and eligible count. Does it establish observed turbulence?",
+          "validator": "validate_evidence",
+          "stores": [
+            "stable_shear_launches",
+            "minimum_bulk_ri_launch",
+            "minimum_dry_bulk_ri",
+            "selected_layer_shear_per_s",
+            "layer_theta_increase_k"
+          ],
+          "evaluation_tier": "execution"
+        }
+      ]
+    }
+  ],
+  "domain": "hk"
+}

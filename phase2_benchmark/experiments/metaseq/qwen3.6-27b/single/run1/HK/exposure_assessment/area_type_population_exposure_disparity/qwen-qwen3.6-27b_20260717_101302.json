@@ -1,0 +1,80 @@
+{
+  "hk_area_type_population_exposure_disparity": {
+    "scenario": "hk_area_type_population_exposure_disparity",
+    "conversations": [
+      {
+        "id": "area_type_disparity",
+        "turns": [
+          {
+            "query": "In October 2025, compute the average PM2.5 for stations grouped by area type (urban, new town, rural). Return the three values rounded to 1 decimal place.",
+            "actual_response": "Based on the analysis of PM2.5 exposure across area types in October 2025:\n\n**PM2.5 Exposure by Area Type:**\n- **Urban areas**: 13.5 \u00b5g/m\u00b3 (11 monitoring stations)\n- **New Town areas**: 14.0 \u00b5g/m\u00b3 (6 monitoring stations)\n- **Rural areas**: 12.0 \u00b5g/m\u00b3 (1 monitoring station)\n\n**Population Distribution:**\n- **Urban**: 6,402,304 people within 3km of urban stations\n- **New Town**: 1,450,868 people within 3km of new town stations\n- **Rural**: 1,230 people within 3km of rural stations\n\n**Key Findings:**\n\n1. **Highest Exposure**: New Town areas had the highest average PM2.5 concentration (14.0 \u00b5g/m\u00b3), followed by Urban areas (13.5 \u00b5g/m\u00b3), with Rural areas having the lowest (12.0 \u00b5g/m\u00b3).\n\n2. **Population Impact**: Despite having lower PM2.5 levels than New Town areas, Urban areas expose the largest population (6.4 million people) to elevated PM2.5 levels. This represents approximately 77% of the total population within 3km of all monitoring stations.\n\n3. **Rural Advantage**: The rural station (Tap Mun) recorded the lowest PM2.5 levels, consistent with its remote location and minimal surrounding population (only 1,230 people within 3km).\n\n4. **Public Health Significance**: The combination of high PM2.5 exposure and large population in Urban areas means that urban residents face the greatest cumulative health burden from PM2.5 pollution, even though New Town areas technically have slightly higher concentrations.\n\n**highest_exposure_type**: NEW_TOWN",
+            "actual_calls": [],
+            "validation_errors": [],
+            "metrics": {
+              "steps": 4,
+              "prompt_tokens": 34004,
+              "completion_tokens": 3057,
+              "total_tokens": 37061
+            },
+            "success": true,
+            "variables_not_set": false,
+            "error": null,
+            "code_snippets": [
+              "import pandas as pd\nfrom sqlalchemy import text\nimport numpy as np\n\n# Step 1: Get station info grouped by area type\nquery = \"\"\"\nSELECT id, name_en, area_type\nFROM air_quality_station\n\"\"\"\nstations = pd.read_sql(query, engine)\nprint(\"Stations by area type:\")\nprint(stations.groupby('area_type')['name_en'].apply(list).to_dict())\n\n# Step 2: Query PM2.5 data for October 2025 grouped by area type\nquery = \"\"\"\nSELECT aqs.area_type, AVG(hsaq.pm2_5) as avg_pm25\nFROM hourly_station_air_quality hsaq\nJOIN air_quality_station aqs ON hsaq.station_id = aqs.id\nWHERE hsaq.datetime >= '2025-10-01 00:00:00'\nAND hsaq.datetime < '2025-11-01 00:00:00'\nGROUP BY aqs.area_type\nORDER BY aqs.area_type\n\"\"\"\npm25_by_area = pd.read_sql(query, engine)\nprint(\"\\nAverage PM2.5 by area type in October 2025:\")\nprint(pm25_by_area)\n\n# Step 3: Calculate population within 3km of stations for each area type\nfrom math import radians, cos, sin, asin, sqrt\n\ndef haversine(lon1, lat1, lon2, lat2):\n    lon1, lat1, lon2, lat2 = map(radians, [lon1, lat1, lon2, lat2])\n    dlon = lon2 - lon1\n    dlat = lat2 - lat1\n    a = sin(dlat/2)**2 + cos(lat1) * cos(lat2) * sin(dlon/2)**2\n    c = 2 * asin(sqrt(a))\n    r = 6371\n    return c * r\n\n# Get station coordinates\nquery = \"\"\"\nSELECT id, name_en, area_type, ST_X(coordinate) as lon, ST_Y(coordinate) as lat\nFROM air_quality_station\n\"\"\"\nstation_coords = pd.read_sql(query, engine)\n\n# Calculate population for each area type\narea_types = ['URBAN', 'NEW_TOWN', 'RURAL']\npop_results = {}\n\nfor area_type in area_types:\n    area_stations = station_coords[station_coords['area_type'] == area_type]\n    total_pop = 0\n    \n    for _, station in area_stations.iterrows():\n        # Calculate distance from this station to all population grid cells\n        distances = haversine(\n            station['lon'], station['lat'],\n            pop_df['longitude'].values, pop_df['latitude'].values\n        )\n        # Sum population within 3km\n        pop_within_3km = pop_df.loc[distances <= 3, 'population'].sum()\n        total_pop += pop_within_3km\n    \n    pop_results[area_type] = int(total_pop)\n    print(f\"\\n{area_type} population within 3km of stations: {total_pop}\")\n\n# Store results\nurban_pm25 = round(pm25_by_area.loc[pm25_by_area['area_type'] == 'URBAN', 'avg_pm25'].values[0], 1)\nnew_town_pm25 = round(pm25_by_area.loc[pm25_by_area['area_type'] == 'NEW_TOWN', 'avg_pm25'].values[0], 1)\nrural_pm25 = round(pm25_by_area.loc[pm25_by_area['area_type'] == 'RURAL', 'avg_pm25'].values[0], 1)\n\nurban_pop = pop_results['URBAN']\nnew_town_pop = pop_results['NEW_TOWN']\nrural_pop = pop_results['RURAL']\n\n# Determine highest exposure type\nhighest_exposure_type = pm25_by_area.loc[pm25_by_area['avg_pm25'].idxmax(), 'area_type']\n\nprint(f\"\\nFinal Results:\")\nprint(f\"Urban PM2.5: {urban_pm25}\")\nprint(f\"New Town PM2.5: {new_town_pm25}\")\nprint(f\"Rural PM2.5: {rural_pm25}\")\nprint(f\"Urban Population: {urban_pop}\")\nprint(f\"New Town Population: {new_town_pop}\")\nprint(f\"Rural Population: {rural_pop}\")\nprint(f\"Highest Exposure Type: {highest_exposure_type}\")",
+              "import pandas as pd\nfrom sqlalchemy import text\nimport numpy as np\nfrom math import radians, cos, sin, asin, sqrt\n\ndef haversine(lon1, lat1, lon2, lat2):\n    lon1, lat1, lon2, lat2 = map(radians, [lon1, lat1, lon2, lat2])\n    dlon = lon2 - lon1\n    dlat = lat2 - lat1\n    a = sin(dlat/2)**2 + cos(lat1) * cos(lat2) * sin(dlon/2)**2\n    c = 2 * asin(sqrt(a))\n    r = 6371\n    return c * r\n\n# Get station coordinates - cast geography to geometry\nquery = \"\"\"\nSELECT id, name_en, area_type, ST_X(coordinate::geometry) as lon, ST_Y(coordinate::geometry) as lat\nFROM air_quality_station\n\"\"\"\nstation_coords = pd.read_sql(query, engine)\nprint(\"Station coordinates:\")\nprint(station_coords)\n\n# Calculate population for each area type\narea_types = ['URBAN', 'NEW_TOWN', 'RURAL']\npop_results = {}\n\nfor area_type in area_types:\n    area_stations = station_coords[station_coords['area_type'] == area_type]\n    total_pop = 0\n    \n    for _, station in area_stations.iterrows():\n        # Calculate distance from this station to all population grid cells\n        distances = haversine(\n            station['lon'], station['lat'],\n            pop_df['longitude'].values, pop_df['latitude'].values\n        )\n        # Sum population within 3km\n        pop_within_3km = pop_df.loc[distances <= 3, 'population'].sum()\n        total_pop += pop_within_3km\n    \n    pop_results[area_type] = int(total_pop)\n    print(f\"\\n{area_type} population within 3km of stations: {total_pop}\")\n\n# PM2.5 results from previous execution\npm25_by_area = pd.DataFrame({\n    'area_type': ['URBAN', 'RURAL', 'NEW_TOWN'],\n    'avg_pm25': [13.525508, 12.036337, 13.952149]\n})\n\n# Store results\nurban_pm25 = round(pm25_by_area.loc[pm25_by_area['area_type'] == 'URBAN', 'avg_pm25'].values[0], 1)\nnew_town_pm25 = round(pm25_by_area.loc[pm25_by_area['area_type'] == 'NEW_TOWN', 'avg_pm25'].values[0], 1)\nrural_pm25 = round(pm25_by_area.loc[pm25_by_area['area_type'] == 'RURAL', 'avg_pm25'].values[0], 1)\n\nurban_pop = pop_results['URBAN']\nnew_town_pop = pop_results['NEW_TOWN']\nrural_pop = pop_results['RURAL']\n\n# Determine highest exposure type\nhighest_exposure_type = pm25_by_area.loc[pm25_by_area['avg_pm25'].idxmax(), 'area_type']\n\nprint(f\"\\nFinal Results:\")\nprint(f\"Urban PM2.5: {urban_pm25}\")\nprint(f\"New Town PM2.5: {new_town_pm25}\")\nprint(f\"Rural PM2.5: {rural_pm25}\")\nprint(f\"Urban Population: {urban_pop}\")\nprint(f\"New Town Population: {new_town_pop}\")\nprint(f\"Rural Population: {rural_pop}\")\nprint(f\"Highest Exposure Type: {highest_exposure_type}\")",
+              "import numpy as np\nfrom math import radians, cos, sin, asin, sqrt\n\ndef haversine_array(lon1, lat1, lon2_arr, lat2_arr):\n    lon1, lat1 = radians(lon1), radians(lat1)\n    lon2_arr = np.radians(lon2_arr)\n    lat2_arr = np.radians(lat2_arr)\n    dlon = lon2_arr - lon1\n    dlat = lat2_arr - lat1\n    a = np.sin(dlat/2)**2 + np.cos(lat1) * np.cos(lat2_arr) * np.sin(dlon/2)**2\n    c = 2 * np.arcsin(np.sqrt(a))\n    r = 6371\n    return c * r\n\n# Calculate population for each area type\narea_types = ['URBAN', 'NEW_TOWN', 'RURAL']\npop_results = {}\n\nfor area_type in area_types:\n    area_stations = station_coords[station_coords['area_type'] == area_type]\n    total_pop = 0\n    \n    for _, station in area_stations.iterrows():\n        distances = haversine_array(\n            station['lon'], station['lat'],\n            pop_df['longitude'].values, pop_df['latitude'].values\n        )\n        pop_within_3km = pop_df.loc[distances <= 3, 'population'].sum()\n        total_pop += pop_within_3km\n    \n    pop_results[area_type] = int(total_pop)\n    print(f\"{area_type} population within 3km of stations: {total_pop}\")\n\n# PM2.5 results from previous execution\npm25_by_area = pd.DataFrame({\n    'area_type': ['URBAN', 'RURAL', 'NEW_TOWN'],\n    'avg_pm25': [13.525508, 12.036337, 13.952149]\n})\n\n# Store results\nurban_pm25 = round(pm25_by_area.loc[pm25_by_area['area_type'] == 'URBAN', 'avg_pm25'].values[0], 1)\nnew_town_pm25 = round(pm25_by_area.loc[pm25_by_area['area_type'] == 'NEW_TOWN', 'avg_pm25'].values[0], 1)\nrural_pm25 = round(pm25_by_area.loc[pm25_by_area['area_type'] == 'RURAL', 'avg_pm25'].values[0], 1)\n\nurban_pop = pop_results['URBAN']\nnew_town_pop = pop_results['NEW_TOWN']\nrural_pop = pop_results['RURAL']\n\nhighest_exposure_type = pm25_by_area.loc[pm25_by_area['avg_pm25'].idxmax(), 'area_type']\n\nprint(f\"\\nFinal Results:\")\nprint(f\"Urban PM2.5: {urban_pm25}\")\nprint(f\"New Town PM2.5: {new_town_pm25}\")\nprint(f\"Rural PM2.5: {rural_pm25}\")\nprint(f\"Urban Population: {urban_pop}\")\nprint(f\"New Town Population: {new_town_pop}\")\nprint(f\"Rural Population: {rural_pop}\")\nprint(f\"Highest Exposure Type: {highest_exposure_type}\")"
+            ],
+            "runtime_variables": {
+              "urban_pm25": 13.5,
+              "new_town_pm25": 14.0,
+              "rural_pm25": 12.0,
+              "urban_pop": 6402304,
+              "new_town_pop": 1450868,
+              "rural_pop": 1230,
+              "highest_exposure_type": "NEW_TOWN"
+            }
+          },
+          {
+            "query": "Compute the total population within 3km (from pop_df using haversine distance) of all urban stations combined, all new town stations combined, and the rural station. Which area type has the highest average PM2.5? Return the three population counts and the area type name.",
+            "actual_response": "Based on the analysis of PM2.5 exposure and population distribution in October 2025:\n\n**Average PM2.5 Concentrations by Area Type:**\n- **Urban areas**: 13.5 \u00b5g/m\u00b3\n- **New Town areas**: 14.0 \u00b5g/m\u00b3\n- **Rural areas**: 12.0 \u00b5g/m\u00b3\n\n**Population within 3km of Monitoring Stations:**\n- **Urban stations**: 6,402,304 people\n- **New Town stations**: 1,450,868 people\n- **Rural station**: 1,230 people\n\n**Highest Exposure Area Type:** NEW_TOWN\n\nNew Town areas recorded the highest average PM2.5 concentration (14.0 \u00b5g/m\u00b3), followed by Urban areas (13.5 \u00b5g/m\u00b3), with Rural areas having the lowest levels (12.0 \u00b5g/m\u00b3). Despite having lower PM2.5 concentrations than New Town areas, Urban areas expose a significantly larger population (6.4 million vs 1.45 million) to elevated pollution levels, representing the greatest overall public health impact.",
+            "actual_calls": [],
+            "validation_errors": [
+              "Custom validator failed: urban_pop=6402304, expected ~3804554"
+            ],
+            "metrics": {
+              "steps": 2,
+              "prompt_tokens": 22638,
+              "completion_tokens": 468,
+              "total_tokens": 23106
+            },
+            "success": false,
+            "variables_not_set": false,
+            "error": null,
+            "code_snippets": [
+              "urban_pm25 = 13.5\nnew_town_pm25 = 14.0\nrural_pm25 = 12.0\nurban_pop = 6402304\nnew_town_pop = 1450868\nrural_pop = 1230\nhighest_exposure_type = \"NEW_TOWN\"\n\nprint(f\"urban_pm25: {urban_pm25}\")\nprint(f\"new_town_pm25: {new_town_pm25}\")\nprint(f\"rural_pm25: {rural_pm25}\")\nprint(f\"urban_pop: {urban_pop}\")\nprint(f\"new_town_pop: {new_town_pop}\")\nprint(f\"rural_pop: {rural_pop}\")\nprint(f\"highest_exposure_type: {highest_exposure_type}\")"
+            ],
+            "runtime_variables": {
+              "urban_pm25": 13.5,
+              "new_town_pm25": 14.0,
+              "rural_pm25": 12.0,
+              "urban_pop": 6402304,
+              "new_town_pop": 1450868,
+              "rural_pop": 1230,
+              "highest_exposure_type": "NEW_TOWN"
+            }
+          }
+        ]
+      }
+    ],
+    "metrics": {
+      "total_turns": 2,
+      "successful_turns": 1,
+      "failed_turns": 1,
+      "total_steps": 6,
+      "success_rate": 0.5,
+      "total_prompt_tokens": 56642,
+      "total_completion_tokens": 3525,
+      "total_tokens": 60167
+    }
+  }
+}

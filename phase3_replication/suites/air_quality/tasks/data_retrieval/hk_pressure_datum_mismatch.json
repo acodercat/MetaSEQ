@@ -1,0 +1,34 @@
+{
+  "name": "hk_pressure_datum_mismatch",
+  "difficulty": "hard",
+  "category": "data_retrieval",
+  "case_type": "baseline",
+  "conversations": [
+    {
+      "id": "pressure_datum_mismatch",
+      "turns": [
+        {
+          "query": "We are about to use the ERA5 reanalysis's surface pressure for Hong Kong. Validate it against our own instruments over 2025 and tell us whether it can be used as it stands. Give the offset you find at the cell nearest the Observatory, say what kind of offset it is, and whether the product follows our hour-to-hour variation.",
+          "validator": "validate_validation",
+          "stores": [
+            "offset_nearest_cell_hpa",
+            "offset_kind",
+            "tracks_variability"
+          ]
+        },
+        {
+          "query": "The desk proposes dropping ERA5 or applying one flat correction. Compare the six cells' mean offsets from the Observatory: name the furthest cell and report the offset spread. Recommend how to use the product, distinguishing absolute sea-level comparisons from changes at a fixed cell.",
+          "validator": "validate_evidence_and_conclusion_full_review",
+          "stores": [
+            "recommendation",
+            "most_negative_offset_cell",
+            "offset_spread_across_cells_hpa",
+            "levels_usable_as_they_are",
+            "differences_usable"
+          ]
+        }
+      ]
+    }
+  ],
+  "domain": "hk"
+}

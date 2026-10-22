@@ -1,0 +1,25 @@
+[
+  {
+    "name": "hk_x_monument_mongkok",
+    "module": "evals.neuroair.spatial_analysis.HK.hk_x_monument_mongkok",
+    "requirements": "Nearest DECLARED_MONUMENT (centroid distance) to station 14. Store nearest_monument (str, exact stored name) and monument_dist_m (float, metres).",
+    "conversations": [
+      {
+        "id": "hk_x_monument_mongkok",
+        "turns": [
+          {
+            "query": "Which sensitive area of category 'DECLARED_MONUMENT' lies closest to the Mong Kok air-quality station (station_id 14), measuring distance from the monument polygon's centroid to the station coordinate? Return the monument's name exactly as stored, and the distance in metres.",
+            "validator": "validate_hk_x_monument_mongkok"
+          }
+        ]
+      }
+    ],
+    "difficulty": "hard",
+    "category": "spatial_analysis",
+    "_source": {
+      "benchmark": "hk-x-hard",
+      "original_query_id": "hk_x_monument_mongkok",
+      "verbatim": false
+    }
+  }
+]

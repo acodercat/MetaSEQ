@@ -1,0 +1,22 @@
+{
+  "name": "hk_aqhi_not_reproducible",
+  "difficulty": "medium",
+  "category": "data_retrieval",
+  "case_type": "baseline",
+  "conversations": [
+    {
+      "id": "aqhi_not_reproducible",
+      "turns": [
+        {
+          "query": "A colleague wants to reproduce each hour's AQHI from the stored added-risk components, so they can attribute the index to whichever pollutant drove it. Their plan is to add the four components and band the total. Check the plan over 2025 and tell them whether it works.",
+          "validator": "validate_band_overlap",
+          "stores": [
+            "hours_checked",
+            "index_is_a_function_of_the_component_sum"
+          ]
+        }
+      ]
+    }
+  ],
+  "domain": "hk"
+}

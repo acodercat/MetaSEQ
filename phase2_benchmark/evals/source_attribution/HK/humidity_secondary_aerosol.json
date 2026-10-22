@@ -1,0 +1,24 @@
+[
+    {
+        "name": "hk_humidity_secondary_aerosol",
+        "module": "evals.source_attribution.HK.humidity_secondary_aerosol",
+        "requirements": "Analyze humidity effect on secondary aerosol formation via PM2.5/PM10 ratio. Please store the results in: ratio_low_humidity (float, 3dp), ratio_mid_humidity (float, 3dp), ratio_high_humidity (float, 3dp), humidity_ratio_correlation (float, 4dp).",
+        "conversations": [
+            {
+                "id": "humidity_aerosol",
+                "turns": [
+                    {
+                        "query": "In October 2025, for all general air quality stations combined, group hourly PM2.5/PM10 ratios by humidity bins from the King's Park weather station: low (<60%), medium (60-80%), high (>80%). Compute the average PM2.5/PM10 ratio for each bin (only include hours where both PM2.5 and PM10 are valid and PM10 > 0). Return the three ratios rounded to 3 decimal places.",
+                        "validator": "validate_humidity_aerosol"
+                    },
+                    {
+                        "query": "Across all matched hours in October 2025, what is the Pearson correlation between King's Park humidity and the network-wide average PM2.5/PM10 ratio? Return the coefficient rounded to 4 decimal places.",
+                        "validator": "validate_humidity_aerosol_t2"
+                    }
+                ]
+            }
+        ],
+        "difficulty": "medium",
+        "category": "source_attribution"
+    }
+]

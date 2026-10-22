@@ -1,0 +1,20 @@
+[
+    {
+        "name": "hk_multi_pollutant_health_risk",
+        "module": "evals.exposure_assessment.HK.multi_pollutant_health_risk",
+        "requirements": "Compute total Added Health Risk at the nearest station to the largest residential area. Please store the results in: residential_area_name (str), station_name (str), total_ar (float, rounded to 2 decimal places).",
+        "conversations": [
+            {
+                "id": "multi_pollutant_ar",
+                "turns": [
+                    {
+                        "query": "At 14:00 on October 5, 2025, for the air quality monitoring station nearest to the sensitive area with the largest area of category 'residential area', compute the total Added Health Risk from all pollutant components. Return the sensitive area name, the station name, and the total AR value rounded to 2 decimal places.",
+                        "validator": "validate_multi_pollutant"
+                    }
+                ]
+            }
+        ],
+        "difficulty": "medium",
+        "category": "exposure_assessment"
+    }
+]

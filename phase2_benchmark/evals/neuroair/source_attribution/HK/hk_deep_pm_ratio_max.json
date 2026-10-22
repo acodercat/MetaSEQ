@@ -1,0 +1,25 @@
+[
+  {
+    "name": "hk_deep_pm_ratio_max",
+    "module": "evals.neuroair.source_attribution.HK.hk_deep_pm_ratio_max",
+    "requirements": "Argmax mean(PM2.5)/mean(PM10) over all stations, June. Store pmr_station_id (int), pmr_ratio (float,3dp).",
+    "conversations": [
+      {
+        "id": "hk_deep_pm_ratio_max",
+        "turns": [
+          {
+            "query": "Over June 2025, compute for each station the ratio of its mean PM2.5 to its mean PM10, and return the station_id with the HIGHEST such ratio and that ratio.",
+            "validator": "validate_hk_deep_pm_ratio_max"
+          }
+        ]
+      }
+    ],
+    "difficulty": "deep",
+    "category": "source_attribution",
+    "_source": {
+      "benchmark": "Neuro-Air-MetaSEQ-deep2",
+      "original_query_id": "hk_deep_pm_ratio_max",
+      "verbatim": false
+    }
+  }
+]

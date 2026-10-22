@@ -1,0 +1,31 @@
+{
+  "name": "hk_ozone_aqo_day_boundary",
+  "difficulty": "hard",
+  "category": "regulatory_standards",
+  "case_type": "baseline",
+  "conversations": [
+    {
+      "id": "ozone_aqo_day_boundary",
+      "turns": [
+        {
+          "query": "Did the Southern station meet Hong Kong's 8-hour ozone Air Quality Objective in 2025? Give the number of days on which its daily maximum 8-hour ozone exceeded the objective's 160 ug/m3, and the tenth-highest of the year's daily maximum 8-hour values.",
+          "validator": "validate_convention_count",
+          "stores": [
+            "exceedance_days_2025",
+            "tenth_highest_daily_max_8h_2025"
+          ]
+        },
+        {
+          "query": "EPD's 2025 report says Southern met the eight-hour ozone objective: nine exceedance days and a tenth-highest value near 160 ug/m3. An earlier analysis found ten days. Reconcile the counts and advise what to publish.",
+          "validator": "validate_reconciliation",
+          "stores": [
+            "southern_complied",
+            "source_of_the_extra_day",
+            "day_the_tenth_was_counted_on"
+          ]
+        }
+      ]
+    }
+  ],
+  "domain": "hk"
+}

@@ -1,0 +1,21 @@
+{
+  "name": "beijing_channel_city_membership",
+  "difficulty": "hard",
+  "category": "comparative_assessment",
+  "case_type": "trap",
+  "conversations": [
+    {
+      "id": "channel_city_membership",
+      "turns": [
+        {
+          "query": "For winter 2023, meaning December 2022 through February 2023, report the mean PM2.5 over the cities officially designated as the '2+26' air-pollution transmission-channel cities.",
+          "validator": "validate_channel_winter_pm25",
+          "stores": [
+            "channel_winter_pm25"
+          ]
+        }
+      ]
+    }
+  ],
+  "domain": "beijing"
+}

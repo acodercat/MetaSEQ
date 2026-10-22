@@ -1,0 +1,24 @@
+{
+  "name": "hk_april_2025_coarse_dust_signature",
+  "difficulty": "medium",
+  "category": "exceedance_anomaly_detection",
+  "case_type": "baseline",
+  "conversations": [
+    {
+      "id": "april_2025_coarse_dust_signature",
+      "turns": [
+        {
+          "query": "Assess the 13–15 April 2025 Hong Kong particulate episode using general stations. Find the coarse-load peak day and coarse share at the peak. Would PM2.5 alone rank it among 2025's highest hundredth of hours? Explain what the particle record establishes about the event and its origin.",
+          "validator": "validate_evidence_and_conclusion_full_review",
+          "stores": [
+            "dust_peak_date",
+            "coarse_share_at_peak",
+            "fine_monitor_would_have_registered_it",
+            "source_settled_by_these_data"
+          ]
+        }
+      ]
+    }
+  ],
+  "domain": "hk"
+}

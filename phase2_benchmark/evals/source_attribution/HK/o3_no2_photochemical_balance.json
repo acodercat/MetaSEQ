@@ -1,0 +1,24 @@
+[
+    {
+        "name": "hk_o3_no2_photochemical_balance",
+        "module": "evals.source_attribution.HK.o3_no2_photochemical_balance",
+        "requirements": "Analyze photochemical oxidant partitioning ratio. Please store the results in: roadside_ox_ratio (float, 3dp), general_ox_ratio (float, 3dp), highest_ox_station (str), highest_ox_ratio (float, 3dp), morning_ox (float, 3dp), midday_ox (float, 3dp), evening_ox (float, 3dp).",
+        "conversations": [
+            {
+                "id": "photochemical_balance",
+                "turns": [
+                    {
+                        "query": "On October 5, 2025, for each air quality monitoring station, compute the daily average photochemical oxidant partitioning ratio (including only hours where both O3 and NO2 are available). What is the mean ratio for roadside vs general stations? Return both means rounded to 3 decimal places and the station with the highest ratio (most photochemically aged air) along with its ratio.",
+                        "validator": "validate_ox_ratio"
+                    },
+                    {
+                        "query": "For the station with the highest photochemical oxidant partitioning ratio, how does this ratio vary across the day? Compute the average ratio for morning (06:00-09:00), midday (11:00-14:00), and evening (17:00-20:00) on October 5, 2025. Return all three values rounded to 3 decimal places.",
+                        "validator": "validate_ox_ratio_t2"
+                    }
+                ]
+            }
+        ],
+        "difficulty": "hard",
+        "category": "source_attribution"
+    }
+]

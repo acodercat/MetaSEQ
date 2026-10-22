@@ -1,0 +1,48 @@
+{
+  "hk_network_deviation_outlier": {
+    "scenario": "hk_network_deviation_outlier",
+    "conversations": [
+      {
+        "id": "network_deviation",
+        "turns": [
+          {
+            "query": "On October 5, 2025, for each hour compute the network-wide mean and standard deviation of PM2.5 across all general air quality stations. Then find the single station-hour with the largest absolute z-score deviation, where z-score equals the station PM2.5 minus the network mean divided by the network standard deviation. Return the station name, the hour of day, the station's PM2.5 value rounded to 1 decimal place, the network mean at that hour rounded to 1 decimal place, and the z-score rounded to 2 decimal places.",
+            "actual_response": "The analysis is complete. Here are the results:\n\n**Outlier Station:** Tseung Kwan O  \n**Outlier Hour:** 5 (05:00 \u2013 06:00)  \n**Station PM2.5:** 12.4 \u00b5g/m\u00b3  \n**Network Mean PM2.5 at that hour:** 5.4 \u00b5g/m\u00b3  \n**Z-score:** 2.83  \n\nAt 5 AM on October 5, 2025, the Tseung Kwan O station recorded a PM2.5 concentration of 12.4 \u00b5g/m\u00b3, which was more than double the network-wide average of 5.4 \u00b5g/m\u00b3 across all general stations. This deviation corresponds to a z-score of 2.83, meaning it was nearly 3 standard deviations above the network mean \u2014 the most extreme anomaly of the day.",
+            "actual_calls": [],
+            "validation_errors": [],
+            "metrics": {
+              "steps": 3,
+              "prompt_tokens": 19046,
+              "completion_tokens": 963,
+              "total_tokens": 20009
+            },
+            "success": true,
+            "variables_not_set": false,
+            "error": null,
+            "code_snippets": [
+              "import pandas as pd\nfrom sqlalchemy import text\nimport numpy as np\n\n# First, check which stations are GENERAL type\nquery = text(\"\"\"\nSELECT id, name_en, station_type, area_type\nFROM air_quality_station\nORDER BY id\n\"\"\")\nstations = pd.read_sql(query, engine)\nprint(\"All stations:\")\nprint(stations)\nprint()\n\n# Check how many hourly readings exist for Oct 5, 2025\nquery = text(\"\"\"\nSELECT COUNT(*) as cnt\nFROM hourly_station_air_quality h\nJOIN air_quality_station s ON h.station_id = s.id\nWHERE h.datetime >= '2025-10-05 00:00:00'\n  AND h.datetime < '2025-10-06 00:00:00'\n  AND s.station_type = 'GENERAL'\n\"\"\")\ncnt = pd.read_sql(query, engine)\nprint(f\"Total GENERAL station-hour readings on Oct 5: {cnt['cnt'].iloc[0]}\")",
+              "import pandas as pd\nfrom sqlalchemy import text\nimport numpy as np\n\n# Get all PM2.5 readings for GENERAL stations on Oct 5, 2025\nquery = text(\"\"\"\nSELECT s.name_en, h.pm2_5, h.datetime,\n       EXTRACT(HOUR FROM h.datetime)::int as hour\nFROM hourly_station_air_quality h\nJOIN air_quality_station s ON h.station_id = s.id\nWHERE h.datetime >= '2025-10-05 00:00:00'\n  AND h.datetime < '2025-10-06 00:00:00'\n  AND s.station_type = 'GENERAL'\n  AND h.pm2_5 IS NOT NULL\nORDER BY h.datetime\n\"\"\")\ndf = pd.read_sql(query, engine)\nprint(f\"Total rows: {len(df)}\")\nprint(df.head(10))\nprint()\n\n# Compute network mean and std per hour\nhourly_stats = df.groupby('hour')['pm2_5'].agg(['mean', 'std']).reset_index()\nhourly_stats.columns = ['hour', 'network_mean', 'network_std']\nprint(\"Hourly network stats:\")\nprint(hourly_stats)\nprint()\n\n# Merge back and compute z-scores\ndf = df.merge(hourly_stats, on='hour')\ndf['zscore'] = (df['pm2_5'] - df['network_mean']) / df['network_std']\ndf['abs_zscore'] = df['zscore'].abs()\n\n# Find the row with largest absolute z-score\noutlier = df.loc[df['abs_zscore'].idxmax()]\nprint(\"Outlier row:\")\nprint(outlier)\nprint()\n\n# Store results\noutlier_station = outlier['name_en']\noutlier_hour = int(outlier['hour'])\nstation_pm25 = round(outlier['pm2_5'], 1)\nnetwork_mean = round(outlier['network_mean'], 1)\nzscore = round(outlier['zscore'], 2)\n\nprint(f\"outlier_station = {outlier_station}\")\nprint(f\"outlier_hour = {outlier_hour}\")\nprint(f\"station_pm25 = {station_pm25}\")\nprint(f\"network_mean = {network_mean}\")\nprint(f\"zscore = {zscore}\")"
+            ],
+            "runtime_variables": {
+              "outlier_station": "Tseung Kwan O",
+              "outlier_hour": 5,
+              "station_pm25": 12.4,
+              "network_mean": 5.4,
+              "zscore": 2.83
+            }
+          }
+        ]
+      }
+    ],
+    "metrics": {
+      "total_turns": 1,
+      "successful_turns": 1,
+      "failed_turns": 0,
+      "total_steps": 3,
+      "success_rate": 1.0,
+      "total_prompt_tokens": 19046,
+      "total_completion_tokens": 963,
+      "total_tokens": 20009
+    }
+  }
+}

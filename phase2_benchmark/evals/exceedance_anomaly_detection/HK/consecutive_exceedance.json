@@ -1,0 +1,20 @@
+[
+    {
+        "name": "hk_consecutive_exceedance",
+        "module": "evals.exceedance_anomaly_detection.HK.consecutive_exceedance",
+        "requirements": "Find the longest consecutive PM2.5 exceedance event. Please store the results in: station_name (str), consecutive_hours (int), event_start (str, format 'YYYY-MM-DD HH:MM:SS').",
+        "conversations": [
+            {
+                "id": "consecutive_exceedance",
+                "turns": [
+                    {
+                        "query": "In October 2025, find the longest consecutive sequence of hours where any single air quality monitoring station recorded PM2.5 > 50 µg/m³. Which station experienced this longest event, how many consecutive hours did it last, and when did it start? Return the station name, the number of consecutive hours, and the start datetime.",
+                        "validator": "validate_consecutive"
+                    }
+                ]
+            }
+        ],
+        "difficulty": "medium",
+        "category": "exceedance_anomaly_detection"
+    }
+]

@@ -1,0 +1,62 @@
+{
+  "dataset_version": "1.0.0",
+  "created_at": "2026-08-09",
+  "scope": "ERA5 reanalysis surface meteorology over Hong Kong from 2024-12, sampled on the ERA5 grid itself. Produced by scripts/ingest/fetch_era5.py --domain HK. Added for one quantity the territory has no other source for: boundary-layer height at every hour. The radiosondes measure the vertical structure directly but only at 08:00 and 20:00, which brackets the daytime mixed layer without ever sampling it.",
+  "files": {
+    "met_era5.csv": "One row per grid cell per hour: boundary-layer height, 10 m wind speed and direction, 2 m temperature, surface pressure, ventilation coefficient."
+  },
+  "sources": [
+    {
+      "id": "ecmwf_era5_single_levels_hk",
+      "authority": "ECMWF / Copernicus Climate Change Service (C3S)",
+      "title": "ERA5 hourly data on single levels from 1940 to present",
+      "url": "https://cds.climate.copernicus.eu/datasets/reanalysis-era5-single-levels",
+      "doi": "10.24381/cds.adbb2d47",
+      "accessed": "2026-08-09",
+      "supports": [
+        "blh_m",
+        "wind_speed_ms",
+        "wind_dir_deg",
+        "t2m_c",
+        "surface_pressure_hpa",
+        "ventilation_m2s"
+      ],
+      "notes": "product_type=reanalysis, area [22.6, 113.8, 22.1, 114.5]. Requested variables: boundary_layer_height, 10m_u_component_of_wind, 10m_v_component_of_wind, 2m_temperature, surface_pressure. Native resolution 0.25 degrees, hourly."
+    }
+  ],
+  "sampling": {
+    "why_grid_cells_not_stations": "Beijing's ERA5 tables are sampled at its twelve monitoring stations. Hong Kong's station coordinates live in a database this ingest cannot open, and taking them from a public source instead would repeat the provenance hazard that `beijing_station_coordinate_audit` exists to document. Sampling on ERA5's own grid needs no external coordinates at all.",
+    "cells": [
+      "grid_22.50N_114.00E", "grid_22.50N_114.25E", "grid_22.50N_114.50E",
+      "grid_22.25N_114.00E", "grid_22.25N_114.25E", "grid_22.25N_114.50E"
+    ],
+    "kings_park_cell": "grid_22.25N_114.25E — the cell containing 22.3119N, 114.1728E, so this is the one that pairs with the soundings and the radiation records.",
+    "why_all_six_are_kept": "They disagree. At a given hour the boundary-layer height spreads a median of 177 m across the six, a 95th percentile of 563 m and a maximum of 1,576 m — the southern cells sit over water and the northern ones against the mainland. Annual means are nearly identical (445 to 500 m), so this is an hour-scale signal rather than a bias, and averaging or picking one cell would discard it."
+  },
+  "conventions": {
+    "time": "Hong Kong local standard time (UTC+8). ERA5 stamps in UTC; the ingest shifts it, and pulls a boundary pad from the preceding month so the first local day of each month is not short by eight hours.",
+    "station_column": "`station` holds grid-cell names, not monitoring sites. The column is named `station` only to match the shape of the Beijing tables.",
+    "wind_direction": "The direction the wind blows FROM, per meteorological convention.",
+    "ventilation": "blh_m x wind_speed_ms, with the factors rounded first so the product is reproducible from the published columns. About 0.4 % of rows still disagree by exactly 0.1 when recomputed — the product lands on a .x5 boundary that the CSV round trip resolves the other way. A case asking for this quantity needs a tolerance of at least 0.1."
+  },
+  "verification": {
+    "completeness": "87,984 rows over the full days 2024-12-01 to 2026-08-03: exactly 144 rows per day (6 cells x 24 h) on every day, no missing values in any field.",
+    "diurnal_cycle": "Median boundary-layer height at the King's Park cell runs from 362 m at 19:00 to 642 m at 14:00 — deepest in the afternoon, collapsing after sunset, which is the expected shape in local time.",
+    "physical_ranges": "blh 10.7 to 2,098 m; wind 0 to 30.8 m/s; temperature 8.6 to 35.1 C; pressure 975.3 to 1,030.8 hPa. Nothing out of range.",
+    "spatial_spread": "Median 177 m between the six cells at a given hour, 95th percentile 563 m, maximum 1,576 m."
+  },
+  "coverage": {
+    "first": "2024-11-30 08:00 local",
+    "last": "2026-08-04 18:00 local",
+    "rows": 88194,
+    "cells": 6,
+    "incomplete_days": ["2024-11-30 (16/24 h)", "2026-08-04 (19/24 h)"],
+    "note": "The two partial days are the boundary pad at the start and the end of the download window. Exclude them from daily or monthly statistics."
+  },
+  "known_limits": [
+    "This is MODEL output, not measurement. A case must say 'ERA5-estimated boundary-layer height' rather than 'observed'; the radiosondes in profile_sounding.csv are the observational counterpart, at two hours a day.",
+    "Grid-cell choice changes the answer. With up to 1,576 m between cells at the same hour, any question about boundary-layer height has to name its cell or its aggregation rule, or two defensible readings will disagree by more than the quantity itself.",
+    "0.25 degrees is about 25 km. Hong Kong gets six cells, which is enough to separate water from land but not to resolve the terrain that shapes local ventilation.",
+    "Begins 2024-12. Ten months of 2020 (January to October) are also in the download cache from an earlier interrupted run but are NOT in this build; rebuild with --start-year 2020 to include them, noting that their boundary pads are incomplete."
+  ]
+}

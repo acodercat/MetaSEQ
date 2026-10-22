@@ -1,0 +1,43 @@
+{
+  "hk_cov_schools_roadside5km": {
+    "scenario": "hk_cov_schools_roadside5km",
+    "conversations": [
+      {
+        "id": "hk_cov_schools_roadside5km",
+        "turns": [
+          {
+            "query": "How many distinct 'EDUCATIONAL_INSTITUTION' sensitive areas have their polygon centroid within 5000 metres of at least one roadside air-quality station (station_id 14, 16, or 17)? The three stations are close together and their catchments overlap heavily; count each institution only once. Return the count.",
+            "actual_response": "The number of distinct educational institutions within 5000 meters of a roadside station is 1599.",
+            "actual_calls": [],
+            "validation_errors": [],
+            "metrics": {
+              "steps": 2,
+              "prompt_tokens": 11021,
+              "completion_tokens": 544,
+              "total_tokens": 11565
+            },
+            "success": true,
+            "variables_not_set": false,
+            "error": null,
+            "code_snippets": [
+              "from sqlalchemy import text\nimport pandas as pd\n\n# Define the station IDs for roadside stations\nroadside_station_ids = [14, 16, 17]\n\n# Query the coordinates of the roadside stations\nquery_stations = text(f\"\"\"\nSELECT id, ST_X(coordinate::geometry) as longitude, ST_Y(coordinate::geometry) as latitude\nFROM air_quality_station\nWHERE id IN ({', '.join(map(str, roadside_station_ids))})\n\"\"\")\n\nstations_df = pd.read_sql(query_stations, engine)\n\n# Query the sensitive areas that are educational institutions\nquery_educational_institutions = text(\"\"\"\nSELECT id, name, ST_X(ST_Centroid(geometry)::geometry) as longitude, ST_Y(ST_Centroid(geometry)::geometry) as latitude\nFROM sensitive_area\nWHERE category = 'EDUCATIONAL_INSTITUTION'\n\"\"\")\n\ninstitutions_df = pd.read_sql(query_educational_institutions, engine)\n\n# Function to calculate the Haversine distance between two points\ndef haversine_distance(lat1, lon1, lat2, lon2):\n    from math import radians, sin, cos, sqrt, atan2\n    R = 6371  # Radius of the Earth in kilometers\n    lat1, lon1, lat2, lon2 = map(radians, [lat1, lon1, lat2, lon2])\n    dlat = lat2 - lat1\n    dlon = lon2 - lon1\n    a = sin(dlat/2)**2 + cos(lat1) * cos(lat2) * sin(dlon/2)**2\n    c = 2 * atan2(sqrt(a), sqrt(1-a))\n    distance = R * c\n    return distance\n\n# Calculate the distance from each institution to each station\ninstitutions_df['near_roadside'] = False\nfor index, institution in institutions_df.iterrows():\n    for _, station in stations_df.iterrows():\n        distance = haversine_distance(station['latitude'], station['longitude'], institution['latitude'], institution['longitude'])\n        if distance <= 5:\n            institutions_df.at[index, 'near_roadside'] = True\n            break\n\n# Count the number of institutions within 5000 meters of any roadside station\nschools_roadside_5km = institutions_df['near_roadside'].sum()\nprint(f\"Number of distinct educational institutions within 5000 meters of a roadside station: {schools_roadside_5km}\")"
+            ],
+            "runtime_variables": {
+              "schools_roadside_5km": "np.int64(1599)"
+            }
+          }
+        ]
+      }
+    ],
+    "metrics": {
+      "total_turns": 1,
+      "successful_turns": 1,
+      "failed_turns": 0,
+      "total_steps": 2,
+      "success_rate": 1.0,
+      "total_prompt_tokens": 11021,
+      "total_completion_tokens": 544,
+      "total_tokens": 11565
+    }
+  }
+}

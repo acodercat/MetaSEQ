@@ -1,0 +1,50 @@
+{
+  "hk_global_morans_i": {
+    "scenario": "hk_global_morans_i",
+    "conversations": [
+      {
+        "id": "morans_i_pm25",
+        "turns": [
+          {
+            "query": "On October 5, 2025, compute the daily average PM2.5 for each air quality monitoring station. Then calculate the Global Moran's I statistic using inverse distance weights. Return the Moran's I value (rounded to 4 decimal places) and whether the spatial pattern is 'clustered', 'dispersed', or 'random'.",
+            "actual_response": "The Global Moran's I statistic for PM2.5 spatial autocorrelation on October 5, 2025, is -0.0692. The spatial pattern is **dispersed**.",
+            "actual_calls": [],
+            "validation_errors": [
+              "Custom validator failed: spatial_pattern='dispersed', expected 'random'"
+            ],
+            "metrics": {
+              "steps": 6,
+              "prompt_tokens": 37811,
+              "completion_tokens": 1317,
+              "total_tokens": 39128
+            },
+            "success": false,
+            "variables_not_set": false,
+            "error": null,
+            "code_snippets": [
+              "import pandas as pd\nfrom sqlalchemy import text\nfrom libpysal.weights import DistanceBand\nimport esda\n\n# Query the daily average PM2.5 for each station on October 5, 2025\nquery = text(\"\"\"\nSELECT station_id, AVG(pm2_5) as pm2_5\nFROM hourly_station_air_quality\nWHERE datetime >= '2025-10-05 00:00:00' AND datetime < '2025-10-06 00:00:00'\nGROUP BY station_id\n\"\"\")\npm2_5_df = pd.read_sql(query, engine)\n\n# Query the coordinates of each station\nquery = text(\"\"\"\nSELECT id, ST_X(coordinate::geometry) as longitude, ST_Y(coordinate::geometry) as latitude\nFROM air_quality_station\n\"\"\")\nstations_df = pd.read_sql(query, engine)\n\n# Merge the PM2.5 data with the station coordinates\nmerged_df = pd.merge(pm2_5_df, stations_df, left_on='station_id', right_on='id')\n\n# Calculate the inverse distance weights\ncoordinates = merged_df[['longitude', 'latitude']].values\nw = DistanceBand.from_array(coordinates, binary=False)\n\n# Calculate the Global Moran's I statistic\nmoran = esda.Moran(merged_df['pm2_5'], w)\n\n# Store the results\nmorans_i = round(moran.I, 4)\nspatial_pattern = 'clustered' if moran.I > 0 else 'dispersed' if moran.I < 0 else 'random'",
+              "# Since libpysal is not available, we will use an alternative method to calculate the Global Moran's I statistic\nimport numpy as np\nfrom scipy.spatial.distance import pdist, squareform\n\n# Calculate the inverse distance weights matrix\ndef inverse_distance_weights(coordinates):\n    distances = pdist(coordinates, 'euclidean')\n    inv_distances = 1 / (distances + np.eye(len(coordinates)).flatten())\n    weights = squareform(inv_distances)\n    return weights\n\n# Calculate the Global Moran's I statistic\ndef morans_i(data, weights):\n    n = len(data)\n    z = data - np.mean(data)\n    z_sum = np.sum(z)\n    z_sq_sum = np.sum(z ** 2)\n    w_sum = np.sum(weights)\n    numerator = np.sum(weights * np.outer(z, z))\n    denominator = z_sq_sum * w_sum\n    I = (n * numerator) / denominator\n    return I\n\n# Calculate the inverse distance weights\ncoordinates = merged_df[['longitude', 'latitude']].values\nweights = inverse_distance_weights(coordinates)\n\n# Calculate the Global Moran's I statistic\npm2_5 = merged_df['pm2_5'].values\nmoran_i_value = morans_i(pm2_5, weights)\n\n# Determine the spatial pattern\nspatial_pattern = 'clustered' if moran_i_value > 0 else 'dispersed' if moran_i_value < 0 else 'random'\n\n# Store the results\nmorans_i = round(moran_i_value, 4)\nspatial_pattern = spatial_pattern",
+              "# Re-run the necessary queries to get the merged DataFrame\n\n# Query the daily average PM2.5 for each station on October 5, 2025\nquery = text(\"\"\"\nSELECT station_id, AVG(pm2_5) as pm2_5\nFROM hourly_station_air_quality\nWHERE datetime >= '2025-10-05 00:00:00' AND datetime < '2025-10-06 00:00:00'\nGROUP BY station_id\n\"\"\")\npm2_5_df = pd.read_sql(query, engine)\n\n# Query the coordinates of each station\nquery = text(\"\"\"\nSELECT id, ST_X(coordinate::geometry) as longitude, ST_Y(coordinate::geometry) as latitude\nFROM air_quality_station\n\"\"\")\nstations_df = pd.read_sql(query, engine)\n\n# Merge the PM2.5 data with the station coordinates\nmerged_df = pd.merge(pm2_5_df, stations_df, left_on='station_id', right_on='id')\n\n# Calculate the inverse distance weights\ncoordinates = merged_df[['longitude', 'latitude']].values\nweights = inverse_distance_weights(coordinates)\n\n# Calculate the Global Moran's I statistic\npm2_5 = merged_df['pm2_5'].values\nmoran_i_value = morans_i(pm2_5, weights)\n\n# Determine the spatial pattern\nspatial_pattern = 'clustered' if moran_i_value > 0 else 'dispersed' if moran_i_value < 0 else 'random'\n\n# Store the results\nmorans_i = round(moran_i_value, 4)\nspatial_pattern = spatial_pattern",
+              "# Correct the inverse distance weights calculation to handle the broadcasting issue\n\ndef inverse_distance_weights(coordinates):\n    distances = pdist(coordinates, 'euclidean')\n    distances_matrix = squareform(distances)\n    # Add a small constant to avoid division by zero\n    inv_distances_matrix = 1 / (distances_matrix + np.eye(len(coordinates)) + 1e-9)\n    return inv_distances_matrix\n\n# Re-calculate the inverse distance weights\ncoordinates = merged_df[['longitude', 'latitude']].values\nweights = inverse_distance_weights(coordinates)\n\n# Re-calculate the Global Moran's I statistic\npm2_5 = merged_df['pm2_5'].values\nmoran_i_value = morans_i(pm2_5, weights)\n\n# Determine the spatial pattern\nspatial_pattern = 'clustered' if moran_i_value > 0 else 'dispersed' if moran_i_value < 0 else 'random'\n\n# Store the results\nmorans_i = round(moran_i_value, 4)\nspatial_pattern = spatial_pattern",
+              "# Print the results to ensure they are correctly stored\nprint(f\"Moran's I: {morans_i}\")\nprint(f\"Spatial Pattern: {spatial_pattern}\")"
+            ],
+            "runtime_variables": {
+              "morans_i": -0.0692,
+              "spatial_pattern": "dispersed"
+            }
+          }
+        ]
+      }
+    ],
+    "metrics": {
+      "total_turns": 1,
+      "successful_turns": 0,
+      "failed_turns": 1,
+      "total_steps": 6,
+      "success_rate": 0.0,
+      "total_prompt_tokens": 37811,
+      "total_completion_tokens": 1317,
+      "total_tokens": 39128
+    }
+  }
+}

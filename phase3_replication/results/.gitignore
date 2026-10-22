@@ -1,0 +1,6 @@
+# Run directories (run.json, verdicts, transcripts) are deposited on Zenodo (see Data
+# availability); the derived report tables and the alias records are tracked.
+hk/
+beijing/
+original_bands/
+_logs/

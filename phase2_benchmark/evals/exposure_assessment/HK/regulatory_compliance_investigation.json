@@ -1,0 +1,28 @@
+[
+    {
+        "name": "hk_regulatory_compliance_investigation",
+        "module": "evals.exposure_assessment.HK.regulatory_compliance_investigation",
+        "requirements": "Multi-turn WHO compliance investigation. Turn 1: exceedance_station_count (int), worst_station_name (str), worst_station_pm25 (float, 1dp). Turn 2: residential_count (int), educational_count (int). Turn 3: residential_in_residential_zone_pct (float, 1dp).",
+        "conversations": [
+            {
+                "id": "compliance_investigation",
+                "turns": [
+                    {
+                        "query": "On December 30, 2025, which air quality monitoring stations had a daily average PM2.5 exceeding the WHO 24-hour guideline of 15 µg/m³? How many stations exceeded it, and which had the highest daily average?",
+                        "validator": "validate_t1"
+                    },
+                    {
+                        "query": "For the station with the highest exceedance, how many residential area and educational institution sensitive areas are within 2 km?",
+                        "validator": "validate_t2"
+                    },
+                    {
+                        "query": "Of the residential areas within 2 km of that station, what percentage have their centroid located in a land use zone categorized as 'Residential'?",
+                        "validator": "validate_t3"
+                    }
+                ]
+            }
+        ],
+        "difficulty": "hard",
+        "category": "exposure_assessment"
+    }
+]

@@ -1,0 +1,27 @@
+{
+  "name": "hk_moist_hypsometric_thickness",
+  "difficulty": "hard",
+  "category": "cross_domain_analysis",
+  "case_type": "baseline",
+  "conversations": [
+    {
+      "id": "hk_moist_hypsometric_thickness",
+      "turns": [
+        {
+          "query": "Audit King's Park's July 2025 morning 925-850 hPa thickness using dry and moisture-adjusted hypsometry. Report mean signed errors, the moisture contribution, sample size and its largest-contribution launch. Does agreement with the supplied heights independently validate the thermodynamic calculation?",
+          "validator": "validate_evidence",
+          "stores": [
+            "hypsometric_launches",
+            "dry_thickness_mean_bias_m",
+            "moist_thickness_mean_bias_m",
+            "mean_moisture_thickness_increment_m",
+            "largest_moisture_increment_launch",
+            "largest_moisture_increment_m"
+          ],
+          "evaluation_tier": "execution"
+        }
+      ]
+    }
+  ],
+  "domain": "hk"
+}

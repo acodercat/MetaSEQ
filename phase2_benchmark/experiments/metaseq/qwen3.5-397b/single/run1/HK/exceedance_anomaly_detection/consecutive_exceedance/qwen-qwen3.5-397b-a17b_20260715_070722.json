@@ -1,0 +1,47 @@
+{
+  "hk_consecutive_exceedance": {
+    "scenario": "hk_consecutive_exceedance",
+    "conversations": [
+      {
+        "id": "consecutive_exceedance",
+        "turns": [
+          {
+            "query": "In October 2025, find the longest consecutive sequence of hours where any single air quality monitoring station recorded PM2.5 > 50 \u00b5g/m\u00b3. Which station experienced this longest event, how many consecutive hours did it last, and when did it start? Return the station name, the number of consecutive hours, and the start datetime.",
+            "actual_response": "The longest consecutive PM2.5 exceedance event in October 2025 occurred at **Causeway Bay** station, lasting **5 consecutive hours**, starting from **2025-10-27 18:00:00**.",
+            "actual_calls": [],
+            "validation_errors": [],
+            "metrics": {
+              "steps": 4,
+              "prompt_tokens": 26877,
+              "completion_tokens": 1005,
+              "total_tokens": 27882
+            },
+            "success": true,
+            "variables_not_set": false,
+            "error": null,
+            "code_snippets": [
+              "import pandas as pd\nfrom sqlalchemy import text\n\n# Query all hourly data for October 2025 where PM2.5 > 50\nquery = text(\"\"\"\nSELECT hsaq.station_id, aqs.name_en, hsaq.datetime, hsaq.pm2_5\nFROM hourly_station_air_quality hsaq\nJOIN air_quality_station aqs ON hsaq.station_id = aqs.id\nWHERE hsaq.datetime >= '2025-10-01 00:00:00'\nAND hsaq.datetime < '2025-11-01 00:00:00'\nAND hsaq.pm2_5 > 50\nORDER BY hsaq.station_id, hsaq.datetime\n\"\"\")\ndf = pd.read_sql(query, engine)\nprint(f\"Total records with PM2.5 > 50 in October 2025: {len(df)}\")\nprint(f\"Unique stations: {df['station_id'].nunique()}\")\nprint(df.head(20))",
+              "import pandas as pd\n\n# Analyze consecutive hours for each station\n# First, let's look at the data more carefully to find consecutive sequences\n# Group by station and find consecutive hour sequences\n\ndf['datetime'] = pd.to_datetime(df['datetime'])\ndf = df.sort_values(['station_id', 'datetime'])\n\n# Function to find consecutive sequences\ndef find_consecutive_sequences(group):\n    group = group.sort_values('datetime')\n    if len(group) == 0:\n        return pd.DataFrame()\n    \n    sequences = []\n    start_dt = group.iloc[0]['datetime']\n    prev_dt = start_dt\n    count = 1\n    \n    for i in range(1, len(group)):\n        curr_dt = group.iloc[i]['datetime']\n        # Check if consecutive hour (1 hour difference)\n        if (curr_dt - prev_dt).total_seconds() == 3600:\n            count += 1\n        else:\n            # End of sequence, record it\n            sequences.append({\n                'station_id': group.iloc[0]['station_id'],\n                'station_name': group.iloc[0]['name_en'],\n                'consecutive_hours': count,\n                'event_start': start_dt\n            })\n            # Start new sequence\n            start_dt = curr_dt\n            count = 1\n        prev_dt = curr_dt\n    \n    # Record last sequence\n    sequences.append({\n        'station_id': group.iloc[0]['station_id'],\n        'station_name': group.iloc[0]['name_en'],\n        'consecutive_hours': count,\n        'event_start': start_dt\n    })\n    \n    return pd.DataFrame(sequences)\n\n# Apply to each station\nall_sequences = []\nfor station_id in df['station_id'].unique():\n    station_data = df[df['station_id'] == station_id]\n    seq_df = find_consecutive_sequences(station_data)\n    all_sequences.append(seq_df)\n\nresult_df = pd.concat(all_sequences, ignore_index=True)\nprint(result_df)\n\n# Find the longest sequence\nlongest = result_df.loc[result_df['consecutive_hours'].idxmax()]\nprint(\"\\nLongest consecutive event:\")\nprint(longest)",
+              "# Store the results in the required variables\nstation_name = \"Causeway Bay\"\nconsecutive_hours = 5\nevent_start = \"2025-10-27 18:00:00\"\n\nprint(f\"Station: {station_name}\")\nprint(f\"Consecutive hours: {consecutive_hours}\")\nprint(f\"Event start: {event_start}\")"
+            ],
+            "runtime_variables": {
+              "station_name": "Causeway Bay",
+              "consecutive_hours": 5,
+              "event_start": "2025-10-27 18:00:00"
+            }
+          }
+        ]
+      }
+    ],
+    "metrics": {
+      "total_turns": 1,
+      "successful_turns": 1,
+      "failed_turns": 0,
+      "total_steps": 4,
+      "success_rate": 1.0,
+      "total_prompt_tokens": 26877,
+      "total_completion_tokens": 1005,
+      "total_tokens": 27882
+    }
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "hk_nearest_station_to_severe_congestion": {
+    "scenario": "hk_nearest_station_to_severe_congestion",
+    "conversations": [
+      {
+        "id": "nearest_station_to_severe_congestion",
+        "turns": [
+          {
+            "query": "During the evening peak hour at 18:00 on October 5, 2025, locate all severely congested road segments. What is the ID of the air quality monitoring station closest to any of these segments, and what was its NO2 concentration at that hour?",
+            "actual_response": "At 18:00 on October 5, 2025, there were 113 severely congested road segments.\n\nThe closest air quality monitoring station to any of these severely congested segments was station ID 4, located 144.6 metres from the nearest severely congested segment.\n\nIts NO\u2082 concentration at that hour was 8.2 \u00b5g/m\u00b3.",
+            "actual_calls": [],
+            "validation_errors": [],
+            "metrics": {
+              "steps": 2,
+              "prompt_tokens": 10681,
+              "completion_tokens": 1012,
+              "total_tokens": 11693
+            },
+            "success": true,
+            "variables_not_set": false,
+            "error": null,
+            "code_snippets": [
+              "import pandas as pd\nfrom sqlalchemy import text\n\nts = \"2025-10-05 18:00:00\"\n\n# Count severe congestion records first, then compute the closest monitoring station to any severe segment.\ncount_q = text(\"\"\"\nSELECT COUNT(*) AS severe_segment_count\nFROM hourly_road_segment_traffic\nWHERE datetime = :ts AND congestion_status = 3\n\"\"\")\nsevere_count = int(pd.read_sql(count_q, engine, params={\"ts\": ts}).iloc[0][\"severe_segment_count\"])\n\nresult_q = text(\"\"\"\nWITH severe_segments AS (\n    SELECT DISTINCT road_segment_id\n    FROM hourly_road_segment_traffic\n    WHERE datetime = :ts AND congestion_status = 3\n),\nnearest AS (\n    SELECT\n        a.id AS station_id,\n        MIN(ST_Distance(a.coordinate, r.geometry::geography)) AS distance_m\n    FROM air_quality_station a\n    CROSS JOIN severe_segments s\n    JOIN road_segment r ON r.id = s.road_segment_id\n    GROUP BY a.id\n    ORDER BY distance_m\n    LIMIT 1\n)\nSELECT\n    n.station_id,\n    ROUND(n.distance_m::numeric, 1) AS nearest_distance_m,\n    aq.no2\nFROM nearest n\nLEFT JOIN hourly_station_air_quality aq\n    ON aq.station_id = n.station_id AND aq.datetime = :ts\n\"\"\")\nnearest_result = pd.read_sql(result_q, engine, params={\"ts\": ts})\n\nsevere_congestion_station_id = None if nearest_result.empty else int(nearest_result.iloc[0][\"station_id\"])\nsevere_congestion_station_no2 = None if nearest_result.empty or pd.isna(nearest_result.iloc[0][\"no2\"]) else float(nearest_result.iloc[0][\"no2\"])\n\nprint({\n    \"time\": ts,\n    \"severe_congested_segment_count\": severe_count,\n    \"nearest_station_id\": severe_congestion_station_id,\n    \"nearest_distance_m\": None if nearest_result.empty else float(nearest_result.iloc[0][\"nearest_distance_m\"]),\n    \"no2_at_that_hour\": severe_congestion_station_no2\n})"
+            ],
+            "runtime_variables": {
+              "severe_congestion_station_id": 4,
+              "severe_congestion_station_no2": 8.2
+            }
+          }
+        ]
+      }
+    ],
+    "metrics": {
+      "total_turns": 1,
+      "successful_turns": 1,
+      "failed_turns": 0,
+      "total_steps": 2,
+      "success_rate": 1.0,
+      "total_prompt_tokens": 10681,
+      "total_completion_tokens": 1012,
+      "total_tokens": 11693
+    }
+  }
+}

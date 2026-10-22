@@ -1,0 +1,20 @@
+# The two arms of experiment 2 (see agents/arm.py): the suite's system prompt and the task's
+# own text only, no analysis rules, 50 code-execution steps per turn. The step budget was
+# pre-specified at 20 and raised to 50 before the confirmatory runs (docs/deviations.md §15),
+# with the verifier's and synthesis worker's reserves scaled in proportion (15 and 8 steps).
+
+[defaults]
+max_steps = 20          # the answering agent's steps per turn (the single agent's limit)
+
+[single_agent_bare]
+description = "Single agent: the suite's system prompt and the task's own text, no analysis rules, 50 steps."
+topology = "single"
+max_steps = 50
+
+[multi_agent_fixed_roles_verified]
+description = "The MetaSEQ topology: a coordinator plans over four domain workers sharing one runtime, a synthesis worker assigns the outputs and the verifier checks them; 50 steps in all, 8 held for synthesis and 15 for the verifier; role prompts without analysis rules."
+topology = "fixed_roles"
+verification = true
+max_steps = 50
+synthesis_steps = 8
+verify_steps = 15

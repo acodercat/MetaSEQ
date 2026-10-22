@@ -1,0 +1,50 @@
+{
+  "hk_hard_nearest_other_no2_gap": {
+    "scenario": "hk_hard_nearest_other_no2_gap",
+    "conversations": [
+      {
+        "id": "hk_hard_nearest_other_no2_gap",
+        "turns": [
+          {
+            "query": "For every GENERAL air-quality station except station 8, find its nearest OTHER GENERAL air-quality station by geodesic distance in meters, explicitly excluding itself and excluding roadside stations. For June 2025 inclusive, compute each station's mean NO2 over non-NULL hourly rows and its nearest-other GENERAL station's mean NO2 over non-NULL hourly rows. For each base station compute base_mean_no2 - nearest_other_mean_no2. Return the base station_id with the largest positive difference, the nearest_station_id, and the difference rounded to 6 decimals. Break ties by smaller base station_id, though the expected winner is unique with a non-tiny margin.",
+            "actual_response": "The analysis is complete. The results are:\n\n- **base_station_id**: 3 (Kwun Tong)\n- **nearest_station_id**: 4 (Tseung Kwan O)\n- **max_no2_gap**: 16.970511\n\nStation 3 (Kwun Tong) has the largest positive difference between its mean NO2 level and its nearest other GENERAL station's mean NO2 level during June 2025. Kwun Tong's mean NO2 was 34.586167 \u00b5g/m\u00b3, while its nearest neighbor Tseung Kwan O (station 4) had a mean NO2 of 17.615656 \u00b5g/m\u00b3, resulting in a gap of 16.970511 \u00b5g/m\u00b3.",
+            "actual_calls": [],
+            "validation_errors": [],
+            "metrics": {
+              "steps": 7,
+              "prompt_tokens": 51005,
+              "completion_tokens": 1552,
+              "total_tokens": 52557
+            },
+            "success": true,
+            "variables_not_set": false,
+            "error": null,
+            "code_snippets": [
+              "import pandas as pd\nfrom sqlalchemy import text\n\n# Get all GENERAL stations except station 8\nquery = text(\"\"\"\nSELECT id, name_en, station_type\nFROM air_quality_station\nWHERE station_type = 'GENERAL' AND id != 8\nORDER BY id\n\"\"\")\nstations_df = pd.read_sql(query, engine)\nprint(stations_df)",
+              "import pandas as pd\nfrom sqlalchemy import text\n\n# Get coordinates for all GENERAL stations\nquery = text(\"\"\"\nSELECT id, name_en, ST_X(coordinate::geometry) as lon, ST_Y(coordinate::geometry) as lat\nFROM air_quality_station\nWHERE station_type = 'GENERAL' AND id != 8\nORDER BY id\n\"\"\")\ncoords_df = pd.read_sql(query, engine)\nprint(coords_df)",
+              "import pandas as pd\nfrom sqlalchemy import text\n\n# For each station, find its nearest OTHER GENERAL station\n# We'll compute distances using PostGIS\nquery = text(\"\"\"\nSELECT \n    s1.id as base_id,\n    s2.id as nearest_id,\n    ST_Distance(s1.coordinate::geography, s2.coordinate::geography) as distance_m\nFROM air_quality_station s1\nCROSS JOIN air_quality_station s2\nWHERE s1.station_type = 'GENERAL' \n  AND s2.station_type = 'GENERAL'\n  AND s1.id != 8 \n  AND s2.id != 8\n  AND s1.id != s2.id\nORDER BY s1.id, distance_m\n\"\"\")\ndistances_df = pd.read_sql(query, engine)\n\n# For each base station, get the nearest one (first row per base_id since ordered by distance)\nnearest_stations = distances_df.loc[distances_df.groupby('base_id')['distance_m'].idxmin()]\nprint(nearest_stations)",
+              "import pandas as pd\nfrom sqlalchemy import text\n\n# Get mean NO2 for June 2025 for all GENERAL stations (except station 8)\nquery = text(\"\"\"\nSELECT \n    station_id,\n    AVG(no2) as mean_no2\nFROM hourly_station_air_quality\nWHERE station_id IN (1, 2, 3, 4, 5, 6, 7, 9, 10, 11, 12, 13, 15, 18)\n  AND datetime >= '2025-06-01 00:00:00'\n  AND datetime < '2025-07-01 00:00:00'\n  AND no2 IS NOT NULL\nGROUP BY station_id\nORDER BY station_id\n\"\"\")\nmean_no2_df = pd.read_sql(query, engine)\nprint(mean_no2_df)",
+              "import pandas as pd\n\n# Create a dictionary of mean NO2 values\nmean_no2_dict = dict(zip(mean_no2_df['station_id'], mean_no2_df['mean_no2']))\n\n# Create dataframe with base stations and their nearest neighbors\nnearest_df = nearest_stations[['base_id', 'nearest_id']].copy()\n\n# Add mean NO2 for base and nearest stations\nnearest_df['base_mean_no2'] = nearest_df['base_id'].map(mean_no2_dict)\nnearest_df['nearest_mean_no2'] = nearest_df['nearest_id'].map(mean_no2_dict)\n\n# Compute the difference\nnearest_df['no2_gap'] = nearest_df['base_mean_no2'] - nearest_df['nearest_mean_no2']\n\n# Sort by no2_gap descending, then by base_id ascending for tie-breaking\nresult = nearest_df.sort_values(['no2_gap', 'base_id'], ascending=[False, True])\n\nprint(result)\n\n# Get the winning station\nwinner = result.iloc[0]\nprint(f\"\\nWinner: base_station_id={int(winner['base_id'])}, nearest_station_id={int(winner['nearest_id'])}, max_no2_gap={round(winner['no2_gap'], 6)}\")",
+              "base_station_id = 3\nnearest_station_id = 4\nmax_no2_gap = round(16.970511, 6)\n\nprint(f\"base_station_id: {base_station_id}\")\nprint(f\"nearest_station_id: {nearest_station_id}\")\nprint(f\"max_no2_gap: {max_no2_gap}\")"
+            ],
+            "runtime_variables": {
+              "base_station_id": 3,
+              "nearest_station_id": 4,
+              "max_no2_gap": 16.970511
+            }
+          }
+        ]
+      }
+    ],
+    "metrics": {
+      "total_turns": 1,
+      "successful_turns": 1,
+      "failed_turns": 0,
+      "total_steps": 7,
+      "success_rate": 1.0,
+      "total_prompt_tokens": 51005,
+      "total_completion_tokens": 1552,
+      "total_tokens": 52557
+    }
+  }
+}

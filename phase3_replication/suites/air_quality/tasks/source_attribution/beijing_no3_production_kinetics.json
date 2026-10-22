@@ -1,0 +1,27 @@
+{
+  "name": "beijing_no3_production_kinetics",
+  "difficulty": "hard",
+  "category": "source_attribution",
+  "case_type": "baseline",
+  "conversations": [
+    {
+      "id": "beijing_no3_production_kinetics",
+      "turns": [
+        {
+          "query": "Prioritise Beijing's 2025 nocturnal sampling for nitrate-radical chemistry. Identify the station-hour with the largest NO₃ production rate from NO₂ reacting with O₃; report the rate, temperature and valid sample count. Does this identify the greatest nitrate-aerosol concentration?",
+          "validator": "validate_evidence",
+          "stores": [
+            "no3_peak_station",
+            "no3_peak_timestamp",
+            "no3_peak_production_million",
+            "no3_peak_temperature_c",
+            "no3_peak_pressure_hpa",
+            "no3_valid_station_hours"
+          ],
+          "evaluation_tier": "execution"
+        }
+      ]
+    }
+  ],
+  "domain": "beijing"
+}

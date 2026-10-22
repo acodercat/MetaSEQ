@@ -1,0 +1,25 @@
+[
+  {
+    "name": "hk_vor_central_schools",
+    "module": "evals.neuroair.spatial_analysis.HK.hk_vor_central_schools",
+    "requirements": "Count of EDUCATIONAL_INSTITUTION centroids inside Central's Voronoi cell. Store central_cell_schools (int).",
+    "conversations": [
+      {
+        "id": "hk_vor_central_schools",
+        "turns": [
+          {
+            "query": "Compute the Voronoi (Thiessen) tessellation of all 18 air-quality monitoring stations and clip each cell to the axis-aligned bounding box of all station coordinates. Use geodesic area (cast to geography) in km². How many sensitive areas of category 'EDUCATIONAL_INSTITUTION' have their polygon centroid inside the Voronoi cell of the Central station (station_id 16)? Return the count.",
+            "validator": "validate_hk_vor_central_schools"
+          }
+        ]
+      }
+    ],
+    "difficulty": "hard",
+    "category": "spatial_analysis",
+    "_source": {
+      "benchmark": "hk-voronoi-hard",
+      "original_query_id": "hk_vor_central_schools",
+      "verbatim": false
+    }
+  }
+]

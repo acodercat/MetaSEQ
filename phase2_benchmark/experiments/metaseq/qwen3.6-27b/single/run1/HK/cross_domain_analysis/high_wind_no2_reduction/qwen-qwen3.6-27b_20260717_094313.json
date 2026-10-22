@@ -1,0 +1,47 @@
+{
+  "hk_high_wind_no2_reduction": {
+    "scenario": "hk_high_wind_no2_reduction",
+    "conversations": [
+      {
+        "id": "high_wind_no2_reduction",
+        "turns": [
+          {
+            "query": "On October 5, 2025, identify the hour when any weather station recorded the highest wind speed of the day. For the air quality monitoring station closest to that windiest weather station, by what percentage was the NO2 concentration at that peak-wind hour lower than the station's daily average NO2? (Round to 1 decimal place, positive value means reduction)",
+            "actual_response": "On October 5, 2025, the highest wind speed (100.67 km/h) was recorded at the Ngong Ping weather station at 09:00. The closest air quality monitoring station to Ngong Ping is Tung Chung. At the Tung Chung station, the NO2 concentration at the peak-wind hour (09:00) was 3.5 \u00b5g/m\u00b3, while the daily average NO2 was 4.59 \u00b5g/m\u00b3. This represents a 23.8% reduction in NO2 concentration at the windiest hour compared to the daily average.\n\nThe percentage reduction in NO2 at the windiest hour versus the day average on 2025-10-05 is **23.8%**.",
+            "actual_calls": [],
+            "validation_errors": [],
+            "metrics": {
+              "steps": 6,
+              "prompt_tokens": 37743,
+              "completion_tokens": 1476,
+              "total_tokens": 39219
+            },
+            "success": true,
+            "variables_not_set": false,
+            "error": null,
+            "code_snippets": [
+              "import pandas as pd\nfrom sqlalchemy import text\nimport numpy as np\n\n# Step 1: Find the hour with the highest wind speed on 2025-10-05\nquery = text(\"\"\"\nSELECT hsw.id, hsw.station_id, hsw.wind_speed, hsw.datetime, ws.name_en as weather_station_name\nFROM hourly_station_weather hsw\nJOIN weather_station ws ON hsw.station_id = ws.id\nWHERE hsw.datetime >= '2025-10-05 00:00:00'\nAND hsw.datetime < '2025-10-06 00:00:00'\nORDER BY hsw.wind_speed DESC\nLIMIT 1\n\"\"\")\npeak_wind = pd.read_sql(query, engine)\nprint(peak_wind)",
+              "import pandas as pd\nfrom sqlalchemy import text\nimport numpy as np\n\n# Step 1: Find the hour with the highest wind speed on 2025-10-05, excluding NULLs\nquery = text(\"\"\"\nSELECT hsw.id, hsw.station_id, hsw.wind_speed, hsw.datetime, ws.name_en as weather_station_name\nFROM hourly_station_weather hsw\nJOIN weather_station ws ON hsw.station_id = ws.id\nWHERE hsw.datetime >= '2025-10-05 00:00:00'\nAND hsw.datetime < '2025-10-06 00:00:00'\nAND hsw.wind_speed IS NOT NULL\nORDER BY hsw.wind_speed DESC\nLIMIT 1\n\"\"\")\npeak_wind = pd.read_sql(query, engine)\nprint(peak_wind)",
+              "import pandas as pd\nfrom sqlalchemy import text\nimport numpy as np\n\n# Step 2: Find the closest air quality station to Ngong Ping weather station (station_id=47)\nquery = text(\"\"\"\nSELECT aqs.id, aqs.name_en, ST_Distance(\n    aqs.coordinate::geography,\n    ws.coordinate::geography\n) as distance\nFROM air_quality_station aqs\nCROSS JOIN weather_station ws\nWHERE ws.id = 47\nORDER BY distance\nLIMIT 1\n\"\"\")\nclosest_aq = pd.read_sql(query, engine)\nprint(closest_aq)",
+              "import pandas as pd\nfrom sqlalchemy import text\nimport numpy as np\n\n# Step 3: Get NO2 at peak wind hour (09:00) and daily average for Tung Chung (station_id=6) on 2025-10-05\nquery = text(\"\"\"\nSELECT \n    MAX(CASE WHEN datetime = '2025-10-05 09:00:00' THEN no2 END) as no2_peak_hour,\n    AVG(no2) as no2_daily_avg\nFROM hourly_station_air_quality\nWHERE station_id = 6\nAND datetime >= '2025-10-05 00:00:00'\nAND datetime < '2025-10-06 00:00:00'\nAND no2 IS NOT NULL\n\"\"\")\nno2_data = pd.read_sql(query, engine)\nprint(no2_data)\n\nno2_peak = no2_data['no2_peak_hour'].values[0]\nno2_avg = no2_data['no2_daily_avg'].values[0]\npct_reduction = ((no2_avg - no2_peak) / no2_avg) * 100\nprint(f\"NO2 at peak wind hour: {no2_peak}\")\nprint(f\"Daily average NO2: {no2_avg}\")\nprint(f\"Percentage reduction: {pct_reduction:.1f}%\")",
+              "no2_pct_reduction = 23.8"
+            ],
+            "runtime_variables": {
+              "no2_pct_reduction": 23.8
+            }
+          }
+        ]
+      }
+    ],
+    "metrics": {
+      "total_turns": 1,
+      "successful_turns": 1,
+      "failed_turns": 0,
+      "total_steps": 6,
+      "success_rate": 1.0,
+      "total_prompt_tokens": 37743,
+      "total_completion_tokens": 1476,
+      "total_tokens": 39219
+    }
+  }
+}

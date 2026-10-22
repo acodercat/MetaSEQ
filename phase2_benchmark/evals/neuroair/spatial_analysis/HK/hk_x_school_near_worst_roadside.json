@@ -1,0 +1,25 @@
+[
+  {
+    "name": "hk_x_school_near_worst_roadside",
+    "module": "evals.neuroair.spatial_analysis.HK.hk_x_school_near_worst_roadside",
+    "requirements": "Argmax June NO2 among roadside stations -> count EDUCATIONAL_INSTITUTION sensitive areas with centroid within 1000 m. Store worst_road_station_id (int) and school_count_1km (int).",
+    "conversations": [
+      {
+        "id": "hk_x_school_near_worst_roadside",
+        "turns": [
+          {
+            "query": "First identify which of the three roadside air-quality stations (station_id 14, 16, 17) had the highest mean NO2 over June 2025 (2025-06-01 to 2025-06-30, non-NULL hourly values). Then count how many sensitive areas of category 'EDUCATIONAL_INSTITUTION' have their polygon centroid within 1000 metres of that station's coordinate. Return the winning station_id and the school count.",
+            "validator": "validate_hk_x_school_near_worst_roadside"
+          }
+        ]
+      }
+    ],
+    "difficulty": "hard",
+    "category": "spatial_analysis",
+    "_source": {
+      "benchmark": "hk-x-hard",
+      "original_query_id": "hk_x_school_near_worst_roadside",
+      "verbatim": false
+    }
+  }
+]

@@ -1,0 +1,23 @@
+{
+  "name": "beijing_haze_vs_dust_episode",
+  "difficulty": "hard",
+  "category": "comparative_assessment",
+  "case_type": "baseline",
+  "conversations": [
+    {
+      "id": "haze_vs_dust",
+      "turns": [
+        {
+          "query": "Outside Beijing's 2023 heating season, identify the highest daily network PM2.5 day and report its fine-particle share and reporting-hour count. What does the particle-size evidence establish about the episode's type and origin?",
+          "validator": "validate_worst_haze_date",
+          "stores": [
+            "worst_pm25_day",
+            "fine_particle_share",
+            "peak_reporting_hours"
+          ]
+        }
+      ]
+    }
+  ],
+  "domain": "beijing"
+}

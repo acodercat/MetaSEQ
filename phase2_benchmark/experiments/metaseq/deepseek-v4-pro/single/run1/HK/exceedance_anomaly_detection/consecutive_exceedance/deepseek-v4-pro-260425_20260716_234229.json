@@ -1,0 +1,48 @@
+{
+  "hk_consecutive_exceedance": {
+    "scenario": "hk_consecutive_exceedance",
+    "conversations": [
+      {
+        "id": "consecutive_exceedance",
+        "turns": [
+          {
+            "query": "In October 2025, find the longest consecutive sequence of hours where any single air quality monitoring station recorded PM2.5 > 50 \u00b5g/m\u00b3. Which station experienced this longest event, how many consecutive hours did it last, and when did it start? Return the station name, the number of consecutive hours, and the start datetime.",
+            "actual_response": "**Analysis Results:**\n\nIn October 2025, the longest consecutive PM2.5 exceedance event (PM2.5 > 50 \u00b5g/m\u00b3) occurred at **Causeway Bay** station. The event lasted **5 consecutive hours**, starting at **2025-10-27 18:00:00** and ending at 2025-10-27 22:00:00. During this period, PM2.5 readings ranged from 51.5 to 57.8 \u00b5g/m\u00b3, indicating a sustained moderate pollution episode at this roadside station.\n\nFor context, the second-longest event was at Central station with 3 consecutive hours on October 8, 2025 (04:00\u201306:00), where PM2.5 peaked at 105.3 \u00b5g/m\u00b3 \u2014 a more intense but shorter-duration event.",
+            "actual_calls": [],
+            "validation_errors": [],
+            "metrics": {
+              "steps": 5,
+              "prompt_tokens": 31002,
+              "completion_tokens": 838,
+              "total_tokens": 31840
+            },
+            "success": true,
+            "variables_not_set": false,
+            "error": null,
+            "code_snippets": [
+              "import pandas as pd\nfrom sqlalchemy import text\n\n# First, check data availability and size for October 2025\nquery = text(\"\"\"\nSELECT COUNT(*) as cnt\nFROM hourly_station_air_quality\nWHERE datetime >= '2025-10-01' AND datetime < '2025-11-01'\nAND pm2_5 > 50\n\"\"\")\ndf = pd.read_sql(query, engine)\nprint(f\"Total hours with PM2.5 > 50 in October 2025: {df['cnt'].values[0]}\")",
+              "query = text(\"\"\"\nSELECT hsaq.station_id, aqs.name_en, hsaq.datetime, hsaq.pm2_5\nFROM hourly_station_air_quality hsaq\nJOIN air_quality_station aqs ON hsaq.station_id = aqs.id\nWHERE hsaq.datetime >= '2025-10-01' AND hsaq.datetime < '2025-11-01'\nAND hsaq.pm2_5 > 50\nORDER BY hsaq.station_id, hsaq.datetime\n\"\"\")\ndf = pd.read_sql(query, engine)\nprint(f\"Total rows: {len(df)}\")\nprint(df.to_string())",
+              "from itertools import groupby\nfrom datetime import timedelta\n\nresults = []\nfor station_id, group in df.groupby('station_id'):\n    name = group['name_en'].iloc[0]\n    times = sorted(group['datetime'].tolist())\n    # Find consecutive runs (gap = 1 hour)\n    runs = []\n    current_run = [times[0]]\n    for i in range(1, len(times)):\n        if times[i] - times[i-1] == timedelta(hours=1):\n            current_run.append(times[i])\n        else:\n            runs.append(current_run)\n            current_run = [times[i]]\n    runs.append(current_run)\n    \n    longest = max(runs, key=len)\n    results.append({\n        'station_name': name,\n        'consecutive_hours': len(longest),\n        'event_start': longest[0]\n    })\n\nresults_df = pd.DataFrame(results)\nresults_df = results_df.sort_values('consecutive_hours', ascending=False)\nprint(results_df.to_string())",
+              "station_name = \"Causeway Bay\"\nconsecutive_hours = 5\nevent_start = \"2025-10-27 18:00:00\"\nprint(f\"station_name: {station_name}\")\nprint(f\"consecutive_hours: {consecutive_hours}\")\nprint(f\"event_start: {event_start}\")"
+            ],
+            "runtime_variables": {
+              "station_name": "Causeway Bay",
+              "consecutive_hours": 5,
+              "event_start": "2025-10-27 18:00:00"
+            }
+          }
+        ]
+      }
+    ],
+    "metrics": {
+      "total_turns": 1,
+      "successful_turns": 1,
+      "failed_turns": 0,
+      "total_steps": 5,
+      "success_rate": 1.0,
+      "total_prompt_tokens": 31002,
+      "total_completion_tokens": 838,
+      "total_tokens": 31840
+    }
+  }
+}

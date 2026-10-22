@@ -1,0 +1,53 @@
+{
+  "dataset_version": "1.0.0",
+  "created_at": "2026-07-25",
+  "scope": "Daily NASA FIRMS active-fire detections over the North China Plain, reduced to regional and upwind counts for a central-Beijing receptor. Produced by scripts/ingest/fetch_firms.py.",
+  "files": {
+    "Beijing_fire_firms.csv": "One row per day: detections and total FRP within 300 km, plus the subset lying upwind of Beijing given that day's mean wind direction."
+  },
+  "sources": [
+    {
+      "id": "nasa_firms_viirs_snpp_sp",
+      "authority": "NASA FIRMS (Fire Information for Resource Management System), LANCE/ESDIS",
+      "title": "VIIRS S-NPP 375 m Active Fire product, standard-processing archive (VIIRS_SNPP_SP)",
+      "url": "https://firms.modaps.eosdis.nasa.gov/api/area/",
+      "accessed": "2026-07-25",
+      "supports": [
+        "fires_within_radius",
+        "frp_total_mw",
+        "fires_upwind",
+        "frp_upwind_mw"
+      ],
+      "notes": "Archive (SP) product, available from 2012-01-20; the NRT feeds hold only recent months. Search region west,south,east,north = 114,37,119,41. The API caps a request at a 5-day window but has no job queue."
+    },
+    {
+      "id": "airbench_beijing_csv",
+      "authority": "AirBench",
+      "title": "datasets/Beijing.csv hourly wind direction",
+      "supports": [
+        "wind_from_deg"
+      ],
+      "notes": "Daily mean wind direction is the circular (unit-vector) mean of the hourly wd compass values across all stations, mapped N=0 ... NNW=337.5."
+    }
+  ],
+  "extraction": {
+    "receptor_point": [
+      116.4,
+      39.95
+    ],
+    "radius_km": 300.0,
+    "upwind_half_angle_deg": 45.0,
+    "upwind_definition": "A detection is upwind when the great-circle bearing from the receptor to the fire lies within +/-45 degrees of wind_from_deg, the direction the wind blows FROM.",
+    "deduplication": "Detections are de-duplicated on (latitude, longitude, acq_date, acq_time) because repeated or overlapping 5-day pulls can return the same record.",
+    "coverage_days": 1421,
+    "coverage_range": "2013-03-01 .. 2017-03-04 (the tail extends a few days past the benchmark record because the API window is a fixed 5 days)"
+  },
+  "known_limitations": [
+    "These are satellite DETECTIONS, not emissions. Fire radiative power is an observed radiance quantity; converting it to pollutant emissions requires emission factors that are not applied here.",
+    "Detection is strongly cloud-limited. Measured over June 2014, detections correlate POSITIVELY with the temperature-dewpoint gap (r = +0.37, i.e. clear dry days) while PM2.5 correlates NEGATIVELY with it (r = -0.53). Detected fire counts therefore anti-correlate with pollution, and any attribution built on raw counts is confounded by detection bias rather than measuring a causal effect.",
+    "Small or short-lived fires below the 375 m detection threshold are missed, and overpass timing means sub-daily burning is sampled, not integrated.",
+    "wind_from_deg is a single city-wide daily mean; it cannot represent wind shifts within a day or spatial variation of the flow across a 300 km source region.",
+    "The 300 km radius and +/-45 degree sector are analysis choices, not physical constants; transport distance depends on wind speed and lifetime.",
+    "Absence of a date row means no FIRMS detection within the receptor radius that day. This is USUALLY zero fires, but can also be a cloud-obscured or no-overpass miss — a missing row is not an asserted zero. Whether to treat missing days as zero in a continuity or daily-mean analysis is the analyst's call, not a claim of the data; the rows are not gap-filled."
+  ]
+}

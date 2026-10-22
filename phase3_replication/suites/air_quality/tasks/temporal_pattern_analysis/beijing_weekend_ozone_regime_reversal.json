@@ -1,0 +1,37 @@
+{
+  "name": "beijing_weekend_ozone_regime_reversal",
+  "difficulty": "hard",
+  "category": "temporal_pattern_analysis",
+  "case_type": "baseline",
+  "conversations": [
+    {
+      "id": "weekend_ozone_regime",
+      "turns": [
+        {
+          "query": "Quantify Beijing's summer-afternoon weekend-minus-weekday ozone contrasts in 2020-2022 and 2023-2025. Has the weekend effect persisted? What can this comparison say about the chemical regime?",
+          "validator": "validate_harder_turn_1",
+          "stores": [
+            "weekend_o3_sign_2020_2022",
+            "weekend_o3_sign_2023_2025",
+            "weekend_o3_early_difference",
+            "weekend_o3_late_difference"
+          ],
+          "evaluation_tier": "execution"
+        },
+        {
+          "query": "What does pooling 2020-2025 conceal? For 2023-2025, quantify the corresponding odd-oxygen contrast and its paired sample size, alongside the NO2 result. Can these observations distinguish titration from a change in photochemical production?",
+          "validator": "validate_harder_turn_2",
+          "stores": [
+            "weekend_o3_sign_pooled",
+            "pooled_smaller_than_every_year",
+            "weekend_no2_sign_2023_2025",
+            "weekend_ox_late_difference",
+            "weekend_ox_late_hours"
+          ],
+          "evaluation_tier": "execution"
+        }
+      ]
+    }
+  ],
+  "domain": "beijing"
+}

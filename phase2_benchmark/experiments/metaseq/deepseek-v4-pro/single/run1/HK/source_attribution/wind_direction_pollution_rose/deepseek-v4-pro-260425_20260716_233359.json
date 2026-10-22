@@ -1,0 +1,49 @@
+{
+  "hk_wind_direction_pollution_rose": {
+    "scenario": "hk_wind_direction_pollution_rose",
+    "conversations": [
+      {
+        "id": "pollution_rose",
+        "turns": [
+          {
+            "query": "In October 2025, for the Tuen Mun station, compute the average NO2 concentration for each wind direction (using matched weather station data, only when wind speed exceeds 1 m/s to exclude calm conditions). Which wind direction is associated with the highest average NO2 and which with the lowest? Tuen Mun is located in northwestern New Territories \u2014 the highest-NO2 wind direction reveals the dominant pollution source region. Return the highest and lowest wind directions with their NO2 values, and the average NO2 when wind is from the north.",
+            "actual_response": "Based on the analysis of October 2025 hourly data at Tuen Mun station, matching air quality measurements with wind data from the nearest weather station (Tuen Mun weather station, ~1.4 km away) and excluding calm conditions (wind speed \u2264 1 m/s), the results are:\n\n**Highest NO2 wind direction: NW (northwest), with an average NO2 concentration of 56.2 \u00b5g/m\u00b3.**\n\n**Lowest NO2 wind direction: E (east), with an average NO2 concentration of 23.7 \u00b5g/m\u00b3.**\n\n**Average NO2 when wind is from the north: 43.2 \u00b5g/m\u00b3.**\n\nThe northwest direction shows the highest NO2 levels, which is consistent with Tuen Mun's location in the northwestern New Territories \u2014 winds from the northwest carry pollutants from inland industrial and urban areas of the Pearl River Delta region. The north sector also shows elevated NO2 (43.2 \u00b5g/m\u00b3), further supporting that northerly continental air masses are the dominant pollution source pathway. In contrast, easterly winds bring cleaner maritime air from the South China Sea, resulting in the lowest NO2 concentrations (23.7 \u00b5g/m\u00b3). Note that the NW and W directions had relatively few observations (4 each), so the NW average should be interpreted with some caution, though the pattern of higher NO2 from northerly/northwesterly directions is robust given the large sample for N (145 records) and NE (232 records).",
+            "actual_calls": [],
+            "validation_errors": [],
+            "metrics": {
+              "steps": 4,
+              "prompt_tokens": 25099,
+              "completion_tokens": 1263,
+              "total_tokens": 26362
+            },
+            "success": true,
+            "variables_not_set": false,
+            "error": null,
+            "code_snippets": [
+              "import pandas as pd\nfrom sqlalchemy import text\n\n# First, find Tuen Mun station ID and the nearest weather station\nquery = text(\"\"\"\nSELECT id, name_en, coordinate\nFROM air_quality_station\nWHERE name_en = 'Tuen Mun'\n\"\"\")\ntuen_mun = pd.read_sql(query, engine)\ntm_id = tuen_mun['id'].values[0]\ntm_coord = tuen_mun['coordinate'].values[0]\nprint(f\"Tuen Mun station ID: {tm_id}\")\n\n# Find nearest weather station to Tuen Mun\nquery = text(\"\"\"\nSELECT id, name_en, ST_Distance(coordinate::geography, ST_SetSRID(ST_MakePoint(%s, %s), 4326)::geography) as dist\nFROM weather_station\nORDER BY dist\nLIMIT 5\n\"\"\")\n# Extract coordinates from tm_coord\nquery = text(f\"\"\"\nSELECT id, name_en, ST_Distance(coordinate::geography, \n    (SELECT coordinate::geography FROM air_quality_station WHERE id = {tm_id})) as dist\nFROM weather_station\nORDER BY dist\nLIMIT 5\n\"\"\")\nweather_stations = pd.read_sql(query, engine)\nprint(weather_stations)",
+              "# Use Tuen Mun weather station (id=33) - nearest one\n# Now query hourly NO2 from Tuen Mun air quality station joined with wind data from Tuen Mun weather station\n# for October 2025, only when wind_speed > 1 m/s\nquery = text(\"\"\"\nSELECT \n    hsaq.no2,\n    hsw.wind_direction,\n    hsw.wind_speed\nFROM hourly_station_air_quality hsaq\nJOIN hourly_station_weather hsw \n    ON hsaq.datetime = hsw.datetime\nWHERE hsaq.station_id = 5\n  AND hsw.station_id = 33\n  AND hsaq.datetime >= '2025-10-01 00:00:00'\n  AND hsaq.datetime < '2025-11-01 00:00:00'\n  AND hsw.wind_speed > 1\n  AND hsaq.no2 IS NOT NULL\n  AND hsw.wind_direction IS NOT NULL\n\"\"\")\ndf = pd.read_sql(query, engine)\nprint(f\"Total matched records: {len(df)}\")\nprint(f\"Wind directions present: {df['wind_direction'].unique()}\")\nprint(f\"NULL counts: no2={df['no2'].isna().sum()}, wind_direction={df['wind_direction'].isna().sum()}\")\nprint(df.head(10))",
+              "# Compute average NO2 by wind direction\navg_no2_by_dir = df.groupby('wind_direction')['no2'].mean().round(1)\nprint(\"Average NO2 by wind direction:\")\nprint(avg_no2_by_dir.sort_values(ascending=False))\n\n# Find highest and lowest\nhighest_dir = avg_no2_by_dir.idxmax()\nhighest_val = avg_no2_by_dir.max()\nlowest_dir = avg_no2_by_dir.idxmin()\nlowest_val = avg_no2_by_dir.min()\nnorth_val = avg_no2_by_dir.get('N', None)\n\nprint(f\"\\nHighest: {highest_dir} = {highest_val}\")\nprint(f\"Lowest: {lowest_dir} = {lowest_val}\")\nprint(f\"North sector NO2: {north_val}\")\n\n# Store results\nhighest_no2_direction = highest_dir\nhighest_no2_value = float(highest_val)\nlowest_no2_direction = lowest_dir\nlowest_no2_value = float(lowest_val)\nnorth_sector_no2 = float(north_val) if north_val is not None else None\n\nprint(f\"\\nStored variables:\")\nprint(f\"highest_no2_direction = '{highest_no2_direction}'\")\nprint(f\"highest_no2_value = {highest_no2_value}\")\nprint(f\"lowest_no2_direction = '{lowest_no2_direction}'\")\nprint(f\"lowest_no2_value = {lowest_no2_value}\")\nprint(f\"north_sector_no2 = {north_sector_no2}\")\n\n# Also show record counts per direction for context\nprint(\"\\nRecord counts per wind direction:\")\nprint(df.groupby('wind_direction').size())"
+            ],
+            "runtime_variables": {
+              "highest_no2_direction": "NW",
+              "highest_no2_value": 56.2,
+              "lowest_no2_direction": "E",
+              "lowest_no2_value": 23.7,
+              "north_sector_no2": 43.2
+            }
+          }
+        ]
+      }
+    ],
+    "metrics": {
+      "total_turns": 1,
+      "successful_turns": 1,
+      "failed_turns": 0,
+      "total_steps": 4,
+      "success_rate": 1.0,
+      "total_prompt_tokens": 25099,
+      "total_completion_tokens": 1263,
+      "total_tokens": 26362
+    }
+  }
+}

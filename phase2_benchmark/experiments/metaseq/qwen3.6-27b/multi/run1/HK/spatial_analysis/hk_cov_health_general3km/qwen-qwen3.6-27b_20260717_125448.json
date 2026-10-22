@@ -1,0 +1,54 @@
+{
+  "hk_cov_health_general3km": {
+    "scenario": "hk_cov_health_general3km",
+    "conversations": [
+      {
+        "id": "hk_cov_health_general3km",
+        "turns": [
+          {
+            "query": "How many distinct 'HEALTH_CARE_INSTITUTION' sensitive areas have their polygon centroid within 3000 metres of at least one GENERAL-type air-quality station? Count each institution once. Return the count.",
+            "actual_response": "There are **883** distinct healthcare institutions with their centroid within 3000 metres of at least one GENERAL-type air-quality station.",
+            "actual_calls": [],
+            "validation_errors": [],
+            "metrics": {
+              "steps": 16,
+              "prompt_tokens": 127071,
+              "completion_tokens": 3913,
+              "total_tokens": 130984
+            },
+            "success": true,
+            "variables_not_set": false,
+            "error": null,
+            "code_snippets": [
+              "import pandas as pd\nfrom sqlalchemy import text\nimport numpy as np\n\n# Fetch all GENERAL type air quality stations with coordinates\nquery_stations = text(\"\"\"\nSELECT id, name_en, ST_X(coordinate::geometry) AS lon, ST_Y(coordinate::geometry) AS lat\nFROM air_quality_station\nWHERE station_type = 'GENERAL'\n\"\"\")\nstations_df = pd.read_sql(query_stations, engine)\nprint(f\"GENERAL stations found: {len(stations_df)}\")\nprint(stations_df)\n\n# Fetch all HEALTH_CARE_INSTITUTION sensitive areas with their centroids\nquery_healthcare = text(\"\"\"\nSELECT id, name, \n       ST_X(ST_Centroid(geometry)) AS centroid_lon, \n       ST_Y(ST_Centroid(geometry)) AS centroid_lat\nFROM sensitive_area\nWHERE category = 'HEALTH_CARE_INSTITUTION'\n\"\"\")\nhealthcare_df = pd.read_sql(query_healthcare, engine)\nprint(f\"\\nHEALTH_CARE_INSTITUTION sensitive areas found: {len(healthcare_df)}\")\nprint(healthcare_df[['id', 'name', 'centroid_lon', 'centroid_lat']].head(20))",
+              "from math import radians, sin, cos, sqrt, atan2\n\ndef haversine(lat1, lon1, lat2, lon2):\n    \"\"\"Calculate distance in meters between two points using haversine formula.\"\"\"\n    R = 6371000  # Earth radius in meters\n    lat1, lon1, lat2, lon2 = map(radians, [lat1, lon1, lat2, lon2])\n    dlat = lat2 - lat1\n    dlon = lon2 - lon1\n    a = sin(dlat/2)**2 + cos(lat1) * cos(lat2) * sin(dlon/2)**2\n    c = 2 * atan2(sqrt(a), sqrt(1-a))\n    return R * c\n\n# Extract station coordinates\nstation_coords = stations_df[['id', 'lon', 'lat']].values\n\n# For each healthcare institution, check if it's within 3000m of ANY general station\nhealthcare_within_3km = []\n\nfor idx, row in healthcare_df.iterrows():\n    hc_lat = row['centroid_lat']\n    hc_lon = row['centroid_lon']\n    hc_id = row['id']\n    \n    for _, (st_id, st_lon, st_lat) in enumerate(station_coords):\n        dist = haversine(hc_lat, hc_lon, st_lat, st_lon)\n        if dist <= 3000:\n            healthcare_within_3km.append(hc_id)\n            break  # Only need to be within 3km of ANY one station\n\n# Count distinct healthcare institutions\ndistinct_count = len(set(healthcare_within_3km))\nprint(f\"Distinct healthcare institutions within 3000m of at least one GENERAL station: {distinct_count}\")\n\n# Stage the result\nhealthcare_within_3km_ids = list(set(healthcare_within_3km))\nprint(f\"Sample of IDs: {healthcare_within_3km_ids[:10]}\")",
+              "# First, let's inspect what's already in the shared runtime\nprint(\"Variables available:\")\nprint(f\"healthcare_df type: {type(healthcare_df)}, shape: {healthcare_df.shape if hasattr(healthcare_df, 'shape') else 'N/A'}\")\nprint(f\"stations_df type: {type(stations_df)}, shape: {stations_df.shape if hasattr(stations_df, 'shape') else 'N/A'}\")\nprint(f\"station_coords type: {type(station_coords)}, shape: {station_coords.shape if hasattr(station_coords, 'shape') else 'N/A'}\")\nprint(f\"healthcare_within_3km type: {type(healthcare_within_3km)}, length: {len(healthcare_within_3km) if hasattr(healthcare_within_3km, '__len__') else 'N/A'}\")\nprint(f\"healthcare_within_3km_ids type: {type(healthcare_within_3km_ids)}, length: {len(healthcare_within_3km_ids) if hasattr(healthcare_within_3km_ids, '__len__') else 'N/A'}\")\nprint(f\"distinct_count type: {type(distinct_count)}, value: {distinct_count}\")",
+              "# Verify the stations_df contains only GENERAL stations\nprint(\"Stations in stations_df:\")\nprint(stations_df.head(20))\nprint(f\"\\nTotal stations in stations_df: {len(stations_df)}\")\n\n# Check if there are any non-GENERAL stations\nif 'station_type' in stations_df.columns:\n    print(f\"\\nStation types in stations_df: {stations_df['station_type'].unique()}\")\nelse:\n    print(\"No station_type column found, checking columns:\", stations_df.columns.tolist())\n\n# Check healthcare_df structure\nprint(f\"\\nHealthcare columns: {healthcare_df.columns.tolist()}\")\nprint(f\"Healthcare sample:\\n{healthcare_df.head(5)}\")\n\n# Verify the distinct_count\nprint(f\"\\nhealthcare_within_3km_ids length: {len(healthcare_within_3km_ids)}\")\nprint(f\"distinct_count: {distinct_count}\")\nprint(f\"Unique IDs in healthcare_within_3km_ids: {len(set(healthcare_within_3km_ids))}\")",
+              "# Verify these are GENERAL stations by checking against the database\nfrom sqlalchemy import text\n\nquery = text(\"\"\"\nSELECT id, name_en, station_type \nFROM air_quality_station \nWHERE id IN (5, 12, 15, 2, 1, 3, 9, 8, 13, 10, 18, 11, 6, 7, 4)\nORDER BY id\n\"\"\")\ndf_verify = pd.read_sql(query, engine)\nprint(\"Station types verification:\")\nprint(df_verify)\nprint(f\"\\nAll GENERAL? {all(df_verify['station_type'] == 'GENERAL')}\")\n\n# Also verify total healthcare institutions count\nquery_hc = text(\"\"\"\nSELECT COUNT(*) as total_healthcare\nFROM sensitive_area\nWHERE category = 'HEALTH_CARE_INSTITUTION'\n\"\"\")\ntotal_hc = pd.read_sql(query_hc, engine)\nprint(f\"\\nTotal healthcare institutions: {total_hc['total_healthcare'].values[0]}\")\nprint(f\"Healthcare within 3km of general stations: {distinct_count}\")",
+              "# Store the final result in the required variable\nhealth_general_3km = distinct_count\nprint(f\"health_general_3km = {health_general_3km}\")",
+              "# Check what's already in the shared runtime\nprint(\"healthcare_within_3km_ids:\", healthcare_within_3km_ids)\nprint(\"distinct_count:\", distinct_count)\nprint(\"Type of distinct_count:\", type(distinct_count))",
+              "# Assign the pre-computed distinct count to the required output variable\nhealth_general_3km = int(distinct_count)\nprint(f\"health_general_3km = {health_general_3km} (type: {type(health_general_3km).__name__})\")",
+              "import pandas as pd\nfrom sqlalchemy import text\nimport numpy as np\n\n# First, check how many GENERAL stations exist\nquery_general = text(\"\"\"\nSELECT COUNT(*) as cnt FROM air_quality_station WHERE station_type = 'GENERAL'\n\"\"\")\ndf_gen = pd.read_sql(query_general, engine)\nprint(\"General stations count:\", df_gen['cnt'].values[0])\n\n# Check how many HEALTH_CARE_INSTITUTION sensitive areas exist\nquery_hc = text(\"\"\"\nSELECT COUNT(*) as cnt FROM sensitive_area WHERE category = 'HEALTH_CARE_INSTITUTION'\n\"\"\")\ndf_hc = pd.read_sql(query_hc, engine)\nprint(\"Healthcare institutions count:\", df_hc['cnt'].values[0])\n\n# Sample some general stations\nquery_sample = text(\"\"\"\nSELECT id, name_en, station_type, ST_X(coordinate::geometry) as lon, ST_Y(coordinate::geometry) as lat\nFROM air_quality_station WHERE station_type = 'GENERAL' LIMIT 5\n\"\"\")\ndf_sample = pd.read_sql(query_sample, engine)\nprint(\"\\nSample general stations:\")\nprint(df_sample)",
+              "from sqlalchemy import text\n\n# Use PostGIS to find distinct healthcare institutions within 3000m of any GENERAL station\nquery = text(\"\"\"\nSELECT COUNT(DISTINCT sa.id) as distinct_count\nFROM sensitive_area sa\nWHERE sa.category = 'HEALTH_CARE_INSTITUTION'\nAND EXISTS (\n    SELECT 1 FROM air_quality_station aqs\n    WHERE aqs.station_type = 'GENERAL'\n    AND ST_Distance(\n        ST_Centroid(sa.geometry)::geography,\n        aqs.coordinate::geography\n    ) <= 3000\n)\n\"\"\")\ndf_result = pd.read_sql(query, engine)\nprint(\"Distinct healthcare institutions within 3000m of GENERAL stations:\", df_result['distinct_count'].values[0])\n\n# Also verify by checking a sample - how many healthcare institutions are there total\nquery_total = text(\"\"\"\nSELECT COUNT(*) as total FROM sensitive_area WHERE category = 'HEALTH_CARE_INSTITUTION'\n\"\"\")\ndf_total = pd.read_sql(query_total, engine)\nprint(\"Total healthcare institutions:\", df_total['total'].values[0])",
+              "from sqlalchemy import text\n\n# Verify: check how many GENERAL stations we're using\nquery_gen_count = text(\"\"\"\nSELECT COUNT(*) as cnt FROM air_quality_station WHERE station_type = 'GENERAL'\n\"\"\")\ndf_gen = pd.read_sql(query_gen_count, engine)\nprint(\"General stations used:\", df_gen['cnt'].values[0])\n\n# Verify: check total healthcare institutions\nquery_hc_total = text(\"\"\"\nSELECT COUNT(*) as cnt FROM sensitive_area WHERE category = 'HEALTH_CARE_INSTITUTION'\n\"\"\")\ndf_hc = pd.read_sql(query_hc_total, engine)\nprint(\"Total healthcare institutions:\", df_hc['cnt'].values[0])\n\n# Verify: check the ratio - 883/1117 = ~79% which seems plausible for HK coverage\nprint(\"Ratio within 3km:\", round(883/1117*100, 1), \"%\")\n\n# Cross-check: verify with a different approach - get the IDs and count distinct\nquery_ids = text(\"\"\"\nSELECT DISTINCT sa.id\nFROM sensitive_area sa\nWHERE sa.category = 'HEALTH_CARE_INSTITUTION'\nAND EXISTS (\n    SELECT 1 FROM air_quality_station aqs\n    WHERE aqs.station_type = 'GENERAL'\n    AND ST_Distance(\n        ST_Centroid(sa.geometry)::geography,\n        aqs.coordinate::geography\n    ) <= 3000\n)\n\"\"\")\ndf_ids = pd.read_sql(query_ids, engine)\nprint(\"Distinct count from ID list:\", len(df_ids))\n\n# Sanity check: verify that the result is a subset (not all, not zero)\nprint(\"Result is subset:\", 0 < 883 < 1117)",
+              "health_general_3km = 883\nprint(f\"Final result: health_general_3km = {health_general_3km}\")"
+            ],
+            "runtime_variables": {
+              "health_general_3km": 883
+            }
+          }
+        ]
+      }
+    ],
+    "metrics": {
+      "total_turns": 1,
+      "successful_turns": 1,
+      "failed_turns": 0,
+      "total_steps": 16,
+      "success_rate": 1.0,
+      "total_prompt_tokens": 127071,
+      "total_completion_tokens": 3913,
+      "total_tokens": 130984
+    }
+  }
+}

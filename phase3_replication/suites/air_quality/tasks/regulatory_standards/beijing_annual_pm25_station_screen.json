@@ -1,0 +1,29 @@
+{
+  "name": "beijing_annual_pm25_station_screen",
+  "difficulty": "easy",
+  "category": "regulatory_standards",
+  "case_type": "baseline",
+  "conversations": [
+    {
+      "id": "annual_pm25_screen",
+      "turns": [
+        {
+          "query": "Screen Beijing's monitoring stations for 2023 against the Grade II annual PM2.5 limit of GB 3095-2012: count how many stations had an annual mean at or below that limit. Take each station's annual mean as the arithmetic mean of its hourly values over every hour it reports.",
+          "validator": "validate_station_screen",
+          "stores": [
+            "stations_at_or_below_limit"
+          ]
+        },
+        {
+          "query": "Now, can 2023 be described for the desk with one citywide figure? Give it, and say what the two results together imply.",
+          "validator": "validate_network_mean",
+          "stores": [
+            "network_annual_mean_pm25",
+            "network_above_limit"
+          ]
+        }
+      ]
+    }
+  ],
+  "domain": "beijing"
+}

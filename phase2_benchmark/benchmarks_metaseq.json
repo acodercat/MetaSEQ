@@ -1,0 +1,70 @@
+{
+  "HK": {
+    "comparative_assessment": {
+      "hk_1_11": "evals/neuroair/comparative_assessment/HK/hk_1_11.json",
+      "hk_1_13": "evals/neuroair/comparative_assessment/HK/hk_1_13.json",
+      "hk_1_2": "evals/neuroair/comparative_assessment/HK/hk_1_2.json",
+      "hk_1_12": "evals/neuroair/comparative_assessment/HK/hk_1_12.json",
+      "hk_deep_ratio_rank": "evals/neuroair/comparative_assessment/HK/hk_deep_ratio_rank.json"
+    },
+    "data_retrieval": {
+      "hk_1_1": "evals/neuroair/data_retrieval/HK/hk_1_1.json",
+      "hk_1_10": "evals/neuroair/data_retrieval/HK/hk_1_10.json",
+      "ozone_diurnal_peak": "evals/data_retrieval/HK/ozone_diurnal_peak.json"
+    },
+    "spatial_analysis": {
+      "global_morans_i": "evals/spatial_analysis/HK/global_morans_i.json",
+      "directional_quadrant": "evals/spatial_analysis/HK/directional_quadrant.json",
+      "station_isolation_ranking": "evals/spatial_analysis/HK/station_isolation_ranking.json",
+      "distance_pollution_relationship": "evals/spatial_analysis/HK/distance_pollution_relationship.json",
+      "thiessen_polygon_area": "evals/spatial_analysis/HK/thiessen_polygon_area.json",
+      "hk_hard_nearest_other_no2_gap": "evals/neuroair/spatial_analysis/HK/hk_hard_nearest_other_no2_gap.json",
+      "hk_x_school_near_worst_roadside": "evals/neuroair/spatial_analysis/HK/hk_x_school_near_worst_roadside.json",
+      "hk_x_monument_mongkok": "evals/neuroair/spatial_analysis/HK/hk_x_monument_mongkok.json",
+      "hk_x_conservation_pop": "evals/neuroair/spatial_analysis/HK/hk_x_conservation_pop.json",
+      "hk_vor_area_shatin": "evals/neuroair/spatial_analysis/HK/hk_vor_area_shatin.json",
+      "hk_vor_roadside_total": "evals/neuroair/spatial_analysis/HK/hk_vor_roadside_total.json",
+      "hk_vor_smallest": "evals/neuroair/spatial_analysis/HK/hk_vor_smallest.json",
+      "hk_vor_central_schools": "evals/neuroair/spatial_analysis/HK/hk_vor_central_schools.json",
+      "hk_cov_health_general3km": "evals/neuroair/spatial_analysis/HK/hk_cov_health_general3km.json",
+      "hk_cov_schools_roadside5km": "evals/neuroair/spatial_analysis/HK/hk_cov_schools_roadside5km.json"
+    },
+    "statistical_characterization": {
+      "hk_hard_same_hour_area_correlations": "evals/neuroair/statistical_characterization/HK/hk_hard_same_hour_area_correlations.json",
+      "hk_x_who_station_days": "evals/neuroair/statistical_characterization/HK/hk_x_who_station_days.json"
+    },
+    "source_attribution": {
+      "wind_direction_pollution_rose": "evals/source_attribution/HK/wind_direction_pollution_rose.json",
+      "o3_no2_photochemical_balance": "evals/source_attribution/HK/o3_no2_photochemical_balance.json",
+      "no2_pm25_traffic_dominance": "evals/source_attribution/HK/no2_pm25_traffic_dominance.json",
+      "hk_deep_pm_ratio_max": "evals/neuroair/source_attribution/HK/hk_deep_pm_ratio_max.json",
+      "humidity_secondary_aerosol": "evals/source_attribution/HK/humidity_secondary_aerosol.json"
+    },
+    "exceedance_anomaly_detection": {
+      "consecutive_exceedance": "evals/exceedance_anomaly_detection/HK/consecutive_exceedance.json",
+      "network_deviation_outlier": "evals/exceedance_anomaly_detection/HK/network_deviation_outlier.json",
+      "hk_hard_pm25_peak_day_station_count": "evals/neuroair/exceedance_anomaly_detection/HK/hk_hard_pm25_peak_day_station_count.json",
+      "aqhi_high_risk_episode": "evals/exceedance_anomaly_detection/HK/aqhi_high_risk_episode.json"
+    },
+    "cross_domain_analysis": {
+      "avg_speed_near_highest_pm10_station": "evals/cross_domain_analysis/HK/avg_speed_near_highest_pm10_station.json",
+      "nearest_station_to_severe_congestion": "evals/cross_domain_analysis/HK/nearest_station_to_severe_congestion.json",
+      "high_wind_no2_reduction": "evals/cross_domain_analysis/HK/high_wind_no2_reduction.json",
+      "visibility_pm25_temporal_correlation": "evals/cross_domain_analysis/HK/visibility_pm25_temporal_correlation.json",
+      "hk_x_traffic_no2_condition": "evals/neuroair/cross_domain_analysis/HK/hk_x_traffic_no2_condition.json",
+      "hk_mt_mongkok_profile": "evals/neuroair/cross_domain_analysis/HK/hk_mt_mongkok_profile.json",
+      "hk_mt_worst_no2_context": "evals/neuroair/cross_domain_analysis/HK/hk_mt_worst_no2_context.json",
+      "hk_mt_hottest_general_o3": "evals/neuroair/cross_domain_analysis/HK/hk_mt_hottest_general_o3.json",
+      "hk_mt_cwb_peak_speed": "evals/neuroair/cross_domain_analysis/HK/hk_mt_cwb_peak_speed.json"
+    },
+    "exposure_assessment": {
+      "hk_pop_roadside_share": "evals/neuroair/exposure_assessment/HK/hk_pop_roadside_share.json",
+      "area_type_population_exposure_disparity": "evals/exposure_assessment/HK/area_type_population_exposure_disparity.json",
+      "multi_pollutant_health_risk": "evals/exposure_assessment/HK/multi_pollutant_health_risk.json",
+      "regulatory_compliance_investigation": "evals/exposure_assessment/HK/regulatory_compliance_investigation.json",
+      "voronoi_population_aqhi_burden": "evals/exposure_assessment/HK/voronoi_population_aqhi_burden.json",
+      "hk_cov_pop_general5km": "evals/neuroair/exposure_assessment/HK/hk_cov_pop_general5km.json",
+      "hk_cov_pop_newtown2km": "evals/neuroair/exposure_assessment/HK/hk_cov_pop_newtown2km.json"
+    }
+  }
+}

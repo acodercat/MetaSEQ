@@ -1,0 +1,49 @@
+{
+  "hk_station_isolation_ranking": {
+    "scenario": "hk_station_isolation_ranking",
+    "conversations": [
+      {
+        "id": "isolation_ranking",
+        "turns": [
+          {
+            "query": "For each air quality monitoring station, compute the distance to its nearest fellow air quality monitoring station. Return the top 3 most isolated stations (largest nearest-neighbor distance) with their names and distances in meters.",
+            "actual_response": "Based on the analysis of nearest-neighbor distances between air quality monitoring stations in Hong Kong, the top 3 most isolated stations are:\n\n1. **Tap Mun** - 19,952 meters from its nearest neighbor\n2. **Tung Chung** - 11,824 meters from its nearest neighbor  \n3. **Tuen Mun** - 7,624 meters from its nearest neighbor\n\nThese stations are located in more remote areas of Hong Kong, with Tap Mun being the most isolated station in the network at nearly 20 kilometers from its closest fellow monitoring station.",
+            "actual_calls": [],
+            "validation_errors": [],
+            "metrics": {
+              "steps": 3,
+              "prompt_tokens": 17664,
+              "completion_tokens": 587,
+              "total_tokens": 18251
+            },
+            "success": true,
+            "variables_not_set": false,
+            "error": null,
+            "code_snippets": [
+              "import pandas as pd\nfrom sqlalchemy import text\n\n# Query all stations with their coordinates and compute nearest-neighbor distances\nquery = text(\"\"\"\nWITH station_coords AS (\n    SELECT \n        id,\n        name_en,\n        ST_X(coordinate::geometry) AS lon,\n        ST_Y(coordinate::geometry) AS lat\n    FROM air_quality_station\n),\nnearest_distances AS (\n    SELECT \n        a.id,\n        a.name_en,\n        MIN(ST_Distance(a.coordinate::geography, b.coordinate::geography)) AS nearest_distance\n    FROM air_quality_station a\n    CROSS JOIN air_quality_station b\n    WHERE a.id != b.id\n    GROUP BY a.id, a.name_en\n)\nSELECT name_en, nearest_distance\nFROM nearest_distances\nORDER BY nearest_distance DESC\nLIMIT 3\n\"\"\")\n\ndf = pd.read_sql(query, engine)\nprint(df)",
+              "isolated_1_name = \"Tap Mun\"\nisolated_1_distance = 19952.203652\nisolated_2_name = \"Tung Chung\"\nisolated_2_distance = 11824.474851\nisolated_3_name = \"Tuen Mun\"\nisolated_3_distance = 7623.999340"
+            ],
+            "runtime_variables": {
+              "isolated_1_name": "Tap Mun",
+              "isolated_1_distance": 19952.203652,
+              "isolated_2_name": "Tung Chung",
+              "isolated_2_distance": 11824.474851,
+              "isolated_3_name": "Tuen Mun",
+              "isolated_3_distance": 7623.99934
+            }
+          }
+        ]
+      }
+    ],
+    "metrics": {
+      "total_turns": 1,
+      "successful_turns": 1,
+      "failed_turns": 0,
+      "total_steps": 3,
+      "success_rate": 1.0,
+      "total_prompt_tokens": 17664,
+      "total_completion_tokens": 587,
+      "total_tokens": 18251
+    }
+  }
+}

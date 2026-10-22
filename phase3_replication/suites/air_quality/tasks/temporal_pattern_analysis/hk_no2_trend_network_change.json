@@ -1,0 +1,32 @@
+{
+  "name": "hk_no2_trend_network_change",
+  "difficulty": "hard",
+  "category": "temporal_pattern_analysis",
+  "case_type": "baseline",
+  "conversations": [
+    {
+      "id": "no2_trend_network_change",
+      "turns": [
+        {
+          "query": "A desk is writing a line on how Hong Kong's nitrogen dioxide has moved since 2020. Give them the territory annual mean for 2020 and for 2025, and the percentage change between them.",
+          "validator": "validate_convention_change",
+          "stores": [
+            "no2_territory_2020",
+            "no2_territory_2025",
+            "no2_change_pct"
+          ]
+        },
+        {
+          "query": "Before the line goes out, check that the 2020 figure and the 2025 figure are comparable, and advise the desk on what the line can say.",
+          "validator": "validate_comparability",
+          "stores": [
+            "figures_comparable_as_they_stand",
+            "stations_joining_during_2020",
+            "fixed_network_change_is_negative"
+          ]
+        }
+      ]
+    }
+  ],
+  "domain": "hk"
+}

@@ -1,0 +1,24 @@
+# Python
+__pycache__/
+*.py[oc]
+*.egg-info/
+build/
+dist/
+.venv/
+.pytest_cache/
+.ruff_cache/
+
+# Credentials — real values live only here (see the .example files)
+.env
+models.toml
+
+# Experiment outputs: run records are archived on Zenodo; results/.gitignore keeps the derived
+# report tables and the alias records tracked.
+results/_logs/
+
+# Local assistant working data
+.claude/
+
+# Beijing data: ~300 MB of CSVs copied from air-bench/datasets/Beijing
+# (see data/beijing/*.sources.json); too large for git.
+data/beijing/*.csv

@@ -1,0 +1,22 @@
+{
+  "name": "beijing_two_standards_unnamed",
+  "difficulty": "medium",
+  "category": "regulatory_standards",
+  "case_type": "trap",
+  "conversations": [
+    {
+      "id": "two_standards_unnamed",
+      "turns": [
+        {
+          "query": "The United States sets its 8-hour ozone standard at 70 parts per billion; China's Grade II limit is 160 micrograms per cubic metre. On Beijing's city-level record for 2023, which of the two levels was breached on more days, and by how many days each?",
+          "validator": "validate_two_standards",
+          "stores": [
+            "days_over_us_standard",
+            "days_over_cn_standard"
+          ]
+        }
+      ]
+    }
+  ],
+  "domain": "beijing"
+}

@@ -1,0 +1,75 @@
+{
+  "hk_humidity_secondary_aerosol": {
+    "scenario": "hk_humidity_secondary_aerosol",
+    "conversations": [
+      {
+        "id": "humidity_aerosol",
+        "turns": [
+          {
+            "query": "In October 2025, for all general air quality stations combined, group hourly PM2.5/PM10 ratios by humidity bins from the King's Park weather station: low (<60%), medium (60-80%), high (>80%). Compute the average PM2.5/PM10 ratio for each bin (only include hours where both PM2.5 and PM10 are valid and PM10 > 0). Return the three ratios rounded to 3 decimal places.",
+            "actual_response": "Based on the analysis of October 2025 data from all general air quality stations combined with humidity readings from King's Park weather station:\n\n**Average PM2.5/PM10 Ratios by Humidity Bin:**\n- Low humidity (<60%): 0.686\n- Medium humidity (60-80%): 0.654\n- High humidity (>80%): 0.607\n\n**Pearson Correlation:**\n- Humidity vs PM2.5/PM10 ratio: -0.1879\n\nThe results show a negative correlation between humidity and the PM2.5/PM10 ratio, indicating that as humidity increases, the proportion of fine particulate matter (PM2.5) relative to coarse particulate matter (PM10) tends to decrease. This pattern is consistent with secondary aerosol formation processes where higher humidity conditions may favor the formation or accumulation of larger particles.\n\n**Final Results:**\n- ratio_low_humidity: 0.686\n- ratio_mid_humidity: 0.654\n- ratio_high_humidity: 0.607\n- humidity_ratio_correlation: -0.1879",
+            "actual_calls": [],
+            "validation_errors": [],
+            "metrics": {
+              "steps": 5,
+              "prompt_tokens": 37036,
+              "completion_tokens": 2432,
+              "total_tokens": 39468
+            },
+            "success": true,
+            "variables_not_set": false,
+            "error": null,
+            "code_snippets": [
+              "import pandas as pd\nfrom sqlalchemy import text\n\n# Find King's Park weather station ID\nquery_weather = text(\"\"\"\nSELECT id, name_en\nFROM weather_station\nWHERE name_en LIKE '%King%Park%' OR name_en LIKE '%King's Park%'\n\"\"\")\nweather_stations = pd.read_sql(query_weather, engine)\nprint(\"Weather stations matching King's Park:\")\nprint(weather_stations)\n\n# Find all GENERAL air quality stations\nquery_stations = text(\"\"\"\nSELECT id, name_en\nFROM air_quality_station\nWHERE station_type = 'GENERAL'\n\"\"\")\ngeneral_stations = pd.read_sql(query_stations, engine)\nprint(\"\\nGeneral air quality stations:\")\nprint(general_stations)",
+              "import pandas as pd\nfrom sqlalchemy import text\n\n# Find King's Park weather station ID (fixed apostrophe issue)\nquery_weather = text(\"\"\"\nSELECT id, name_en\nFROM weather_station\nWHERE name_en LIKE '%King%Park%'\n\"\"\")\nweather_stations = pd.read_sql(query_weather, engine)\nprint(\"Weather stations matching King's Park:\")\nprint(weather_stations)\n\n# Find all GENERAL air quality stations\nquery_stations = text(\"\"\"\nSELECT id, name_en\nFROM air_quality_station\nWHERE station_type = 'GENERAL'\n\"\"\")\ngeneral_stations = pd.read_sql(query_stations, engine)\nprint(\"\\nGeneral air quality stations:\")\nprint(general_stations)",
+              "import pandas as pd\nfrom sqlalchemy import text\n\n# Query weather data from King's Park (station_id=14) for October 2025\n# and air quality data from all general stations for October 2025\n# Join on datetime and compute PM2.5/PM10 ratio grouped by humidity bins\n\nquery = text(\"\"\"\nWITH weather_data AS (\n    SELECT datetime, humidity\n    FROM hourly_station_weather\n    WHERE station_id = 14\n    AND datetime >= '2025-10-01 00:00:00'\n    AND datetime < '2025-11-01 00:00:00'\n),\naq_data AS (\n    SELECT station_id, datetime, pm2_5, pm10\n    FROM hourly_station_air_quality\n    WHERE station_id IN (5, 12, 15, 2, 1, 3, 9, 8, 13, 10, 18, 11, 6, 7, 4)\n    AND datetime >= '2025-10-01 00:00:00'\n    AND datetime < '2025-11-01 00:00:00'\n    AND pm2_5 IS NOT NULL\n    AND pm10 IS NOT NULL\n    AND pm10 > 0\n)\nSELECT \n    w.humidity,\n    a.pm2_5,\n    a.pm10,\n    a.pm2_5 * 1.0 / a.pm10 AS pm_ratio\nFROM weather_data w\nJOIN aq_data a ON w.datetime = a.datetime\n\"\"\")\n\ndf = pd.read_sql(query, engine)\nprint(f\"Total records: {len(df)}\")\nprint(f\"Columns: {df.columns.tolist()}\")\nprint(df.head())\n\n# Create humidity bins\ndef humidity_bin(h):\n    if h < 60:\n        return 'low'\n    elif h <= 80:\n        return 'mid'\n    else:\n        return 'high'\n\ndf['humidity_bin'] = df['humidity'].apply(humidity_bin)\n\n# Compute average ratio for each bin\nbin_stats = df.groupby('humidity_bin')['pm_ratio'].mean().round(3)\nprint(\"\\nAverage PM2.5/PM10 ratio by humidity bin:\")\nprint(bin_stats)\n\n# Compute Pearson correlation between humidity and ratio\ncorrelation = df['humidity'].corr(df['pm_ratio'])\nprint(f\"\\nPearson correlation (humidity vs ratio): {correlation:.4f}\")\n\n# Store results\nratio_low_humidity = float(bin_stats.get('low', 0))\nratio_mid_humidity = float(bin_stats.get('mid', 0))\nratio_high_humidity = float(bin_stats.get('high', 0))\nhumidity_ratio_correlation = float(correlation)\n\nprint(f\"\\nFinal results:\")\nprint(f\"ratio_low_humidity: {ratio_low_humidity}\")\nprint(f\"ratio_mid_humidity: {ratio_mid_humidity}\")\nprint(f\"ratio_high_humidity: {ratio_high_humidity}\")\nprint(f\"humidity_ratio_correlation: {humidity_ratio_correlation}\")",
+              "# Store the final results in the required variables\nratio_low_humidity = 0.686\nratio_mid_humidity = 0.654\nratio_high_humidity = 0.607\nhumidity_ratio_correlation = round(-0.18790396770927012, 4)\n\nprint(f\"ratio_low_humidity: {ratio_low_humidity}\")\nprint(f\"ratio_mid_humidity: {ratio_mid_humidity}\")\nprint(f\"ratio_high_humidity: {ratio_high_humidity}\")\nprint(f\"humidity_ratio_correlation: {humidity_ratio_correlation}\")"
+            ],
+            "runtime_variables": {
+              "ratio_low_humidity": 0.686,
+              "ratio_mid_humidity": 0.654,
+              "ratio_high_humidity": 0.607,
+              "humidity_ratio_correlation": -0.1879
+            }
+          },
+          {
+            "query": "Across all matched hours in October 2025, what is the Pearson correlation between King's Park humidity and the network-wide average PM2.5/PM10 ratio? Return the coefficient rounded to 4 decimal places.",
+            "actual_response": "Based on the analysis of 744 matched hours in October 2025, the Pearson correlation coefficient between King's Park humidity and the network-wide average PM2.5/PM10 ratio is **-0.2477**.",
+            "actual_calls": [],
+            "validation_errors": [
+              "Custom validator failed: humidity_ratio_correlation=-0.1879, expected \u2248 -0.2477"
+            ],
+            "metrics": {
+              "steps": 2,
+              "prompt_tokens": 18825,
+              "completion_tokens": 1541,
+              "total_tokens": 20366
+            },
+            "success": false,
+            "variables_not_set": false,
+            "error": null,
+            "code_snippets": [
+              "import pandas as pd\nfrom sqlalchemy import text\n\n# Query hourly average PM2.5/PM10 ratio across all general stations for Oct 2025\nquery_avg = text(\"\"\"\nWITH aq_data AS (\n    SELECT datetime, pm2_5, pm10, pm2_5 * 1.0 / pm10 AS pm_ratio\n    FROM hourly_station_air_quality\n    WHERE station_id IN (5, 12, 15, 2, 1, 3, 9, 8, 13, 10, 18, 11, 6, 7, 4)\n    AND datetime >= '2025-10-01 00:00:00'\n    AND datetime < '2025-11-01 00:00:00'\n    AND pm2_5 IS NOT NULL\n    AND pm10 IS NOT NULL\n    AND pm10 > 0\n)\nSELECT datetime, AVG(pm_ratio) AS avg_pm_ratio\nFROM aq_data\nGROUP BY datetime\n\"\"\")\n\navg_df = pd.read_sql(query_avg, engine)\nprint(f\"Number of unique hours with valid data: {len(avg_df)}\")\nprint(avg_df.head())\n\n# Query King's Park humidity for Oct 2025\nquery_weather = text(\"\"\"\nSELECT datetime, humidity\nFROM hourly_station_weather\nWHERE station_id = 14\nAND datetime >= '2025-10-01 00:00:00'\nAND datetime < '2025-11-01 00:00:00'\n\"\"\")\n\nweather_df = pd.read_sql(query_weather, engine)\nprint(f\"\\nNumber of weather records: {len(weather_df)}\")\n\n# Merge on datetime\nmerged_df = pd.merge(avg_df, weather_df, on='datetime', how='inner')\nprint(f\"\\nMerged records: {len(merged_df)}\")\n\n# Compute Pearson correlation\ncorrelation = merged_df['humidity'].corr(merged_df['avg_pm_ratio'])\nprint(f\"\\nPearson correlation (humidity vs network-wide avg PM2.5/PM10 ratio): {correlation:.4f}\")"
+            ],
+            "runtime_variables": {
+              "ratio_low_humidity": 0.686,
+              "ratio_mid_humidity": 0.654,
+              "ratio_high_humidity": 0.607,
+              "humidity_ratio_correlation": -0.1879
+            }
+          }
+        ]
+      }
+    ],
+    "metrics": {
+      "total_turns": 2,
+      "successful_turns": 1,
+      "failed_turns": 1,
+      "total_steps": 7,
+      "success_rate": 0.5,
+      "total_prompt_tokens": 55861,
+      "total_completion_tokens": 3973,
+      "total_tokens": 59834
+    }
+  }
+}

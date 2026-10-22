@@ -1,0 +1,45 @@
+{
+  "hk_consecutive_exceedance": {
+    "scenario": "hk_consecutive_exceedance",
+    "conversations": [
+      {
+        "id": "consecutive_exceedance",
+        "turns": [
+          {
+            "query": "In October 2025, find the longest consecutive sequence of hours where any single air quality monitoring station recorded PM2.5 > 50 \u00b5g/m\u00b3. Which station experienced this longest event, how many consecutive hours did it last, and when did it start? Return the station name, the number of consecutive hours, and the start datetime.",
+            "actual_response": "Causeway Bay, 5, 2025-10-27 18:00:00",
+            "actual_calls": [],
+            "validation_errors": [],
+            "metrics": {
+              "steps": 2,
+              "prompt_tokens": 10874,
+              "completion_tokens": 863,
+              "total_tokens": 11737
+            },
+            "success": true,
+            "variables_not_set": false,
+            "error": null,
+            "code_snippets": [
+              "import pandas as pd\nfrom sqlalchemy import text\n\n# Count October 2025 PM2.5 readings first, then compute the longest station-level PM2.5 > 50 consecutive hourly event.\ncount_query = text(\"\"\"\nSELECT COUNT(*) AS n_readings,\n       COUNT(*) FILTER (WHERE pm2_5 > 50) AS n_exceedances\nFROM hourly_station_air_quality\nWHERE datetime >= TIMESTAMP '2025-10-01 00:00:00'\n  AND datetime <  TIMESTAMP '2025-11-01 00:00:00'\n  AND pm2_5 IS NOT NULL\n\"\"\")\ncounts = pd.read_sql(count_query, engine)\n\nevent_query = text(\"\"\"\nWITH exceed AS (\n    SELECT station_id, datetime\n    FROM hourly_station_air_quality\n    WHERE datetime >= TIMESTAMP '2025-10-01 00:00:00'\n      AND datetime <  TIMESTAMP '2025-11-01 00:00:00'\n      AND pm2_5 > 50\n),\nruns AS (\n    SELECT station_id, datetime,\n           datetime - (ROW_NUMBER() OVER (PARTITION BY station_id ORDER BY datetime) * INTERVAL '1 hour') AS grp\n    FROM exceed\n),\nevents AS (\n    SELECT station_id, MIN(datetime) AS event_start, COUNT(*)::int AS consecutive_hours\n    FROM runs\n    GROUP BY station_id, grp\n),\nranked AS (\n    SELECT s.name_en AS station_name, e.consecutive_hours, e.event_start\n    FROM events e\n    JOIN air_quality_station s ON s.id = e.station_id\n    ORDER BY e.consecutive_hours DESC, e.event_start ASC, s.name_en ASC\n    LIMIT 1\n)\nSELECT station_name, consecutive_hours, TO_CHAR(event_start, 'YYYY-MM-DD HH24:MI:SS') AS event_start\nFROM ranked\n\"\"\")\nresult = pd.read_sql(event_query, engine)\n\nif result.empty:\n    station_name = \"\"\n    consecutive_hours = 0\n    event_start = \"\"\nelse:\n    station_name = str(result.loc[0, \"station_name\"])\n    consecutive_hours = int(result.loc[0, \"consecutive_hours\"])\n    event_start = str(result.loc[0, \"event_start\"])\n\nprint({\n    \"october_2025_pm25_readings\": int(counts.loc[0, \"n_readings\"]),\n    \"october_2025_pm25_exceedances\": int(counts.loc[0, \"n_exceedances\"]),\n    \"station_name\": station_name,\n    \"consecutive_hours\": consecutive_hours,\n    \"event_start\": event_start\n})"
+            ],
+            "runtime_variables": {
+              "station_name": "Causeway Bay",
+              "consecutive_hours": 5,
+              "event_start": "2025-10-27 18:00:00"
+            }
+          }
+        ]
+      }
+    ],
+    "metrics": {
+      "total_turns": 1,
+      "successful_turns": 1,
+      "failed_turns": 0,
+      "total_steps": 2,
+      "success_rate": 1.0,
+      "total_prompt_tokens": 10874,
+      "total_completion_tokens": 863,
+      "total_tokens": 11737
+    }
+  }
+}

@@ -1,0 +1,47 @@
+{
+  "hk_consecutive_exceedance": {
+    "scenario": "hk_consecutive_exceedance",
+    "conversations": [
+      {
+        "id": "consecutive_exceedance",
+        "turns": [
+          {
+            "query": "In October 2025, find the longest consecutive sequence of hours where any single air quality monitoring station recorded PM2.5 > 50 \u00b5g/m\u00b3. Which station experienced this longest event, how many consecutive hours did it last, and when did it start? Return the station name, the number of consecutive hours, and the start datetime.",
+            "actual_response": "Based on the analysis of PM2.5 data from October 2025, the longest consecutive exceedance event (PM2.5 > 50 \u00b5g/m\u00b3) was recorded at **Causeway Bay** station.\n\n**Results:**\n- **Station Name:** Causeway Bay\n- **Consecutive Hours:** 5 hours\n- **Event Start:** 2025-10-27 18:00:00\n\nThis event occurred from 18:00 on October 27 to 22:00 on October 27, 2025, during which Causeway Bay station recorded PM2.5 levels above 50 \u00b5g/m\u00b3 for 5 consecutive hours.",
+            "actual_calls": [],
+            "validation_errors": [],
+            "metrics": {
+              "steps": 4,
+              "prompt_tokens": 25132,
+              "completion_tokens": 1927,
+              "total_tokens": 27059
+            },
+            "success": true,
+            "variables_not_set": false,
+            "error": null,
+            "code_snippets": [
+              "import pandas as pd\nfrom sqlalchemy import text\n\n# First, let's check how many records we have for October 2025 with PM2.5 > 50\nquery = text(\"\"\"\nSELECT COUNT(*) as total_records\nFROM hourly_station_air_quality\nWHERE datetime >= '2025-10-01 00:00:00'\nAND datetime < '2025-11-01 00:00:00'\nAND pm2_5 > 50\n\"\"\")\nresult = pd.read_sql(query, engine)\nprint(f\"Total records with PM2.5 > 50 in October 2025: {result['total_records'].values[0]}\")",
+              "import pandas as pd\nfrom sqlalchemy import text\n\n# Retrieve all records with PM2.5 > 50 in October 2025\nquery = text(\"\"\"\nSELECT hsaq.station_id, aqs.name_en, hsaq.datetime, hsaq.pm2_5\nFROM hourly_station_air_quality hsaq\nJOIN air_quality_station aqs ON hsaq.station_id = aqs.id\nWHERE hsaq.datetime >= '2025-10-01 00:00:00'\nAND hsaq.datetime < '2025-11-01 00:00:00'\nAND hsaq.pm2_5 > 50\nORDER BY hsaq.station_id, hsaq.datetime\n\"\"\")\ndf = pd.read_sql(query, engine)\ndf['datetime'] = pd.to_datetime(df['datetime'])\nprint(df)",
+              "import pandas as pd\nfrom sqlalchemy import text\n\n# Analyze consecutive sequences for each station\ndf['datetime'] = pd.to_datetime(df['datetime'])\n\n# Group by station and find consecutive sequences\nresults = []\n\nfor station_id, group in df.groupby('station_id'):\n    station_name = group['name_en'].iloc[0]\n    # Sort by datetime\n    group = group.sort_values('datetime').reset_index(drop=True)\n    \n    # Find consecutive sequences\n    current_start = group.iloc[0]['datetime']\n    current_length = 1\n    max_start = current_start\n    max_length = 1\n    \n    for i in range(1, len(group)):\n        prev_time = group.iloc[i-1]['datetime']\n        curr_time = group.iloc[i]['datetime']\n        \n        # Check if consecutive (1 hour apart)\n        if (curr_time - prev_time).total_seconds() == 3600:\n            current_length += 1\n            if current_length > max_length:\n                max_length = current_length\n                max_start = current_start\n        else:\n            # Reset sequence\n            current_start = curr_time\n            current_length = 1\n    \n    results.append({\n        'station_id': station_id,\n        'station_name': station_name,\n        'consecutive_hours': max_length,\n        'event_start': max_start\n    })\n\nresults_df = pd.DataFrame(results)\nprint(\"Longest consecutive PM2.5 > 50 events per station:\")\nprint(results_df)\n\n# Find the overall longest\nlongest = results_df.loc[results_df['consecutive_hours'].idxmax()]\nprint(f\"\\nLongest event: {longest['station_name']}, {int(longest['consecutive_hours'])} hours, starting at {longest['event_start'].strftime('%Y-%m-%d %H:%M:%S')}\")\n\n# Store results\nstation_name = longest['station_name']\nconsecutive_hours = int(longest['consecutive_hours'])\nevent_start = longest['event_start'].strftime('%Y-%m-%d %H:%M:%S')"
+            ],
+            "runtime_variables": {
+              "station_name": "Causeway Bay",
+              "consecutive_hours": 5,
+              "event_start": "2025-10-27 18:00:00"
+            }
+          }
+        ]
+      }
+    ],
+    "metrics": {
+      "total_turns": 1,
+      "successful_turns": 1,
+      "failed_turns": 0,
+      "total_steps": 4,
+      "success_rate": 1.0,
+      "total_prompt_tokens": 25132,
+      "total_completion_tokens": 1927,
+      "total_tokens": 27059
+    }
+  }
+}

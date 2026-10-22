@@ -1,0 +1,71 @@
+{
+  "hk_humidity_secondary_aerosol": {
+    "scenario": "hk_humidity_secondary_aerosol",
+    "conversations": [
+      {
+        "id": "humidity_aerosol",
+        "turns": [
+          {
+            "query": "In October 2025, for all general air quality stations combined, group hourly PM2.5/PM10 ratios by humidity bins from the King's Park weather station: low (<60%), medium (60-80%), high (>80%). Compute the average PM2.5/PM10 ratio for each bin (only include hours where both PM2.5 and PM10 are valid and PM10 > 0). Return the three ratios rounded to 3 decimal places.",
+            "actual_response": "For October 2025, using all general air quality stations combined:\n\n- Low humidity (<60%): 0.686\n- Medium humidity (60\u201380%): 0.654\n- High humidity (>80%): 0.607\n\nThe PM2.5/PM10 ratio decreased as humidity increased across the three humidity bins.",
+            "actual_calls": [],
+            "validation_errors": [],
+            "metrics": {
+              "steps": 3,
+              "prompt_tokens": 22124,
+              "completion_tokens": 2145,
+              "total_tokens": 24269
+            },
+            "success": true,
+            "variables_not_set": false,
+            "error": null,
+            "code_snippets": [
+              "import pandas as pd\nfrom sqlalchemy import text\n\nstart, end = \"2025-10-01 00:00:00\", \"2025-11-01 00:00:00\"\n\n# Identify King's Park weather station (limited exploratory lookup)\nkp = pd.read_sql(text(\"\"\"\nSELECT id, name_en\nFROM weather_station\nWHERE name_en ILIKE :pattern\nORDER BY name_en\nLIMIT 10\n\"\"\"), engine, params={\"pattern\": \"%King%Park%\"})\nprint(\"King's Park weather station matches:\", len(kp))\nprint(kp.to_string(index=False))\n\nif kp.empty:\n    raise ValueError(\"King's Park weather station not found.\")\nkp_id = int(kp.iloc[0][\"id\"])\n\n# Count valid combined station-hour records before aggregation\ncount_df = pd.read_sql(text(\"\"\"\nSELECT COUNT(*) AS valid_station_hours\nFROM hourly_station_air_quality aq\nJOIN air_quality_station s ON s.id = aq.station_id\nJOIN hourly_station_weather w ON w.datetime = aq.datetime\nWHERE s.station_type = 'GENERAL'\n  AND w.station_id = :kp_id\n  AND aq.datetime >= :start AND aq.datetime < :end\n  AND aq.pm2_5 IS NOT NULL\n  AND aq.pm10 IS NOT NULL\n  AND aq.pm10 > 0\n  AND w.humidity IS NOT NULL\n\"\"\"), engine, params={\"kp_id\": kp_id, \"start\": start, \"end\": end})\nprint(\"Valid station-hours:\", int(count_df.loc[0, \"valid_station_hours\"]))\n\n# Aggregate PM2.5/PM10 ratios by King's Park humidity bin and compute humidity-ratio correlation\nagg = pd.read_sql(text(\"\"\"\nWITH valid AS (\n    SELECT\n        w.humidity,\n        aq.pm2_5 / aq.pm10 AS ratio,\n        CASE\n            WHEN w.humidity < 60 THEN 'low'\n            WHEN w.humidity <= 80 THEN 'medium'\n            WHEN w.humidity > 80 THEN 'high'\n        END AS humidity_bin\n    FROM hourly_station_air_quality aq\n    JOIN air_quality_station s ON s.id = aq.station_id\n    JOIN hourly_station_weather w ON w.datetime = aq.datetime\n    WHERE s.station_type = 'GENERAL'\n      AND w.station_id = :kp_id\n      AND aq.datetime >= :start AND aq.datetime < :end\n      AND aq.pm2_5 IS NOT NULL\n      AND aq.pm10 IS NOT NULL\n      AND aq.pm10 > 0\n      AND w.humidity IS NOT NULL\n)\nSELECT\n    humidity_bin,\n    COUNT(*) AS n,\n    AVG(ratio) AS avg_ratio,\n    CORR(humidity, ratio) OVER () AS corr_all\nFROM valid\nGROUP BY humidity_bin\nORDER BY CASE humidity_bin WHEN 'low' THEN 1 WHEN 'medium' THEN 2 WHEN 'high' THEN 3 END\n\"\"\"), engine, params={\"kp_id\": kp_id, \"start\": start, \"end\": end})\n\nratio_map = dict(zip(agg[\"humidity_bin\"], agg[\"avg_ratio\"]))\nratio_low_humidity = round(float(ratio_map[\"low\"]), 3) if \"low\" in ratio_map and pd.notna(ratio_map[\"low\"]) else None\nratio_mid_humidity = round(float(ratio_map[\"medium\"]), 3) if \"medium\" in ratio_map and pd.notna(ratio_map[\"medium\"]) else None\nratio_high_humidity = round(float(ratio_map[\"high\"]), 3) if \"high\" in ratio_map and pd.notna(ratio_map[\"high\"]) else None\ncorr_val = agg[\"corr_all\"].dropna().iloc[0] if not agg[\"corr_all\"].dropna().empty else None\nhumidity_ratio_correlation = round(float(corr_val), 4) if corr_val is not None else None\n\nprint(\"Humidity-bin summary:\")\nprint(agg[[\"humidity_bin\", \"n\", \"avg_ratio\"]].assign(avg_ratio=agg[\"avg_ratio\"].round(6)).to_string(index=False))\nprint(\"Stored results:\", {\n    \"ratio_low_humidity\": ratio_low_humidity,\n    \"ratio_mid_humidity\": ratio_mid_humidity,\n    \"ratio_high_humidity\": ratio_high_humidity,\n    \"humidity_ratio_correlation\": humidity_ratio_correlation\n})",
+              "# Re-run only the failed aggregation, reusing kp_id/start/end from the previous cell\nagg = pd.read_sql(text(\"\"\"\nWITH valid AS (\n    SELECT\n        w.humidity,\n        aq.pm2_5 / aq.pm10 AS ratio,\n        CASE\n            WHEN w.humidity < 60 THEN 'low'\n            WHEN w.humidity <= 80 THEN 'medium'\n            WHEN w.humidity > 80 THEN 'high'\n        END AS humidity_bin\n    FROM hourly_station_air_quality aq\n    JOIN air_quality_station s ON s.id = aq.station_id\n    JOIN hourly_station_weather w ON w.datetime = aq.datetime\n    WHERE s.station_type = 'GENERAL'\n      AND w.station_id = :kp_id\n      AND aq.datetime >= :start AND aq.datetime < :end\n      AND aq.pm2_5 IS NOT NULL\n      AND aq.pm10 IS NOT NULL\n      AND aq.pm10 > 0\n      AND w.humidity IS NOT NULL\n),\nbins AS (\n    SELECT humidity_bin, COUNT(*) AS n, AVG(ratio) AS avg_ratio\n    FROM valid\n    GROUP BY humidity_bin\n),\ncorr AS (\n    SELECT CORR(humidity, ratio) AS corr_all\n    FROM valid\n)\nSELECT b.humidity_bin, b.n, b.avg_ratio, c.corr_all\nFROM bins b\nCROSS JOIN corr c\nORDER BY CASE b.humidity_bin WHEN 'low' THEN 1 WHEN 'medium' THEN 2 WHEN 'high' THEN 3 END\n\"\"\"), engine, params={\"kp_id\": kp_id, \"start\": start, \"end\": end})\n\nratio_map = dict(zip(agg[\"humidity_bin\"], agg[\"avg_ratio\"]))\nratio_low_humidity = round(float(ratio_map[\"low\"]), 3) if \"low\" in ratio_map and pd.notna(ratio_map[\"low\"]) else None\nratio_mid_humidity = round(float(ratio_map[\"medium\"]), 3) if \"medium\" in ratio_map and pd.notna(ratio_map[\"medium\"]) else None\nratio_high_humidity = round(float(ratio_map[\"high\"]), 3) if \"high\" in ratio_map and pd.notna(ratio_map[\"high\"]) else None\ncorr_val = agg[\"corr_all\"].dropna().iloc[0] if not agg[\"corr_all\"].dropna().empty else None\nhumidity_ratio_correlation = round(float(corr_val), 4) if corr_val is not None else None\n\nprint(\"Humidity-bin summary:\")\nprint(agg[[\"humidity_bin\", \"n\", \"avg_ratio\"]].assign(avg_ratio=agg[\"avg_ratio\"].round(6)).to_string(index=False))\nprint(\"Stored results:\", {\n    \"ratio_low_humidity\": ratio_low_humidity,\n    \"ratio_mid_humidity\": ratio_mid_humidity,\n    \"ratio_high_humidity\": ratio_high_humidity,\n    \"humidity_ratio_correlation\": humidity_ratio_correlation\n})"
+            ],
+            "runtime_variables": {
+              "ratio_low_humidity": 0.686,
+              "ratio_mid_humidity": 0.654,
+              "ratio_high_humidity": 0.607,
+              "humidity_ratio_correlation": -0.1879
+            }
+          },
+          {
+            "query": "Across all matched hours in October 2025, what is the Pearson correlation between King's Park humidity and the network-wide average PM2.5/PM10 ratio? Return the coefficient rounded to 4 decimal places.",
+            "actual_response": "-0.2477",
+            "actual_calls": [],
+            "validation_errors": [],
+            "metrics": {
+              "steps": 2,
+              "prompt_tokens": 18299,
+              "completion_tokens": 393,
+              "total_tokens": 18692
+            },
+            "success": true,
+            "variables_not_set": false,
+            "error": null,
+            "code_snippets": [
+              "# Correlate King's Park humidity with the network-wide hourly average PM2.5/PM10 ratio for October 2025\ncorr_hourly = pd.read_sql(text(\"\"\"\nWITH hourly_network AS (\n    SELECT\n        aq.datetime,\n        AVG(aq.pm2_5 / aq.pm10) AS network_avg_ratio\n    FROM hourly_station_air_quality aq\n    JOIN air_quality_station s ON s.id = aq.station_id\n    WHERE s.station_type = 'GENERAL'\n      AND aq.datetime >= :start AND aq.datetime < :end\n      AND aq.pm2_5 IS NOT NULL\n      AND aq.pm10 IS NOT NULL\n      AND aq.pm10 > 0\n    GROUP BY aq.datetime\n),\nmatched AS (\n    SELECT\n        w.humidity,\n        hn.network_avg_ratio\n    FROM hourly_network hn\n    JOIN hourly_station_weather w ON w.datetime = hn.datetime\n    WHERE w.station_id = :kp_id\n      AND w.humidity IS NOT NULL\n)\nSELECT\n    COUNT(*) AS matched_hours,\n    CORR(humidity, network_avg_ratio) AS pearson_corr\nFROM matched\n\"\"\"), engine, params={\"kp_id\": kp_id, \"start\": start, \"end\": end})\n\nhumidity_ratio_correlation = round(float(corr_hourly.loc[0, \"pearson_corr\"]), 4)\nprint(\"Matched hours:\", int(corr_hourly.loc[0, \"matched_hours\"]))\nprint(\"Stored result:\", {\"humidity_ratio_correlation\": humidity_ratio_correlation})"
+            ],
+            "runtime_variables": {
+              "ratio_low_humidity": 0.686,
+              "ratio_mid_humidity": 0.654,
+              "ratio_high_humidity": 0.607,
+              "humidity_ratio_correlation": -0.2477
+            }
+          }
+        ]
+      }
+    ],
+    "metrics": {
+      "total_turns": 2,
+      "successful_turns": 2,
+      "failed_turns": 0,
+      "total_steps": 5,
+      "success_rate": 1.0,
+      "total_prompt_tokens": 40423,
+      "total_completion_tokens": 2538,
+      "total_tokens": 42961
+    }
+  }
+}

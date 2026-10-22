@@ -1,0 +1,107 @@
+{
+  "hk_regulatory_compliance_investigation": {
+    "scenario": "hk_regulatory_compliance_investigation",
+    "conversations": [
+      {
+        "id": "compliance_investigation",
+        "turns": [
+          {
+            "query": "On December 30, 2025, which air quality monitoring stations had a daily average PM2.5 exceeding the WHO 24-hour guideline of 15 \u00b5g/m\u00b3? How many stations exceeded it, and which had the highest daily average?",
+            "actual_response": "Based on the data queried:\n\n- **Turn 1:** 18 air quality monitoring stations exceeded the WHO 24-hour PM2.5 guideline of 15 \u00b5g/m\u00b3 on December 30, 2025. The station with the highest daily average PM2.5 was **Tung Chung**, with a value of **78.0 \u00b5g/m\u00b3**.\n- **Turn 2:** Within a 2km radius of Tung Chung station, there are **31** residential areas and **62** educational institutions.\n- **Turn 3:** **100.0%** of these residential areas are located within statutory Residential land use zones.",
+            "actual_calls": [],
+            "validation_errors": [],
+            "metrics": {
+              "steps": 11,
+              "prompt_tokens": 98882,
+              "completion_tokens": 15058,
+              "total_tokens": 113940
+            },
+            "success": true,
+            "variables_not_set": false,
+            "error": null,
+            "code_snippets": [
+              "import pandas as pd\nfrom sqlalchemy import text\n\n# Query daily average PM2.5 for all stations on December 30, 2025\nquery = text(\"\"\"\nSELECT \n    aqs.name_en,\n    AVG(hsaq.pm2_5) as daily_avg_pm25\nFROM hourly_station_air_quality hsaq\nJOIN air_quality_station aqs ON hsaq.station_id = aqs.id\nWHERE hsaq.datetime >= '2025-12-30 00:00:00'\n  AND hsaq.datetime < '2025-12-31 00:00:00'\nGROUP BY aqs.name_en\nORDER BY daily_avg_pm25 DESC\n\"\"\")\n\ndf = pd.read_sql(query, engine)\nprint(df)\nprint(f\"\\nTotal stations with data: {len(df)}\")\nprint(f\"Stations exceeding WHO guideline (15 \u00b5g/m\u00b3): {len(df[df['daily_avg_pm25'] > 15])}\")\nprint(f\"Worst station: {df.iloc[0]['name_en']} with PM2.5: {df.iloc[0]['daily_avg_pm25']:.1f} \u00b5g/m\u00b3\")",
+              "exceedance_station_count = 18\nworst_station_name = \"Tung Chung\"\nworst_station_pm25 = 78.0",
+              "import pandas as pd\nfrom sqlalchemy import text\n\n# Get coordinates of Tung Chung station\nquery_coords = text(\"\"\"\nSELECT coordinate\nFROM air_quality_station\nWHERE name_en = 'Tung Chung'\n\"\"\")\ncoords_df = pd.read_sql(query_coords, engine)\ntung_chung_coord = coords_df['coordinate'].values[0]\nprint(f\"Tung Chung coordinates: {tung_chung_coord}\")\n\n# Count residential areas within 2km\nquery_residential = text(\"\"\"\nSELECT COUNT(*)\nFROM sensitive_area\nWHERE category = 'RESIDENTIAL_AREA'\n  AND ST_DWithin(\n    coordinate::geography,\n    %s::geography,\n    2000\n  )\n\"\"\")\nresidential_count = pd.read_sql(query_residential, engine, params=(tung_chung_coord,))['count'].values[0]\nprint(f\"Residential areas within 2km: {residential_count}\")\n\n# Count educational institutions within 2km\nquery_educational = text(\"\"\"\nSELECT COUNT(*)\nFROM sensitive_area\nWHERE category = 'EDUCATIONAL_INSTITUTION'\n  AND ST_DWithin(\n    coordinate::geography,\n    %s::geography,\n    2000\n  )\n\"\"\")\neducational_count = pd.read_sql(query_educational, engine, params=(tung_chung_coord,))['count'].values[0]\nprint(f\"Educational institutions within 2km: {educational_count}\")",
+              "import pandas as pd\nfrom sqlalchemy import text\n\n# Get Tung Chung station coordinates as WKT\nquery_coords = text(\"SELECT ST_AsText(coordinate) FROM air_quality_station WHERE name_en = 'Tung Chung'\")\ncoords_df = pd.read_sql(query_coords, engine)\ntung_chung_wkt = coords_df['st_astext'].values[0]\nprint(f\"Tung Chung WKT: {tung_chung_wkt}\")\n\n# Count residential areas within 2km\nquery_residential = text(\"\"\"\nSELECT COUNT(*) as cnt\nFROM sensitive_area\nWHERE category = 'RESIDENTIAL_AREA'\n  AND ST_DWithin(\n    coordinate::geography,\n    ST_SetSRID(ST_GeomFromText(%s), 4326)::geography,\n    2000\n  )\n\"\"\")\nres_df = pd.read_sql(query_residential, engine, params=[tung_chung_wkt])\nresidential_count = res_df['cnt'].values[0]\nprint(f\"Residential areas within 2km: {residential_count}\")\n\n# Count educational institutions within 2km\nquery_educational = text(\"\"\"\nSELECT COUNT(*) as cnt\nFROM sensitive_area\nWHERE category = 'EDUCATIONAL_INSTITUTION'\n  AND ST_DWithin(\n    coordinate::geography,\n    ST_SetSRID(ST_GeomFromText(%s), 4326)::geography,\n    2000\n  )\n\"\"\")\nedu_df = pd.read_sql(query_educational, engine, params=[tung_chung_wkt])\neducational_count = edu_df['cnt'].values[0]\nprint(f\"Educational institutions within 2km: {educational_count}\")",
+              "import pandas as pd\nfrom sqlalchemy import text\n\ntung_chung_wkt = \"POINT(113.943659 22.28888887)\"\n\nquery_residential = f\"\"\"\nSELECT COUNT(*) as cnt\nFROM sensitive_area\nWHERE category = 'RESIDENTIAL_AREA'\n  AND ST_DWithin(\n    coordinate::geography,\n    ST_GeomFromText('{tung_chung_wkt}', 4326)::geography,\n    2000\n  )\n\"\"\"\nres_df = pd.read_sql(text(query_residential), engine)\nresidential_count = int(res_df['cnt'].values[0])\nprint(f\"Residential areas within 2km: {residential_count}\")\n\nquery_educational = f\"\"\"\nSELECT COUNT(*) as cnt\nFROM sensitive_area\nWHERE category = 'EDUCATIONAL_INSTITUTION'\n  AND ST_DWithin(\n    coordinate::geography,\n    ST_GeomFromText('{tung_chung_wkt}', 4326)::geography,\n    2000\n  )\n\"\"\"\nedu_df = pd.read_sql(text(query_educational), engine)\neducational_count = int(edu_df['cnt'].values[0])\nprint(f\"Educational institutions within 2km: {educational_count}\")",
+              "import pandas as pd\nfrom sqlalchemy import text\n\ntung_chung_wkt = \"POINT(113.943659 22.28888887)\"\n\nquery_residential = f\"\"\"\nSELECT COUNT(*) as cnt\nFROM sensitive_area\nWHERE category = 'RESIDENTIAL_AREA'\n  AND ST_DWithin(\n    geometry::geography,\n    ST_GeomFromText('{tung_chung_wkt}', 4326)::geography,\n    2000\n  )\n\"\"\"\nres_df = pd.read_sql(text(query_residential), engine)\nresidential_count = int(res_df['cnt'].values[0])\nprint(f\"Residential areas within 2km: {residential_count}\")\n\nquery_educational = f\"\"\"\nSELECT COUNT(*) as cnt\nFROM sensitive_area\nWHERE category = 'EDUCATIONAL_INSTITUTION'\n  AND ST_DWithin(\n    geometry::geography,\n    ST_GeomFromText('{tung_chung_wkt}', 4326)::geography,\n    2000\n  )\n\"\"\"\nedu_df = pd.read_sql(text(query_educational), engine)\neducational_count = int(edu_df['cnt'].values[0])\nprint(f\"Educational institutions within 2km: {educational_count}\")",
+              "import pandas as pd\nfrom sqlalchemy import text\n\ntung_chung_wkt = \"POINT(113.943659 22.28888887)\"\n\nquery_pct = f\"\"\"\nSELECT \n  COUNT(*) as total_residential,\n  COUNT(DISTINCT CASE WHEN l.land_category = 'Residential' THEN s.id END) as in_residential_zone\nFROM sensitive_area s\nLEFT JOIN land_use_zone l ON ST_Intersects(s.geometry, l.geometry)\nWHERE s.category = 'RESIDENTIAL_AREA'\n  AND ST_DWithin(s.geometry::geography, ST_GeomFromText('{tung_chung_wkt}', 4326)::geography, 2000)\n\"\"\"\ndf_pct = pd.read_sql(text(query_pct), engine)\ntotal_res = int(df_pct['total_residential'].values[0])\nin_zone = int(df_pct['in_residential_zone'].values[0])\npct = round((in_zone / total_res) * 100, 1) if total_res > 0 else 0.0\nprint(f\"Total residential areas: {total_res}\")\nprint(f\"In Residential zone: {in_zone}\")\nprint(f\"Percentage: {pct}%\")",
+              "import pandas as pd\nfrom sqlalchemy import text\n\ntung_chung_wkt = \"POINT(113.943659 22.28888887)\"\n\nquery_correct = f\"\"\"\nWITH res_areas AS (\n  SELECT id, geometry\n  FROM sensitive_area\n  WHERE category = 'RESIDENTIAL_AREA'\n    AND ST_DWithin(geometry::geography, ST_GeomFromText('{tung_chung_wkt}', 4326)::geography, 2000)\n)\nSELECT \n  COUNT(*) as total_residential,\n  COUNT(DISTINCT CASE WHEN l.land_category = 'Residential' THEN r.id END) as in_residential_zone\nFROM res_areas r\nLEFT JOIN land_use_zone l ON ST_Intersects(r.geometry, l.geometry)\n\"\"\"\ndf_correct = pd.read_sql(text(query_correct), engine)\ntotal_res = int(df_correct['total_residential'].values[0])\nin_zone = int(df_correct['in_residential_zone'].values[0])\npct = round((in_zone / total_res) * 100, 1) if total_res > 0 else 0.0\nprint(f\"Total residential areas: {total_res}\")\nprint(f\"In Residential zone: {in_zone}\")\nprint(f\"Percentage: {pct}%\")",
+              "import pandas as pd\nfrom sqlalchemy import text\n\ntung_chung_wkt = \"POINT(113.943659 22.28888887)\"\n\nquery_correct = f\"\"\"\nSELECT \n  COUNT(*) as total_residential,\n  SUM(CASE WHEN EXISTS (\n    SELECT 1 FROM land_use_zone l \n    WHERE ST_Intersects(r.geometry, l.geometry) AND l.land_category = 'Residential'\n  ) THEN 1 ELSE 0 END) as in_residential_zone\nFROM sensitive_area r\nWHERE r.category = 'RESIDENTIAL_AREA'\n  AND ST_DWithin(r.geometry::geography, ST_GeomFromText('{tung_chung_wkt}', 4326)::geography, 2000)\n\"\"\"\ndf_correct = pd.read_sql(text(query_correct), engine)\ntotal_res = int(df_correct['total_residential'].values[0])\nin_zone = int(df_correct['in_residential_zone'].values[0])\npct = round((in_zone / total_res) * 100, 1) if total_res > 0 else 0.0\nprint(f\"Total residential areas: {total_res}\")\nprint(f\"In Residential zone: {in_zone}\")\nprint(f\"Percentage: {pct}%\")",
+              "residential_count = 31\neducational_count = 62\nresidential_in_residential_zone_pct = 100.0"
+            ],
+            "runtime_variables": {
+              "exceedance_station_count": 18,
+              "worst_station_name": "Tung Chung",
+              "worst_station_pm25": 78.0,
+              "residential_count": 31,
+              "educational_count": 62,
+              "residential_in_residential_zone_pct": 100.0
+            }
+          },
+          {
+            "query": "For the station with the highest exceedance, how many residential area and educational institution sensitive areas are within 2 km?",
+            "actual_response": "Within a 2 km radius of Tung Chung station, there are 31 residential area sensitive areas and 62 educational institution sensitive areas.",
+            "actual_calls": [],
+            "validation_errors": [],
+            "metrics": {
+              "steps": 1,
+              "prompt_tokens": 11701,
+              "completion_tokens": 735,
+              "total_tokens": 12436
+            },
+            "success": true,
+            "variables_not_set": false,
+            "error": null,
+            "code_snippets": [],
+            "runtime_variables": {
+              "exceedance_station_count": 18,
+              "worst_station_name": "Tung Chung",
+              "worst_station_pm25": 78.0,
+              "residential_count": 31,
+              "educational_count": 62,
+              "residential_in_residential_zone_pct": 100.0
+            }
+          },
+          {
+            "query": "Of the residential areas within 2 km of that station, what percentage have their centroid located in a land use zone categorized as 'Residential'?",
+            "actual_response": "100.0% of the residential areas within 2 km of Tung Chung station have their centroid located in a 'Residential' land use zone.",
+            "actual_calls": [],
+            "validation_errors": [],
+            "metrics": {
+              "steps": 2,
+              "prompt_tokens": 23934,
+              "completion_tokens": 1190,
+              "total_tokens": 25124
+            },
+            "success": true,
+            "variables_not_set": false,
+            "error": null,
+            "code_snippets": [
+              "import pandas as pd\nfrom sqlalchemy import text\n\ntung_chung_wkt = \"POINT(113.943659 22.28888887)\"\n\nquery_centroid = f\"\"\"\nWITH res_areas AS (\n  SELECT id, geometry\n  FROM sensitive_area\n  WHERE category = 'RESIDENTIAL_AREA'\n    AND ST_DWithin(geometry::geography, ST_GeomFromText('{tung_chung_wkt}', 4326)::geography, 2000)\n)\nSELECT \n  COUNT(*) as total_residential,\n  SUM(CASE WHEN EXISTS (\n    SELECT 1 FROM land_use_zone l \n    WHERE ST_Contains(l.geometry, ST_Centroid(r.geometry))\n  ) THEN 1 ELSE 0 END) as in_residential_zone\nFROM res_areas r\n\"\"\"\ndf_centroid = pd.read_sql(text(query_centroid), engine)\ntotal_res = int(df_centroid['total_residential'].values[0])\nin_zone = int(df_centroid['in_residential_zone'].values[0])\npct = round((in_zone / total_res) * 100, 1) if total_res > 0 else 0.0\nprint(f\"Total residential areas: {total_res}\")\nprint(f\"In Residential zone (centroid): {in_zone}\")\nprint(f\"Percentage: {pct}%\")"
+            ],
+            "runtime_variables": {
+              "exceedance_station_count": 18,
+              "worst_station_name": "Tung Chung",
+              "worst_station_pm25": 78.0,
+              "residential_count": 31,
+              "educational_count": 62,
+              "residential_in_residential_zone_pct": 100.0
+            }
+          }
+        ]
+      }
+    ],
+    "metrics": {
+      "total_turns": 3,
+      "successful_turns": 3,
+      "failed_turns": 0,
+      "total_steps": 14,
+      "success_rate": 1.0,
+      "total_prompt_tokens": 134517,
+      "total_completion_tokens": 16983,
+      "total_tokens": 151500
+    }
+  }
+}
