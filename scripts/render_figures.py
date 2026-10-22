@@ -23,7 +23,7 @@ def main():
     env = {**os.environ, "OPENBLAS_NUM_THREADS": "1", "OMP_NUM_THREADS": "1"}
     scripts = [
         "table_deployment.py", "table_results.py", "si_replication.py",
-        "style_archived_atlas.py", "fig_overview.py", "fig_replication.py", "fig_failure_boundaries.py",
+        "style_archived_atlas.py", "fig_replication.py", "fig_failure_boundaries.py",
         "fig_evaluation.py", "plot_supp_heatmap.py", "fig_process.py", "plot_ed_fig1.py",
         "fig_experiment1.py", "fig_si_moved.py",
     ]

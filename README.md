@@ -41,7 +41,7 @@ backbones.
 | `phase2_benchmark/` | Experiment 1: the 50 tasks (`benchmarks_metaseq.json`, `evals/`), the single and multi-agent runners, the archived runs (`experiments/metaseq/<backbone>/{single,multi}/run1/`) and their summary (`experiments/metaseq/summary/`) |
 | `phase3_replication/` | Experiment 2: suite, arms, harness, scoring, statistics and the derived report tables; its own `README.md` and `docs/` (pre-registration and deviations) |
 | `scripts/` | Everything that turns archived results into the paper's figures and tables, and the checks on every quoted number |
-| `manuscript/figures/archive_sources/` | The archived data-layer atlas from which Fig. 1a and SI Fig. 9 are drawn |
+| `manuscript/figures/archive_sources/` | The archived data-layer atlas from which SI Fig. 9 is drawn |
 | `PV_findings.md` | Narrative of experiment 1 with per-backbone and per-category results |
 
 ## Reproducing the figures and tables
@@ -60,11 +60,10 @@ cd phase2_benchmark && uv run --project ../phase3_replication python -m scripts.
 ```
 
 Add `--data-only` to `render_figures.py` to refresh the statistical plots while keeping
-Fig. 1, the map atlas and the tables as they are.
+the map atlas and the tables as they are.
 
 | Output | Generator |
 |---|---|
-| Fig. 1, overview | `scripts/fig_overview.py` (map panel cropped from the atlas) |
 | Fig. 2, experiment 1 | `scripts/fig_experiment1.py` |
 | Fig. 3, experiment 2 | `scripts/fig_replication.py` |
 | Fig. 4, gain by task and remaining errors; SI Fig. 10, robustness; SI Table 20 | `scripts/fig_failure_boundaries.py`, with `scripts/failure_evidence.py` |
