@@ -18,8 +18,9 @@ exclusion rules.
 ## Registration
 
 The protocol is dated 2026-09-29 and was committed to the study's repository on 2026-10-01; the
-first confirmatory run started on 2026-10-10. The five backbones added after the first three
-were run under its rule that every backbone started is run in full and reported.
+first confirmatory run started on 2026-10-10. Five of the eight backbones were added after the
+first three had been analysed, a departure from §3 recorded below; each was run in full under the
+unchanged hypothesis, estimator and scoring rule, and reported.
 
 ## Departures in the analysis
 

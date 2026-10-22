@@ -26,7 +26,7 @@ Headline results, every one asserted by a script (see below):
 | Experiment 2, pooled over eight backbones | 77.1% | 84.1% | +7.0 points, 95% interval 4.7–9.6 |
 
 In experiment 2 the gain is positive on all eight backbones. The protocol's
-compute-matched baseline, the single agent run three times with its outputs voted,
+three-run voting baseline, the single agent run three times with its outputs voted,
 reached 81.1%; MetaSEQ was 3.0 points higher (0.3–6.0) at 1.08 times its tokens.
 
 The deployment judge scores and execution logs are the Hong Kong half of the evaluation
