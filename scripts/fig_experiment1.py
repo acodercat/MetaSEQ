@@ -1,4 +1,4 @@
-"""Fig. 2 (experiment 1), in the same form as Fig. 3a. (a) Task pass rate per backbone and pooled,
+"""Fig. 3 (experiment 1), in the same form as Fig. 4a. (a) Task pass rate per backbone and pooled,
 single agent and MetaSEQ, Wilson 95% intervals, the gain above each pair and MetaSEQ's token
 multiple below its label. (b) Outcome of the 350 paired backbone-task cells.
 Writes manuscript/figures/experiment1.pdf.
@@ -98,7 +98,7 @@ def outcomes(ax):
 
 
 def main():
-    fig = plt.figure(figsize=(WIDTH, 96 * MM))   # 96 mm: Fig. 2 and Table 1 share a float page
+    fig = plt.figure(figsize=(WIDTH, 96 * MM))   # 96 mm: Fig. 3 and Table 1 share a float page
     axb = fig.add_axes([.105, .40, .875, .48])
     bars(axb)
     panel(fig, "a", .012, .975, "Task pass rate by backbone")

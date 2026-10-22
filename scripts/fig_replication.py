@@ -1,4 +1,4 @@
-"""Fig. 3, experiment 2. (a) Task pass rate of the single agent (A), the voted three-run baseline
+"""Fig. 4, experiment 2. (a) Task pass rate of the single agent (A), the voted three-run baseline
 (G) and MetaSEQ (D) on every backbone and pooled, with 95% intervals from 10,000 task resamples
 (seed 20260929), the gain D - A above each group and D's token multiple of A below its label.
 (b) Turn pass rate after a failed and after a passed turn, and on third turns. (c) Reasoning mode

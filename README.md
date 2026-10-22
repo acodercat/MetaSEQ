@@ -54,7 +54,7 @@ uv run --project phase3_replication --with matplotlib --with pypdf --with pymupd
     python scripts/render_figures.py
 
 # check every number the paper quotes
-uv run --project phase3_replication python scripts/aggregate_replication.py   # experiment 2 and Fig. 4
+uv run --project phase3_replication python scripts/aggregate_replication.py   # experiment 2 and Fig. 5
 uv run --project phase3_replication python scripts/table_deployment.py        # deployment evaluation
 cd phase2_benchmark && uv run --project ../phase3_replication python -m scripts.aggregate_metaseq && cd ..   # experiment 1
 ```
@@ -64,22 +64,23 @@ the map atlas and the tables as they are.
 
 | Output | Generator |
 |---|---|
-| Fig. 2, experiment 1 | `scripts/fig_experiment1.py` |
-| Fig. 3, experiment 2 | `scripts/fig_replication.py` |
-| Fig. 4, gain by task and remaining errors; SI Fig. 10, robustness; SI Table 20 | `scripts/fig_failure_boundaries.py`, with `scripts/failure_evidence.py` |
+| Fig. 2, deployment case | Archived agent output, not regenerated |
+| Fig. 3, experiment 1 | `scripts/fig_experiment1.py` |
+| Fig. 4, experiment 2 | `scripts/fig_replication.py` |
+| Fig. 5, gain by task and remaining errors; SI Fig. 9, robustness; SI Table 20 | `scripts/fig_failure_boundaries.py`, with `scripts/failure_evidence.py` |
 | Table 1 | `scripts/table_results.py` |
-| SI Fig. 5 and SI Table 5, deployment judge scores | `scripts/fig_evaluation.py`, `scripts/table_deployment.py` |
-| SI Fig. 6, per-criterion judge profiles | `scripts/plot_supp_heatmap.py` |
-| SI Fig. 7, process reliability | `scripts/fig_process.py` |
-| SI Fig. 8, pairwise preference | `scripts/plot_ed_fig1.py` |
-| SI Fig. 9, data-layer atlas | `scripts/gis/supp_maps.py` (needs the database); recoloured by `scripts/style_archived_atlas.py` |
-| SI Figs. 11–13 | `scripts/fig_si_moved.py` |
+| SI Fig. 4 and SI Table 5, deployment judge scores | `scripts/fig_evaluation.py`, `scripts/table_deployment.py` |
+| SI Fig. 5, per-criterion judge profiles | `scripts/plot_supp_heatmap.py` |
+| SI Fig. 6, process reliability | `scripts/fig_process.py` |
+| SI Fig. 7, pairwise preference | `scripts/plot_ed_fig1.py` |
+| SI Fig. 8, data-layer atlas | `scripts/gis/supp_maps.py` (needs the database); recoloured by `scripts/style_archived_atlas.py` |
+| SI Figs. 10–12 | `scripts/fig_si_moved.py` |
 | SI Notes 2–4, SI Tables 10–20 and 23 | `scripts/si_replication.py` |
 | SI Table 18, voted baseline G | `phase3_replication/analysis/vote.py`, read through `scripts/replication_tables.py` |
 
 All figures share one palette, defined in `scripts/data_figure_style.py`: grey for the
-single agent, blue for MetaSEQ, orange for the voted baseline. Supplementary Figs. 1–4
-are archived panels from deployed answers and are not regenerated.
+single agent, blue for MetaSEQ, orange for the voted baseline. Fig. 2 and Supplementary
+Figs. 1–3 are archived panels from deployed answers and are not regenerated.
 
 Fig. 3, Fig. 4, the experiment-2 Supplementary Tables (`scripts/si_replication.py`) and
 `scripts/aggregate_replication.py` read the experiment-2 run records, which are not in this

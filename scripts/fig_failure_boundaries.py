@@ -46,7 +46,7 @@ def task_gains(ax):
 
 
 def failures(counts, representative, matrix, cases):
-    """Fig. 4: (a) per-task gain; (b) error classes recovered and introduced; (c) shared wrong outputs."""
+    """Fig. 5: (a) per-task gain; (b) error classes recovered and introduced; (c) shared wrong outputs."""
     fig = plt.figure(figsize=(WIDTH, 205 * MM))
     panel(fig, "a", .025, .99, "Gain by task")
     task_gains(fig.add_axes([.105, .815, .875, .15]))
@@ -162,7 +162,7 @@ def evidence_table(shared, records):
 Each row is one task--output pair selected after inspection of the results:
 at least eight parsed wrong outputs, a modal wrong value accounting for at least half,
 and that value returned by at least three configurations from at least two families.
-Values are grouped after rounding to four decimal places. T01--T18 match Fig.~4c;
+Values are grouped after rounding to four decimal places. T01--T18 match Fig.~5c;
 E01--E30 identify rows in the accompanying source-data CSVs.
 Reference values are those recorded in validator messages, printed to six significant figures;
 they were not recomputed from a fresh database snapshot for this analysis.

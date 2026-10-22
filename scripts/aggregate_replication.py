@@ -45,7 +45,7 @@ QUOTED = {
     "mixed_model": {"odds_ratio": 2.09, "or_lo": 1.83, "or_hi": 2.38},   # protocol's primary model, A/D only
     "vote": {"G": 81.1, "D_minus_G": (3.0, 0.3, 6.0), "tokens_ratio": 1.08, "backbones_positive": 6},   # G: A x3 voted
     "final_turn": (81.1, 88.1),               # pooled A, D under the final-turn-only rule
-    "per_task": {"higher": 67, "equal": 23, "lower": 21, "top20_share": 69},   # Fig. 4a: D - A over 24 runs per task
+    "per_task": {"higher": 67, "equal": 23, "lower": 21, "top20_share": 69},   # Fig. 5a: D - A over 24 runs per task
     "headroom": (-0.61, 0.016),               # Spearman rho, p over the 15 comparisons of both experiments
     "verifier": {"corrected": 342, "broken": 122, "before": 77.2, "after": 84.1, "delta": (6.9, 5.3, 8.7),
                  "turns": 4080, "label_flips_broken": 22,
