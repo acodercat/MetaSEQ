@@ -7,6 +7,7 @@
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 import pandas as pd
@@ -390,6 +391,28 @@ def vote_baseline(seed: int = 20260929, resamples: int = 10_000) -> pd.DataFrame
                  "tokens_ratio": tok[D].mean() / (3 * tok[A].mean()),
                  "backbones_positive": int(sum(r["delta_pp"] > 0 for r in rows))})
     return pd.DataFrame(rows)
+
+
+def step_cap_detail(model: str) -> dict:
+    """Per arm, for one backbone: turns, turns in which a stage hit its step cap, and turns that
+    used the whole per-turn budget. Reads the run records (on disk; on Zenodo for a clone)."""
+    try:
+        from analysis.failures import STEP_LIMITS   # the harness's own set
+    except ImportError:
+        STEP_LIMITS = {"max_steps", "budget_exhausted"}
+    out = {}
+    for arm in (A, D):
+        turns = capped = full = 0
+        for path in (PHASE3 / "results").glob(f"*/*/*/{arm}/{model}/r*/run.json"):
+            run = json.loads(path.read_text())
+            for conversation in run["conversations"]:
+                for turn in conversation["turns"]:
+                    stages = turn["stages"]
+                    turns += 1
+                    capped += any(s["stop_reason"] in STEP_LIMITS for s in stages)
+                    full += sum(s.get("steps", 0) for s in stages) >= 50
+        out[arm] = (turns, capped, full)
+    return out
 
 
 def final_turn_rule() -> dict:

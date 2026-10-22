@@ -33,13 +33,22 @@ were run under its rule that every backbone started is run in full and reported.
 - **Holm correction.** The protocol's Holm correction across its four contrasts was not applied
   to D − A; its bootstrap p is below 10⁻³ and no correction over four contrasts changes the
   conclusion.
-- **Verifier audit (post hoc, 2026-10-17).** Not pre-specified. Every D turn's record stores the
+- **Verifier audit (post hoc, 2026-10-17).** The protocol lists the turns fixed and broken by the
+  verifier as a secondary outcome (§4 (iii)); the task-level pass rate before the verifier, its
+  comparison with A and the interpretation are post hoc. Every D turn's record stores the
   required outputs as the synthesis worker left them (`coordination.before_verification`); these
   were scored with the task's validator (`analysis/before_verifier.py`, stored as the pseudo-arm
   `multi_agent_fixed_roles_verified_before`) and paired with the stored final verdicts. The verifier
   corrected 342 turns and broke 122 of 4,080; task pass rate 77.2% before it, 84.1% after
   (+6.9 pp, 95% interval 5.3–8.7), net positive on every backbone and in both cities. No run was
   repeated. Reported in Results and Supplementary Table 20.
+- **Scoring pass.** The protocol's single scoring pass after the last run, with a second pass
+  reproducing every verdict (§5), was not performed. Every run was scored by its validator when it
+  finished and those verdicts are the results; the only rescoring is the one under the widened
+  bands (below).
+- **Backbones added after results were seen.** §3 says no backbone is added after results are
+  seen. Five of the eight were added after the first three had been analysed (2026-10-14 and
+  10-15, below); each was run in full under the unchanged hypothesis, estimator and scoring rule.
 
 ## Revised before the confirmatory runs
 

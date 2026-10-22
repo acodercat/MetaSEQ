@@ -26,7 +26,8 @@ QUOTED = {
     "sign_test": {"all": (8, 8, 0.0078), "distinct": (6, 6, 0.0313), "significant": 5},
     "tokens_per_task_ratio": (2.4, 4.8),      # D / A, range over backbones
     "tokens_per_correct_ratio": (2.3, 4.4),
-    "step_cap_turns": {"qwen3.8-flash": (2, 233), "qwen3.8-27b": (14, 85)},   # A, D
+    "step_cap_turns": {"qwen3.8-flash": (2, 233), "qwen3.8-27b": (14, 85)},   # A, D: turns with a stage at its cap
+    "step_cap_full": {"qwen3.8-flash": (510, 2, 135)},   # turns per arm; A and D turns that used all 50 steps
     "runs": 5328,
     "preband": {"A": 72.1, "D": 77.9, "gain": (5.8, 2.1, 9.7),   # the first three backbones only
                 "models": ["deepseek-v4-flash", "gpt-6-luna", "qwen3.8-flash"]},
@@ -90,6 +91,11 @@ def main() -> None:
     for m, quoted in QUOTED["step_cap_turns"].items():
         check(f"step-cap turns {m}", (arms.loc[(rt.A, m), "step_limit_turns"],
                                       arms.loc[(rt.D, m), "step_limit_turns"]), quoted, tol=0)
+    for m, (turns, a_full, d_full) in QUOTED["step_cap_full"].items():
+        detail = rt.step_cap_detail(m)
+        check(f"turns per arm {m}", (detail[rt.A][0], detail[rt.D][0]), (turns, turns), tol=0)
+        check(f"stage-cap turns from records {m}", (detail[rt.A][1], detail[rt.D][1]), QUOTED["step_cap_turns"][m], tol=0)
+        check(f"full-budget turns {m}", (detail[rt.A][2], detail[rt.D][2]), (a_full, d_full), tol=0)
     check("runs", len(rt.outcomes()), QUOTED["runs"], tol=0)
     mt = rt.multiturn()
     for name, quoted in QUOTED["multiturn"].items():
