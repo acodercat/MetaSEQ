@@ -381,6 +381,32 @@ task & city & category & turns \\
                           r"@{}p{.2\textwidth}lrrrllr@{}"))
     print("written", dele, "table 24")
 
+    # Supplementary Table 25: the factorial under the sensitivity conditions.
+    fs = replication_tables.factorial_sensitivity()
+    labels = {"all": "All cells", "no_cap": "No step cap in any core arm", "six_model": "Six-model weighting"}
+    rows = []
+    for cond in ("all", "no_cap", "six_model"):
+        r = fs.loc[cond]
+        rows.append([labels[cond], f"{int(r.cells)}/{int(r.tasks)}"] +
+                    [f"{(0.0 if abs(r[f'{k}_pp']) < .05 else r[f'{k}_pp']):+.1f} [{r[f'{k}_lo']:+.1f}, {r[f'{k}_hi']:+.1f}]"
+                     for k in ("verification", "decomposition", "interaction", "D_minus_B")])
+    sens = ROOT / "manuscript" / "tex" / "table_factorial_sens.tex"
+    sens.write_text(table(25, "The registered $2\\times2$ under two sensitivity conditions, with the study's estimator (per-task means, 10,000 task resamples, seed 20260929). No step cap: every backbone $\\times$ task cell in which any of the four core arms ended a turn at its step cap in any repeat is dropped, so the comparison is between arms that had the steps they used. Six-model weighting: a model's two reasoning modes are averaged before the six models are averaged. Cells/tasks: backbone $\\times$ task cells and tasks retained.",
+                          ["condition", "cells/tasks", "verification (pp)", "decomposition (pp)", "interaction (pp)", "D $-$ B (pp)"], rows,
+                          r"@{}p{.22\textwidth}lllll@{}"))
+    print("written", sens, "table 25")
+
+    # Supplementary Table 26: what the verifier fixed and broke in D, by the kind of error.
+    vk = replication_tables.verifier_fix_kinds()
+    rows = []
+    for m in MODELS + ["pooled"]:
+        r = vk.loc[m]
+        rows.append([MODEL_LABELS.get(m, r"\textbf{Pooled}")] + [str(int(r[(k, c)])) for k in ("fixed", "broken") for c in ("wrong value", "missing")])
+    kinds = ROOT / "manuscript" / "tex" / "table_verifier_kinds.tex"
+    kinds.write_text(table(26, "The turns MetaSEQ's verifier fixed and broke (Supplementary Table~20), by the kind of error in the failing snapshot: a stored value that the validator rejected (wrong value) or a required output that was not set (missing). A fixed turn is classed by its pre-verifier validator message, a broken turn by its final one.",
+                           ["backbone", "fixed: wrong value", "fixed: missing", "broken: wrong value", "broken: missing"], rows, r"@{}p{.28\textwidth}rrrr@{}"))
+    print("written", kinds, "table 26")
+
 
 if __name__ == "__main__":
     main()

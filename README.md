@@ -78,7 +78,7 @@ the map atlas and the tables as they are.
 | SI Fig. 7, pairwise preference | `scripts/plot_ed_fig1.py` |
 | SI Fig. 8, data-layer atlas | `scripts/gis/supp_maps.py` (needs the database); recoloured by `scripts/style_archived_atlas.py` |
 | SI Figs. 10–12 | `scripts/fig_si_moved.py` |
-| SI Notes 2–4, SI Tables 10–20, 23 and 24 | `scripts/si_replication.py` |
+| SI Notes 2–4, SI Tables 10–20 and 23–26 | `scripts/si_replication.py` |
 | SI Table 18, voted baseline G | `phase3_replication/analysis/vote.py`, read through `scripts/replication_tables.py` |
 
 All figures share one palette, defined in `scripts/data_figure_style.py`: grey for the

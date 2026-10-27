@@ -600,6 +600,70 @@ def pair_contrast(treatment: str, control: str, seed: int = 20260929, resamples:
     return 100 * d.mean(), 100 * np.percentile(bs, 2.5), 100 * np.percentile(bs, 97.5)
 
 
+def factorial_sensitivity(seed: int = 20260929, resamples: int = 10_000) -> pd.DataFrame:
+    """The 2 x 2 effects and D - B under three conditions, each with the study's estimator (per-task
+    means, task resamples): "all" (every cell; reproduces factorial()), "no_cap" (dropping every
+    backbone x task cell in which any core arm ended a turn at its step cap in any repeat) and
+    "six_model" (reasoning modes averaged within a model before the six models are averaged).
+    Rows: condition; columns: effect_pp/lo/hi and, for no_cap, the cells and tasks kept."""
+    import numpy as np
+
+    o = study_outcomes(); core = o[o.arm.isin(CORE)]
+    cell = core.groupby(["task", "model", "arm"]).ok.mean().unstack("arm")
+    cap = (core.groupby(["task", "model"]).step_limit_turns.sum() > 0).reindex(cell.index)
+    base = {t: b for b, t in THINKING_PAIRS}
+    cm = cell.reset_index(); cm["base"] = cm.model.map(lambda m: base.get(m, m))
+    conditions = {"all": cell.groupby("task").mean(),
+                  "no_cap": cell[~cap.values].groupby("task").mean(),
+                  "six_model": cm.groupby(["task", "base"])[CORE].mean().groupby("task").mean()}
+    rng = np.random.default_rng(seed)
+    rows = {}
+    for name, per in conditions.items():
+        A_, B_, C_, D_ = (per[a] for a in CORE)
+        eff = {"verification": ((B_ - A_) + (D_ - C_)) / 2, "decomposition": ((C_ - A_) + (D_ - B_)) / 2,
+               "interaction": (D_ - C_) - (B_ - A_), "D_minus_B": D_ - B_}
+        n = len(per); draws = rng.integers(0, n, (resamples, n))
+        row = {}
+        for k, v in eff.items():
+            d = v.to_numpy(); bs = d[draws].mean(axis=1)
+            row[f"{k}_pp"], row[f"{k}_lo"], row[f"{k}_hi"] = 100 * d.mean(), 100 * np.percentile(bs, 2.5), 100 * np.percentile(bs, 97.5)
+        row["cells"] = int(len(cell) - cap.sum()) if name == "no_cap" else int(len(cell))
+        row["tasks"] = int(per.shape[0])
+        rows[name] = row
+    return pd.DataFrame(rows).T
+
+
+D_BEFORE = f"{D}_before"   # D's outputs as the synthesis worker left them, before the verifier
+
+
+def verifier_fix_kinds() -> pd.DataFrame:
+    """Of the D turns the verifier fixed (failed before it, passed after), how many failed before it
+    because a required output was missing and how many because a stored value was wrong, per
+    backbone and in total; and of the turns it broke, how many it broke to a wrong value. Reads
+    the stored pre-verifier and final cards; the class comes from the validator message
+    (error_messages.error_class)."""
+    import json
+    from error_messages import error_class
+
+    rows = []
+    for final_path in (PHASE3 / "results").glob(f"*/*/*/{D}/*/r*/programmatic_verification.json"):
+        before_path = Path(str(final_path).replace(f"/{D}/", f"/{D_BEFORE}/"))
+        final = json.loads(final_path.read_text()); before = json.loads(before_path.read_text())
+        model = final_path.parts[-3]
+        fb = {(c["id"], t["turn"]): t for c in before["conversations"] for t in c["turns"]}
+        for c in final["conversations"]:
+            for t in c["turns"]:
+                b = fb[(c["id"], t["turn"])]
+                if not b["success"] and t["success"]:
+                    rows.append(dict(model=model, kind="fixed", cls="missing" if error_class(b.get("message") or "") == "unset" else "wrong value"))
+                elif b["success"] and not t["success"]:
+                    rows.append(dict(model=model, kind="broken", cls="missing" if error_class(t.get("message") or "") == "unset" else "wrong value"))
+    tr = pd.DataFrame(rows)
+    out = tr.groupby(["model", "kind", "cls"]).size().unstack(["kind", "cls"], fill_value=0).reindex(models())
+    out.loc["pooled"] = out.sum()
+    return out
+
+
 def bayes_factorial() -> pd.DataFrame:
     """The registered primary model (bambi/PyMC, `analysis/bayes.py` of the study repository)
     fitted on the four core arms of all backbones: posterior mean and 95% interval on the

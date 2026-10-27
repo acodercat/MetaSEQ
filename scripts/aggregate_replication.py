@@ -75,6 +75,9 @@ QUOTED = {
     "D_minus_C": (3.8, 2.2, 5.5), "G_minus_A": (4.0, 2.8, 5.1),
     "by_model": {"qwen3.8-flash": {"H2a": 5.7, "H1": 2.4}, "qwen3.8-27b": {"B": 74.2}},
     "turns6": 24480,
+    "sensitivity": {"no_cap": {"cells": 680, "verification": (5.7, 3.9, 7.5), "decomposition": (1.7, -0.0, 3.5), "D_minus_B": (0.6, -0.9, 2.1)},
+                    "six_model": {"verification": (5.0, 3.6, 6.6), "decomposition": (1.3, -0.2, 2.8)}},
+    "verifier_kinds_D": {"fixed_wrong": 269, "fixed_missing": 73, "broken_wrong": 121, "broken_missing": 1},
     "bayes": {"verification": (5.4, 4.3, 6.6), "decomposition": (1.6, 0.5, 2.7), "interaction": (-3.2, -5.5, -1.0),
               "H2c": (-0.0, -1.6, 1.5)},   # the registered bambi/PyMC model, pooled, probability scale
 }
@@ -147,6 +150,20 @@ def check_study() -> None:
     vtb = rt.verifier_turns().drop("pooled")
     for arm in (rt.B, rt.D, rt.FV):
         assert (vtb[(arm, "fixed")] > vtb[(arm, "broken")]).all(), (arm, vtb[arm])   # a net gain on every backbone
+    fs = rt.factorial_sensitivity()
+    for cond, q in QUOTED["sensitivity"].items():
+        for k, v in q.items():
+            if k == "cells":
+                check(f"sensitivity {cond} cells", fs.loc[cond, "cells"], v, tol=0)
+            else:
+                check(f"sensitivity {cond} {k}", (fs.loc[cond, f"{k}_pp"], fs.loc[cond, f"{k}_lo"], fs.loc[cond, f"{k}_hi"]), v)
+    check("sensitivity all reproduces the factorial", (fs.loc["all", "verification_pp"], fs.loc["all", "decomposition_pp"]),
+          (QUOTED["factorial"]["verification"][0], QUOTED["factorial"]["decomposition"][0]))
+    vk = rt.verifier_kinds = rt.verifier_fix_kinds().loc["pooled"]; qk = QUOTED["verifier_kinds_D"]
+    check("verifier kinds D", (vk[("fixed", "wrong value")], vk[("fixed", "missing")], vk[("broken", "wrong value")], vk[("broken", "missing")]),
+          (qk["fixed_wrong"], qk["fixed_missing"], qk["broken_wrong"], qk["broken_missing"]), tol=0)
+    check("verifier kinds sum to the audit", (vk[("fixed", "wrong value")] + vk[("fixed", "missing")], vk[("broken", "wrong value")] + vk[("broken", "missing")]),
+          QUOTED["verifier_turns"]["D"], tol=0)
     if QUOTED["bayes"] is not None:
         bf = rt.bayes_factorial()
         for e, qv in QUOTED["bayes"].items():
