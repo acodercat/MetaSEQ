@@ -388,7 +388,7 @@ task & city & category & turns \\
     for cond in ("all", "no_cap", "six_model"):
         r = fs.loc[cond]
         rows.append([labels[cond], f"{int(r.cells)}/{int(r.tasks)}"] +
-                    [f"{(0.0 if abs(r[f'{k}_pp']) < .05 else r[f'{k}_pp']):+.1f} [{r[f'{k}_lo']:+.1f}, {r[f'{k}_hi']:+.1f}]"
+                    [f"{r[f'{k}_pp']:+.1f} [{r[f'{k}_lo']:+.1f}, {r[f'{k}_hi']:+.1f}]"
                      for k in ("verification", "decomposition", "interaction", "D_minus_B")])
     sens = ROOT / "manuscript" / "tex" / "table_factorial_sens.tex"
     sens.write_text(table(25, "The registered $2\\times2$ under two sensitivity conditions, with the study's estimator (per-task means, 10,000 task resamples, seed 20260929). No step cap: every backbone $\\times$ task cell in which any of the four core arms ended a turn at its step cap in any repeat is dropped, so the comparison is between arms that had the steps they used. Six-model weighting: a model's two reasoning modes are averaged before the six models are averaged. Cells/tasks: backbone $\\times$ task cells and tasks retained.",
