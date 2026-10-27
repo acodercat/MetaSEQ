@@ -5,7 +5,7 @@ from pathlib import Path
 
 import matplotlib.pyplot as plt
 from matplotlib.colors import ListedColormap, BoundaryNorm
-from matplotlib.patches import Patch
+from matplotlib.patches import Patch, Rectangle
 import numpy as np
 
 import failure_evidence as fe
@@ -38,6 +38,12 @@ def task_gains(ax):
         ax.text(xx, 1.04, txt, transform=ax.get_xaxis_transform(), ha="center", va="bottom", fontsize=6, color=col)
     for edge in (pos - .5, pos + tie - .5):
         ax.axvline(edge, color=GRID, lw=.6, zorder=1)
+    # the three tasks of Supplementary Note 3
+    for (task, _), label in zip(rt.CASES, ("Meteorological adjustment", "Ozone season", "O\u2093 conservation")):
+        i = d.index.get_loc(task); v = d.iloc[i]
+        ax.annotate(label, (i, v), xytext=(i + 6, v + 14) if v >= 0 else (i - 8, v), textcoords="data",
+                    fontsize=5.8, color=INK, ha="left" if v >= 0 else "right", va="center",
+                    arrowprops=dict(arrowstyle="-", color=INK, lw=.5, shrinkA=0, shrinkB=1))
     ax.set(xlim=(-1, len(d)), ylim=(d.min() - 4, d.max() + 4), xticks=[], ylabel="D − A (points)")
     for side in ("top", "right", "bottom"):
         ax.spines[side].set_visible(False)
@@ -45,7 +51,7 @@ def task_gains(ax):
     ax.set_xlabel("The 111 tasks, ranked by gain", labelpad=3)
 
 
-def failures(counts, representative, matrix, cases):
+def failures(counts, representative, states, cases):
     """Fig. 5: (a) per-task gain; (b) error classes recovered and introduced; (c) shared wrong outputs."""
     fig = plt.figure(figsize=(WIDTH, 205 * MM))
     panel(fig, "a", .025, .99, "Gain by task")
@@ -71,10 +77,14 @@ def failures(counts, representative, matrix, cases):
     # ---- b: shared wrong outputs across model families ------------------------------------
     panel(fig, "c", .025, .528, "Shared wrong outputs across model families")
     ax = fig.add_axes([.305, .10, .665, .338])
-    colors = ["#F3F4F6", "#C6D6EC", "#7FA3D1", "#2F67AE"]       # blue ramp, 0-3
-    ax.imshow(matrix, cmap=ListedColormap(colors), norm=BoundaryNorm([-.5, .5, 1.5, 2.5, 3.5], 4),
-              aspect="auto")
-    ax.set(yticks=range(len(representative)),
+    # each cell holds the three repeats side by side: passed, failed otherwise, shared wrong value
+    colors = {0: "#F3F4F6", 1: MUTED, 2: VOTE}
+    for y in range(len(representative)):
+        for x in range(16):
+            for n in range(3):
+                ax.add_patch(Rectangle((x - .5 + n / 3, y - .5), 1 / 3, 1, facecolor=colors[states[y, x, n]],
+                                       edgecolor="white", lw=.3, zorder=2))
+    ax.set(xlim=(-.5, 15.5), ylim=(len(representative) - .5, -.5), yticks=range(len(representative)),
            yticklabels=[f"{r.task_id}  {fe.TASK_LABELS[r.task]}" for r in representative.itertuples()],
            xticks=range(16), xticklabels=["A", "D"] * 8)
     ax.xaxis.tick_top()
@@ -84,15 +94,9 @@ def failures(counts, representative, matrix, cases):
         label.set_weight("bold")
     for spine in ax.spines.values():
         spine.set_visible(False)
-    for y in range(len(representative)):
-        for x in range(16):
-            v = matrix[y, x]
-            if v:
-                ax.text(x, y, str(v), ha="center", va="center", fontsize=6.5,
-                        color="white" if v >= 2 else INK)
     ax.set_xticks(np.arange(-.5, 16), minor=True)
     ax.set_yticks(np.arange(-.5, len(representative)), minor=True)
-    ax.grid(which="minor", color="white", lw=.7)
+    ax.grid(which="minor", color="white", lw=1.2, zorder=3)
     ax.tick_params(which="minor", length=0)
     for x in (5.5, 11.5, 13.5):
         ax.axvline(x, color="white", lw=3)
@@ -105,9 +109,11 @@ def failures(counts, representative, matrix, cases):
                 fontsize=7, weight="bold")
         ax.plot([left / 16 + .006, right / 16 - .006], [1.195, 1.195], transform=ax.transAxes,
                 color=MUTED, lw=.6, clip_on=False)
-    fig.legend(handles=[Patch(fc=c, ec=GRID, lw=.4, label=str(i)) for i, c in enumerate(colors)],
-               loc="lower left", bbox_to_anchor=(.30, .028), ncol=4,
-               title="Repeats with the shared wrong output (of 3)",
+    fig.legend(handles=[Patch(fc=colors[0], ec=GRID, lw=.4, label="Turn passed"),
+                        Patch(fc=colors[2], label="Shared wrong value returned"),
+                        Patch(fc=colors[1], label="Failed otherwise")],
+               loc="lower left", bbox_to_anchor=(.30, .028), ncol=3,
+               title="Each cell: the three repeats of the turn that stores the output",
                title_fontsize=6.5, fontsize=6.5, handlelength=1.2, columnspacing=1.4)
     fig.text(.305, .010, "One output per task; all 30 qualifying outputs and source records in Supplementary Table 21.",
              fontsize=5.9, color=MUTED)
@@ -244,8 +250,8 @@ There were no tied modal values among these selected outputs.
 
 
 def main():
-    counts, shared, representative, records, matrix, robust, cases = fe.build()
-    failures(counts, representative, matrix, cases)
+    counts, shared, representative, records, matrix, states, robust, cases = fe.build()
+    failures(counts, representative, states, cases)
     robustness(robust)
     evidence_table(shared, records)
 

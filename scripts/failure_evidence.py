@@ -142,7 +142,25 @@ def shared_values(turns):
         assert matrix[i].sum() == r.modal_count
     assert matrix.max() <= 3
     assert set(summary.task) == set(rt.convergent_tasks()["tasks"])
-    return summary, representative, full, matrix
+    # Each cell's three repeats, for Fig. 5c: 0 the turn that stores the output passed, 1 it
+    # failed otherwise, 2 the shared wrong value was returned.
+    repeats = sorted(turns.repeat.unique()); assert len(repeats) == 3
+    states = np.zeros((len(representative), 16, 3), dtype=int)
+    for i, r in representative.iterrows():
+        selected = full[(full.task == r.task) & (full.variable == r.variable)]
+        assert selected.turn.nunique() == 1, (r.task, r.variable)
+        verdict = turns[(turns.task == r.task) & (turns.turn == int(selected.turn.iloc[0]))]
+        verdict = verdict.set_index(["model", "arm", "repeat"]).passed
+        assert verdict.index.is_unique
+        for j, model in enumerate(MODEL_ORDER):
+            for k, arm in enumerate((rt.A, rt.D)):
+                for n, rep in enumerate(repeats):
+                    if ((selected.model == model) & (selected.arm == arm) & (selected.repeat == rep)).any():
+                        states[i, 2 * j + k, n] = 2
+                    elif not verdict.loc[(model, arm, rep)]:
+                        states[i, 2 * j + k, n] = 1
+    assert ((states == 2).sum(axis=2) == matrix).all()
+    return summary, representative, full, matrix, states
 
 
 def task_contrast(frame, weighting="configuration"):
@@ -185,7 +203,7 @@ def build():
     OUT.mkdir(parents=True, exist_ok=True)
     turns = load_turns()
     discordant, counts = discordant_errors(turns)
-    shared, representative, records, matrix = shared_values(turns)
+    shared, representative, records, matrix, states = shared_values(turns)
     robust = robustness()
     cases = pd.concat([turns[(turns.task == task) & (turns.turn == turn)] for task, turn, _ in CASE_TURNS])
     case_counts = cases.groupby(["task", "model", "arm"]).passed.agg(["sum", "count"]).reset_index()
@@ -202,9 +220,10 @@ def build():
                         ("shared_output_records", records), ("robustness", robust), ("case_counts", case_counts)]:
         frame.to_csv(OUT / f"{name}.csv", index=False)
     np.savetxt(OUT / "shared_error_matrix.csv", matrix, delimiter=",", fmt="%d")
+    np.savetxt(OUT / "shared_error_states.csv", states.reshape(len(states), -1), delimiter=",", fmt="%d")
     (OUT / "summary.json").write_text(json.dumps(summary, ensure_ascii=False, indent=2))
     print(json.dumps(summary, ensure_ascii=False, indent=2))
-    return counts, shared, representative, records, matrix, robust, case_counts
+    return counts, shared, representative, records, matrix, states, robust, case_counts
 
 
 if __name__ == "__main__":

@@ -61,7 +61,7 @@ def main() -> None:
     tex = r"""\begin{table}[!ht]
 \centering
 \fontsize{8.5}{11}\selectfont
-\caption{\textbf{Single agent and MetaSEQ on every backbone of both experiments.} Validated accuracy, per cent. Experiment 1 gain: difference of single runs on 50 tasks (intervals and tests in Supplementary Table~7). Experiment 2 gain: mean paired difference over three repeats, 95\% interval from 10,000 task resamples. Tokens: MetaSEQ's mean tokens per task as a multiple of the single agent's.}
+\caption{\textbf{Single agent and MetaSEQ on every backbone of both experiments.} Validated accuracy, per cent. Experiment 1 gain: difference of single runs on 50 tasks (intervals and tests in Supplementary Table~7). Experiment 2 gain: mean paired difference over three repeats, 95\% interval from 10,000 task resamples. Tokens: MetaSEQ's mean tokens per task as a multiple of the single agent's. Experiment 1 runs the deployed prompts, which carry the analysis rules, with a verifier that checks staged intermediates; experiment 2 runs the prompts with the rules removed and a verifier that recomputes every output (Table~\ref{tab:experiments}).}
 \label{tab:results}
 \setlength{\tabcolsep}{4pt}\renewcommand{\arraystretch}{1.12}
 \begin{tabular*}{\textwidth}{@{\extracolsep{\fill}}lrrrrr@{}}

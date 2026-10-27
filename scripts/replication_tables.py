@@ -562,6 +562,19 @@ def verifier_turns() -> pd.DataFrame:
     return out[[(arm, k) for arm in (B, D, FV) for k in ("verified", "fixed", "broken")]]
 
 
+def turn_accuracy() -> pd.Series:
+    """Share of scored turns passed, per arm, pooled over backbones (the six arms; G has no turn record)."""
+    o = study_outcomes(); o = o[o.arm.isin(ARMS6)]
+    return (100 * o.groupby("arm").turns_passed.sum() / o.groupby("arm").turns.sum()).loc[ARMS6]
+
+
+def elapsed_per_run() -> pd.Series:
+    """Mean wall-clock seconds per run, per arm, pooled over backbones: the stages' elapsed time
+    summed, through the relay; descriptive."""
+    o = study_outcomes(); o = o[o.arm.isin(ARMS6)]
+    return o.groupby("arm").elapsed_s.mean().loc[ARMS6]
+
+
 def step_cap_by_arm() -> pd.DataFrame:
     """Turns whose answering stage ended at its step cap, per backbone and arm, and the totals."""
     o = study_outcomes()

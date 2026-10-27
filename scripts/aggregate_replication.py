@@ -66,6 +66,10 @@ QUOTED = {
     "tokens_per_correct_k": {"A": 172, "B": 341, "C": 377, "D": 509, "F": 253, "FV": 409, "G": 490},   # pooled, thousands
     "cost_D_minus_B_k": (169, 147, 192),       # tokens per correct task, thousands (H4)
     "verifier_turns": {"B": (427, 149), "D": (342, 122), "FV": (383, 134), "verified": 4080},   # fixed, broken
+    "verifier_turns_D_range": {"claude-sonnet-5-5": (6, 0), "deepseek-v4-pro-0813": (45, 27)},   # fewest and most broken
+    "turn_accuracy": {"A": 83.1, "B": 89.1, "C": 85.9, "D": 89.0},   # per cent of 4,080 turns per arm
+    "elapsed_s": {"A": 69, "B": 155, "C": 187, "D": 261},            # mean seconds per run
+    "verification_range": (0.8, 9.6),                                  # per-backbone verification effect, min and max
     "step_cap_by_arm_D": {"qwen3.8-flash": 233, "qwen3.8-27b": 85, "deepseek-v4-flash": 36},
     "step_cap_by_arm_B": {"qwen3.8-flash": 40, "qwen3.8-27b": 41, "deepseek-v4-flash": 6},
     "per_model_effects": {"verification_positive": 8, "verification_significant": 6,
@@ -150,6 +154,16 @@ def check_study() -> None:
     vtb = rt.verifier_turns().drop("pooled")
     for arm in (rt.B, rt.D, rt.FV):
         assert (vtb[(arm, "fixed")] > vtb[(arm, "broken")]).all(), (arm, vtb[arm])   # a net gain on every backbone
+    for m, q in QUOTED["verifier_turns_D_range"].items():
+        check(f"verifier turns D {m}", (vtb.loc[m, (rt.D, "fixed")], vtb.loc[m, (rt.D, "broken")]), q, tol=0)
+    assert vtb[(rt.D, "broken")].idxmin() == "claude-sonnet-5-5" and vtb[(rt.D, "broken")].idxmax() == "deepseek-v4-pro-0813", vtb[rt.D]
+    ta = rt.turn_accuracy(); el = rt.elapsed_per_run()
+    for k, q in QUOTED["turn_accuracy"].items():
+        check(f"turn accuracy {k}", ta[key[k]], q)
+    for k, q in QUOTED["elapsed_s"].items():
+        check(f"elapsed {k}", el[key[k]], q, tol=0.51)
+    assert int(so[so.arm == rt.D].turns.sum()) == QUOTED["verifier_turns"]["verified"]   # 4,080 turns per arm
+    check("verification range", (pm.verification_pp.min(), pm.verification_pp.max()), QUOTED["verification_range"])
     fs = rt.factorial_sensitivity()
     for cond, q in QUOTED["sensitivity"].items():
         for k, v in q.items():
