@@ -25,7 +25,7 @@ def main():
         "table_deployment.py", "table_results.py", "si_replication.py",
         "style_archived_atlas.py", "fig_replication.py", "fig_failure_boundaries.py",
         "fig_evaluation.py", "plot_supp_heatmap.py", "fig_process.py", "plot_ed_fig1.py",
-        "fig_experiment1.py", "fig_si_moved.py",
+        "fig_experiment1.py", "fig_si_moved.py", "table_arms.py",
     ]
     if args.data_only:
         scripts = ["fig_replication.py", "fig_failure_boundaries.py", "fig_evaluation.py", "plot_supp_heatmap.py",

@@ -43,19 +43,40 @@ QUOTED = {
                      "mid 2-50%": (73, 49), "other/unparsed": (30, 32)},          # largest reported error; fixed, broken
     "convergent": {"n_tasks": 18, "failed_share": 36, "A_on": 53.5, "D_on": 61.6, "A_off": 81.7, "D_off": 88.5,
                    "families": {2: 10, 3: 8}},        # tasks by number of model families sharing the wrong value
-    "mixed_model": {"odds_ratio": 2.09, "or_lo": 1.83, "or_hi": 2.38},   # protocol's primary model, A/D only
     "vote": {"G": 81.1, "D_minus_G": (3.0, 0.3, 6.0), "tokens_ratio": 1.08, "backbones_positive": 6},   # G: A x3 voted
     "final_turn": (81.1, 88.1),               # pooled A, D under the final-turn-only rule
     "per_task": {"higher": 67, "equal": 23, "lower": 21, "top20_share": 69},   # Fig. 5a: D - A over 24 runs per task
     "headroom": (-0.61, 0.016),               # Spearman rho, p over the 15 comparisons of both experiments
-    "verifier": {"corrected": 342, "broken": 122, "before": 77.2, "after": 84.1, "delta": (6.9, 5.3, 8.7),
-                 "turns": 4080, "label_flips_broken": 22,
-                 "before_minus_A": (0.1, -2.6, 2.9), "before_minus_A_range": (-11, 9)},   # the pre-verifier audit (post hoc)
     "cases": {"beijing_olympics_meteorological_adjustment": (3, 8),   # passed of 9, A / D
               "hk_ozone_peak_season_aqo": (0, 7),
               "hk_weekend_ozone_ox_conservation": (9, 6)},
     "cases_turn1": {"hk_ozone_peak_season_aqo": (0, 9)},
     "repeats": {"higher": 21, "equal": 2, "lower": 1},   # backbone-repeat comparisons, D vs A runs passed
+    # ---- the six-arm study (study_*.csv): the registered 2 x 2, G, and the exploratory delegation arms
+    "runs6": 15984, "vote_cells": 888,
+    "arms6": {"A": 77.1, "B": 84.2, "C": 80.3, "D": 84.1, "F": 78.5, "FV": 84.8, "G": 81.1},   # pooled accuracy (%)
+    "factorial": {"verification": (5.4, 3.9, 7.1), "decomposition": (1.6, 0.1, 3.2),
+                  "interaction": (-3.2, -6.1, -0.6), "H2": (3.9, 2.0, 5.9)},      # pp, 95% interval
+    "core": {"H1": (7.0, 4.7, 9.6), "H2a": (7.1, 4.8, 9.6), "H2b": (3.2, 0.6, 5.9), "H2c": (-0.0, -1.4, 1.2)},
+    "core_holm_max": {"H1": 0.001, "H2a": 0.001, "H2c": 1.0},   # H2b's Holm p is quoted exactly below
+    "H2b_holm": 0.026,
+    "core_pairs": {"H1": (362, 175), "H2a": (343, 155), "H2b": (319, 234), "H2c": (195, 196)},
+    "delegation": {"F-A": (1.4, -0.8, 3.8), "FV-F": (6.3, 4.3, 8.3), "FV-B": (0.6, -0.6, 2.0), "FV-D": (0.7, -0.8, 2.1),
+                   "F-B": (-5.6, -7.8, -3.5)},
+    "tokens_per_correct_k": {"A": 172, "B": 341, "C": 377, "D": 509, "F": 253, "FV": 409, "G": 490},   # pooled, thousands
+    "cost_D_minus_B_k": (169, 147, 192),       # tokens per correct task, thousands (H4)
+    "verifier_turns": {"B": (427, 149), "D": (342, 122), "FV": (383, 134), "verified": 4080},   # fixed, broken
+    "step_cap_by_arm_D": {"qwen3.8-flash": 233, "qwen3.8-27b": 85, "deepseek-v4-flash": 36},
+    "step_cap_by_arm_B": {"qwen3.8-flash": 40, "qwen3.8-27b": 41, "deepseek-v4-flash": 6},
+    "per_model_effects": {"verification_positive": 8, "verification_significant": 6,
+                          "decomposition_significant": ["qwen3.8-27b", "claude-sonnet-5-5"],
+                          "qwen3.8-27b": (9.0, 7.2), "claude-sonnet-5-5": (4.1, 3.5)},   # verification, decomposition (pp)
+    "vote_vs_B": {"B_minus_G": (3.1, 0.4, 6.1), "backbones_positive": 6},
+    "D_minus_C": (3.8, 2.2, 5.5), "G_minus_A": (4.0, 2.8, 5.1),
+    "by_model": {"qwen3.8-flash": {"H2a": 5.7, "H1": 2.4}, "qwen3.8-27b": {"B": 74.2}},
+    "turns6": 24480,
+    "bayes": {"verification": (5.4, 4.3, 6.6), "decomposition": (1.6, 0.5, 2.7), "interaction": (-3.2, -5.5, -1.0),
+              "H2c": (-0.0, -1.6, 1.5)},   # the registered bambi/PyMC model, pooled, probability scale
 }
 
 
@@ -63,6 +84,76 @@ def check(name: str, got, expected, tol: float = 0.051) -> None:
     pairs = zip(got, expected, strict=True) if isinstance(expected, tuple) else [(got, expected)]
     for g, e in pairs:
         assert abs(g - e) <= tol, f"{name}: got {got}, quoted {expected}"
+
+
+def check_study() -> None:
+    """The six-arm study tables: every number of the factorial section."""
+    so = rt.study_outcomes()
+    check("study runs", int((so.arm != rt.G).sum()), QUOTED["runs6"], tol=0)
+    check("vote cells", int((so.arm == rt.G).sum()), QUOTED["vote_cells"], tol=0)
+    key = {"A": rt.A, "B": rt.B, "C": rt.C, "D": rt.D, "F": rt.F, "FV": rt.FV, "G": rt.G}
+    acc = rt.arm_accuracy().loc["pooled"]
+    for k, q in QUOTED["arms6"].items():
+        check(f"arm {k} pooled", acc[key[k]], q)
+    check("A and D as in the two-arm report", (acc[rt.A], acc[rt.D]), QUOTED["accuracy"]["pooled"])
+    fx = rt.factorial()
+    for e, q in QUOTED["factorial"].items():
+        check(f"factorial {e}", (fx.loc[e, "estimate_pp"], fx.loc[e, "lo_pp"], fx.loc[e, "hi_pp"]), q)
+    assert fx.loc["verification", "estimate_pp"] > fx.loc["decomposition", "hi_pp"], fx   # H2 as registered
+    cc = rt.core_contrasts()
+    for h, q in QUOTED["core"].items():
+        r = cc.loc[h]
+        check(f"core {h}", (r.delta_pp, r.lo_pp, r.hi_pp), q)
+        check(f"core {h} pairs", (r.recovered, r.regressed), QUOTED["core_pairs"][h], tol=0)
+    for h, q in QUOTED["core_holm_max"].items():
+        assert cc.loc[h, "holm_p"] <= q, (h, cc.loc[h, "holm_p"])
+    check("H2b Holm p", cc.loc["H2b", "holm_p"], QUOTED["H2b_holm"], tol=0.0006)
+    check("H1 equals the two-arm contrast", (cc.loc["H1", "delta_pp"], cc.loc["H1", "lo_pp"], cc.loc["H1", "hi_pp"]),
+          QUOTED["gain"]["pooled"])
+    dc = rt.delegation_contrasts()
+    for k, q in QUOTED["delegation"].items():
+        check(f"delegation {k}", (dc.loc[k, "delta_pp"], dc.loc[k, "lo_pp"], dc.loc[k, "hi_pp"]), q)
+    tpc = rt.tokens_per_correct().loc["pooled"]
+    for k, q in QUOTED["tokens_per_correct_k"].items():
+        check(f"tokens per correct {k}", tpc[key[k]] / 1e3, q, tol=0.51)
+    cost = rt.cost_contrast()
+    check("D - B tokens per correct", (cost["diff"] / 1e3, cost["lo"] / 1e3, cost["hi"] / 1e3), QUOTED["cost_D_minus_B_k"], tol=0.51)
+    check("D, B tokens per correct", (cost["D"] / 1e3, cost["B"] / 1e3), (QUOTED["tokens_per_correct_k"]["D"], QUOTED["tokens_per_correct_k"]["B"]), tol=0.51)
+    vt = rt.verifier_turns().loc["pooled"]
+    for k, (fixed, broken) in ((k, v) for k, v in QUOTED["verifier_turns"].items() if k != "verified"):
+        check(f"verifier turns {k}", (vt[(key[k], "fixed")], vt[(key[k], "broken")]), (fixed, broken), tol=0)
+        check(f"verified turns {k}", vt[(key[k], "verified")], QUOTED["verifier_turns"]["verified"], tol=0)
+    sc = rt.step_cap_by_arm()
+    for m, q in QUOTED["step_cap_by_arm_D"].items():
+        check(f"D turns at cap {m}", sc.loc[m, rt.D], q, tol=0)
+    for m, q in QUOTED["step_cap_by_arm_B"].items():
+        check(f"B turns at cap {m}", sc.loc[m, rt.B], q, tol=0)
+    pm = rt.per_model_effects(); q = QUOTED["per_model_effects"]
+    check("verification positive", int((pm.verification_pp > 0).sum()), q["verification_positive"], tol=0)
+    check("verification significant", int((pm.verification_lo > 0).sum()), q["verification_significant"], tol=0)
+    assert list(pm.index[pm.decomposition_lo > 0]) == q["decomposition_significant"], pm[pm.decomposition_lo > 0]
+    for m in q["decomposition_significant"]:
+        check(f"effects {m}", (pm.loc[m, "verification_pp"], pm.loc[m, "decomposition_pp"]), q[m])
+    vv = rt.vote_vs_verified()
+    check("B - G pooled", (vv.loc["pooled", "delta_pp"], vv.loc["pooled", "lo_pp"], vv.loc["pooled", "hi_pp"]), QUOTED["vote_vs_B"]["B_minus_G"])
+    check("B ahead of G on", int(vv.loc["pooled", "backbones_positive"]), QUOTED["vote_vs_B"]["backbones_positive"], tol=0)
+    check("D - C", rt.pair_contrast(rt.D, rt.C), QUOTED["D_minus_C"])
+    check("G - A", rt.pair_contrast(rt.G, rt.A), QUOTED["G_minus_A"])
+    check("Qwen3.8-Flash B - A, D - A", (rt.core_contrasts("qwen3.8-flash").loc["H2a", "delta_pp"],
+                                        rt.core_contrasts("qwen3.8-flash").loc["H1", "delta_pp"]),
+          (QUOTED["by_model"]["qwen3.8-flash"]["H2a"], QUOTED["by_model"]["qwen3.8-flash"]["H1"]))
+    check("Qwen3.8-27B B", rt.arm_accuracy().loc["qwen3.8-27b", rt.B], QUOTED["by_model"]["qwen3.8-27b"]["B"])
+    check("scored turns", int(so[so.arm != rt.G].turns.sum()), QUOTED["turns6"], tol=0)
+    vtb = rt.verifier_turns().drop("pooled")
+    for arm in (rt.B, rt.D, rt.FV):
+        assert (vtb[(arm, "fixed")] > vtb[(arm, "broken")]).all(), (arm, vtb[arm])   # a net gain on every backbone
+    if QUOTED["bayes"] is not None:
+        bf = rt.bayes_factorial()
+        for e, qv in QUOTED["bayes"].items():
+            check(f"bayes {e}", (bf.loc[e, "pp"], bf.loc[e, "lo"], bf.loc[e, "hi"]), qv)
+    print("six-arm study: pooled accuracy", acc[[key[k] for k in "ABCDF"] + [rt.FV, rt.G]].round(1).to_dict())
+    print("factorial:\n" + fx.round(1).to_string())
+    print("core contrasts:\n" + cc[["delta_pp", "lo_pp", "hi_pp", "p", "holm_p"]].round(3).to_string())
 
 
 def main() -> None:
@@ -122,10 +213,6 @@ def main() -> None:
     import collections
     fam = dict(collections.Counter(cv["families"].values()))
     assert fam == QUOTED["convergent"]["families"], fam
-    mm = rt.mixed_model()
-    check("mixed model OR", (mm["odds_ratio"], mm["or_lo"], mm["or_hi"]),
-          (QUOTED["mixed_model"]["odds_ratio"], QUOTED["mixed_model"]["or_lo"], QUOTED["mixed_model"]["or_hi"]), tol=0.011)
-    assert mm["or_lo"] > 1, mm
     vb = rt.vote_baseline().set_index("model")
     check("vote G pooled", vb.loc["pooled", "G"], QUOTED["vote"]["G"])
     check("D - G pooled", (vb.loc["pooled", "delta_pp"], vb.loc["pooled", "lo_pp"], vb.loc["pooled", "hi_pp"]),
@@ -144,18 +231,6 @@ def main() -> None:
     e2 = [(acc.loc[m, "A"], acc.loc[m, "D"] - acc.loc[m, "A"]) for m in models]
     rho, pval = spearmanr(*zip(*(e1 + e2)))
     check("headroom rho, p", (rho, pval), QUOTED["headroom"], tol=0.006)
-    va = rt.verifier_audit(); vt = va["table"]; qv = QUOTED["verifier"]
-    assert (int(vt.loc["pooled", "corrected"]), int(vt.loc["pooled", "broken"])) == (qv["corrected"], qv["broken"]), vt.loc["pooled"]
-    check("verifier pass before/after", (vt.loc["pooled", "pass_before"], vt.loc["pooled", "pass_after"]), (qv["before"], qv["after"]))
-    check("verifier delta", (va["delta_pp"], va["lo_pp"], va["hi_pp"]), qv["delta"])
-    assert va["turns"] == qv["turns"], va["turns"]
-    assert (vt.drop("pooled").corrected > vt.drop("pooled").broken).all(), vt
-    assert (va["by_domain"]["corrected"] > va["by_domain"]["broken"]).all(), va["by_domain"]
-    import numpy as np
-    bA = rt.before_minus_single()
-    check("D-before minus A", (bA["delta_pp"], bA["lo_pp"], bA["hi_pp"]), qv["before_minus_A"])
-    per = bA["per_backbone"]
-    assert (round(per.min()), round(per.max())) == qv["before_minus_A_range"], (per.min(), per.max())
     ft = rt.final_turn_rule()
     check("final-turn rule", (ft["A"], ft["D"]), QUOTED["final_turn"])
     assert ft["n"] == QUOTED["runs"] // 2, ft
@@ -171,6 +246,7 @@ def main() -> None:
     assert before["models"] == QUOTED["preband"]["models"], before["models"]
     check("pre-band A, D", (before["A"], before["D"]), (QUOTED["preband"]["A"], QUOTED["preband"]["D"]))
     check("pre-band D - A", before["gain"], QUOTED["preband"]["gain"])
+    check_study()
 
     print("accuracy (%), A -> D:")
     for scope in [*models, "pooled"]:

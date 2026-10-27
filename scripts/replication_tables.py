@@ -1,8 +1,15 @@
-"""Experiment 2's tables as the paper's scripts read them, from the report that
-`metaseq report study` writes (phase3_replication/results/report/).
+"""Experiment 2's tables as the paper's scripts read them, from phase3_replication/results/report/.
 
-    accuracy()   one row per backbone and "pooled": A, D (%), tokens_A, tokens_D (per task)
-    contrasts()  D - A per backbone and pooled, with the column names the scripts use
+Two sets of derived tables sit there. `arms.csv`, `contrasts.csv`, `outcomes.csv` and
+`failures.csv` are the two-arm report (`metaseq report study`, arms A and D) that the
+error analyses, the cases and Fig. 5 read. `study_*.csv` are the six-arm study report
+(all backbones; see the README beside them) that the factorial results read.
+
+    accuracy()        one row per backbone and "pooled": A, D (%), tokens_A, tokens_D (per task)
+    contrasts()       D - A per backbone and pooled, with the column names the scripts use
+    arm_accuracy()    every arm and G, per backbone and pooled (%)
+    factorial()       verification and decomposition main effects and their interaction
+    core_contrasts()  H1, H2a-c with Holm p; delegation_contrasts() the exploratory ones
 """
 
 from __future__ import annotations
@@ -16,6 +23,13 @@ ROOT = Path(__file__).resolve().parents[1]
 PHASE3 = ROOT / "phase3_replication"
 REPORT = PHASE3 / "results" / "report"
 A, D = "single_agent_bare", "multi_agent_fixed_roles_verified"
+B, C = "single_agent_verified", "multi_agent_fixed_roles"
+F, FV = "multi_agent_delegation_planned", "multi_agent_delegation_verified"
+G = "single_agent_bare_vote"   # the pre-registered self-consistency baseline: A run three times, outputs voted
+CORE = [A, B, C, D]            # the registered 2 x 2: decomposition (C, D) x verification (B, D)
+ARMS6 = [A, B, C, D, F, FV]
+ARM_LABELS = {A: "A", B: "B", C: "C", D: "D", F: "F", FV: "F+V", G: "G"}
+POOLED = "pooled over backbones"   # the aggregate scope label in the study_*.csv files
 FIRST_THREE = ["deepseek-v4-flash", "gpt-6-luna", "qwen3.8-flash"]   # the backbones run first
 LABELS = {"qwen3.8-27b": "Qwen3.8-27B", "qwen3.8-flash": "Qwen3.8-Flash", "gpt-6-luna": "GPT-6 Luna",
           "deepseek-v4-flash": "DeepSeek-V4-Flash", "qwen3.8-27b-thinking": "Qwen3.8-27B (reasoning)",
@@ -298,33 +312,6 @@ def modal_of(lst) -> float:
     return collections.Counter(g for _, g in lst).most_common(1)[0][0]
 
 
-def mixed_model() -> dict:
-    """The protocol's primary model restricted to arms A and D: Bayesian mixed-effects logistic
-    regression of a run's correctness on topology with task, backbone and task x backbone random
-    intercepts (statsmodels BinomialBayesMixedGLM, variational inference, as in experiment 1).
-    Returns the topology coefficient, its posterior sd, the odds ratio with a 95% interval and
-    the mean difference on the probability scale over all runs."""
-    import math
-    import numpy as np
-    from statsmodels.genmod.bayes_mixed_glm import BinomialBayesMixedGLM
-
-    o = outcomes()
-    o = o[o.arm.isin([A, D])].copy()
-    o["ok"] = o.passed.astype(int)
-    o["topology"] = (o.arm == D).astype(int)
-    o["tb"] = o.task + ":" + o.model
-    fit = BinomialBayesMixedGLM.from_formula(
-        "ok ~ topology", {"task": "0 + C(task)", "backbone": "0 + C(model)", "task_backbone": "0 + C(tb)"}, o
-    ).fit_vb()
-    i = list(fit.model.exog_names).index("topology")
-    beta, sd = float(fit.fe_mean[i]), float(fit.fe_sd[i])
-    eta = fit.fe_mean[0] + fit.model.exog_vc @ fit.vc_mean
-    p1, p0 = 1 / (1 + np.exp(-(eta + beta))), 1 / (1 + np.exp(-eta))
-    return dict(beta=beta, sd=sd, odds_ratio=math.exp(beta),
-                or_lo=math.exp(beta - 1.96 * sd), or_hi=math.exp(beta + 1.96 * sd),
-                marginal_pp=100 * float(np.mean(p1 - p0)), n=len(o))
-
-
 def fixed_broken_by_class() -> pd.DataFrame:
     """For every (backbone, task, repeat) cell where exactly one arm passed: the failing arm's
     error class, read from the stored verdict of its first failed turn. Rows: error class;
@@ -344,9 +331,6 @@ def fixed_broken_by_class() -> pd.DataFrame:
                 if cls:
                     counts[label][cls[0]] = counts[label].get(cls[0], 0) + 1
     return pd.DataFrame(counts).fillna(0).astype(int)
-
-
-G = "single_agent_bare_vote"   # the pre-registered self-consistency baseline: A run three times, outputs voted
 
 
 def vote_baseline(seed: int = 20260929, resamples: int = 10_000) -> pd.DataFrame:
@@ -460,73 +444,178 @@ def backbone_settings() -> pd.DataFrame:
     return pd.DataFrame([rows[m] for m in models()])
 
 
-D_BEFORE = f"{D}_before"   # D's outputs as the synthesis worker left them, before the verifier
+# ---------------- the six-arm study tables ----------------------------------------------------
+
+def study_outcomes() -> pd.DataFrame:
+    """One row per run of the six arms (15,984) and one per (backbone, task) for G (888)."""
+    o = pd.read_csv(REPORT / "study_outcomes.csv")
+    o["ok"] = o.passed.astype(str).str.lower().eq("true").astype(float)
+    return o
 
 
-def verifier_audit(seed: int = 20260929, resamples: int = 10_000) -> dict:
-    """Pair every D turn's pre-verifier verdict (pseudo-arm D_BEFORE, scored by
-    analysis/before_verifier.py) with its stored final verdict. Returns per-backbone and pooled
-    counts of turns corrected (fail -> pass), broken (pass -> fail) and unchanged, the task-level
-    pass rate before and after the verifier, and the mean paired task-level change with its 95%
-    percentile interval over `resamples` task resamples."""
-    import json
+def study_contrasts() -> pd.DataFrame:
+    return pd.read_csv(REPORT / "study_contrasts.csv")
+
+
+def _scope(frame: pd.DataFrame, scope: str) -> pd.DataFrame:
+    return frame[frame.scope == (POOLED if scope == "pooled" else scope)]
+
+
+def arm_task_means(arm: str) -> pd.DataFrame:
+    """Per-task pass rate (repeats averaged) of one arm: rows tasks, columns backbones, plus
+    "pooled" (the backbones averaged), the per-task quantity the study's bootstrap resamples."""
+    o = study_outcomes()
+    m = o[o.arm == arm].groupby(["task", "model"]).ok.mean().unstack(1)[models()]
+    m["pooled"] = m.mean(axis=1)
+    return m
+
+
+def arm_accuracy() -> pd.DataFrame:
+    """Accuracy (%) of every arm and G per backbone and pooled: runs passed over runs scored,
+    the figure `study_arms.csv` reports (pooled over all runs, so each task counts equally)."""
+    o = study_outcomes()
+    acc = o.groupby(["model", "arm"]).ok.mean().unstack(1)[ARMS6 + [G]]
+    out = (100 * acc).loc[models()]
+    out.loc["pooled"] = 100 * o.groupby("arm").ok.mean()[ARMS6 + [G]]
+    return out
+
+
+def factorial(scope: str = "pooled") -> pd.DataFrame:
+    """The 2 x 2 on per-task means: verification = mean of (B - A, D - C), decomposition = mean of
+    (C - A, D - B), interaction = (D - C) - (B - A), and B - C (H2 as registered); percentage
+    points with the 95% percentile interval over 10,000 task resamples and the two-sided
+    bootstrap p, from `study_factorial.csv`. Index: verification, decomposition, interaction, H2."""
+    f = _scope(pd.read_csv(REPORT / "study_factorial.csv"), scope).copy()
+    f["effect"] = f.effect.where(~f.effect.str.startswith("H2"), "H2")
+    return f.set_index("effect")[["estimate_pp", "lo_pp", "hi_pp", "p"]]
+
+
+def per_model_effects() -> pd.DataFrame:
+    """Verification and decomposition main effects and the interaction per backbone (pp, with
+    intervals), rows ordered as models()."""
+    rows = {}
+    for m in models():
+        f = factorial(m)
+        rows[m] = {f"{e}_{k}": f.loc[e, c] for e in ("verification", "decomposition", "interaction")
+                   for k, c in (("pp", "estimate_pp"), ("lo", "lo_pp"), ("hi", "hi_pp"))}
+    return pd.DataFrame(rows).T
+
+
+def core_contrasts(scope: str = "pooled") -> pd.DataFrame:
+    """H1 (D - A), H2a (B - A), H2b (C - A), H2c (D - B): arm accuracies, mean paired difference
+    (pp), 95% interval, bootstrap p, Holm-corrected p over the four, task-repeats recovered and
+    regressed, exact McNemar p."""
+    c = _scope(study_contrasts(), scope)
+    c = c[c.analysis == "core"].set_index("contrast")
+    return c.loc[["H1", "H2a", "H2b", "H2c"], ["treatment", "control", "control_acc", "treatment_acc",
+                                                 "delta_pp", "lo_pp", "hi_pp", "p", "holm_p",
+                                                 "recovered", "regressed", "mcnemar_p"]]
+
+
+DELEGATION = {"F-A": (F, A), "F-C": (F, C), "F-B": (F, B), "FV-F": (FV, F), "FV-B": (FV, B), "FV-D": (FV, D)}
+
+
+def delegation_contrasts(scope: str = "pooled") -> pd.DataFrame:
+    """The exploratory delegation contrasts (no Holm correction, no confirmatory claim), indexed
+    by the keys of DELEGATION."""
+    c = _scope(study_contrasts(), scope)
+    c = c[c.analysis == "delegation"].set_index(["treatment", "control"])
+    rows = {k: c.loc[(t, u)] for k, (t, u) in DELEGATION.items()}
+    return pd.DataFrame(rows).T[["control_acc", "treatment_acc", "delta_pp", "lo_pp", "hi_pp", "p",
+                                 "recovered", "regressed", "mcnemar_p"]].astype(float)
+
+
+def cost_contrast(scope: str = "pooled") -> dict:
+    """Tokens per correct task of D and B and their difference with its 95% task-resampled
+    interval (H4), from `study_cost.csv`."""
+    r = _scope(pd.read_csv(REPORT / "study_cost.csv"), scope).iloc[0]
+    assert (r.treatment, r.control) == (D, B), (r.treatment, r.control)
+    return dict(D=r.treatment_per_correct, B=r.control_per_correct, diff=r.difference, lo=r.lo, hi=r.hi)
+
+
+def tokens_per_correct() -> pd.DataFrame:
+    """Tokens per correct task (sum of tokens over sum of passes) for every arm and G, per
+    backbone and pooled; G's tokens are the sum of A's three repeats."""
+    o = study_outcomes()
+    per = o.groupby(["model", "arm"]).apply(lambda g: g.total_tokens.sum() / g.ok.sum()).unstack(1)
+    out = per.loc[models(), ARMS6 + [G]]
+    out.loc["pooled"] = o.groupby("arm").apply(lambda g: g.total_tokens.sum() / g.ok.sum())[ARMS6 + [G]]
+    return out
+
+
+def tokens_per_task() -> pd.DataFrame:
+    """Mean tokens per run for every arm and G (G: per task, three repeats summed)."""
+    o = study_outcomes()
+    out = o.groupby(["model", "arm"]).total_tokens.mean().unstack(1).loc[models(), ARMS6 + [G]]
+    out.loc["pooled"] = o.groupby("arm").total_tokens.mean()[ARMS6 + [G]]
+    return out
+
+
+def verifier_turns() -> pd.DataFrame:
+    """Turns the verifier fixed (failed before it, passed after) and broke (the reverse) in the
+    three verified arms, per backbone and in total, with the turns verified."""
+    o = study_outcomes()
+    v = o[o.arm.isin([B, D, FV])].groupby(["model", "arm"])[["verified_turns", "verifier_fixed_turns", "verifier_broke_turns"]].sum()
+    v = v.rename(columns={"verified_turns": "verified", "verifier_fixed_turns": "fixed", "verifier_broke_turns": "broken"}).astype(int)
+    out = v.unstack(1).swaplevel(axis=1).sort_index(axis=1).loc[models()]
+    out.loc["pooled"] = out.sum()
+    return out[[(arm, k) for arm in (B, D, FV) for k in ("verified", "fixed", "broken")]]
+
+
+def step_cap_by_arm() -> pd.DataFrame:
+    """Turns whose answering stage ended at its step cap, per backbone and arm, and the totals."""
+    o = study_outcomes()
+    out = o[o.arm.isin(ARMS6)].groupby(["model", "arm"]).step_limit_turns.sum().unstack(1).loc[models(), ARMS6].astype(int)
+    out.loc["pooled"] = out.sum()
+    return out
+
+
+def vote_vs_verified(seed: int = 20260929, resamples: int = 10_000) -> pd.DataFrame:
+    """B against G per backbone and pooled: accuracy of both, the mean paired task-level
+    difference B - G with its 95% percentile interval, and (pooled row) the backbones on which
+    B is ahead."""
     import numpy as np
 
-    turns = []
-    for final_path in (PHASE3 / "results").glob(f"*/*/*/{D}/*/r*/programmatic_verification.json"):
-        before_path = Path(str(final_path).replace(f"/{D}/", f"/{D_BEFORE}/"))
-        if not before_path.exists():
-            raise FileNotFoundError(f"no pre-verifier card for {final_path}; run analysis/before_verifier.py")
-        final = json.loads(final_path.read_text()); before = json.loads(before_path.read_text())
-        task, model, repeat = final_path.parts[-5], final_path.parts[-3], int(final_path.parts[-2][1:])
-        fb = {(c["id"], t["turn"]): t for c in before["conversations"] for t in c["turns"]}
-        for c in final["conversations"]:
-            for t in c["turns"]:
-                b = fb[(c["id"], t["turn"])]
-                turns.append(dict(domain=final_path.parts[-7], task=task, model=model, repeat=repeat,
-                                  before=bool(b["success"]), after=bool(t["success"])))
-    tr = pd.DataFrame(turns)
-    tr["kind"] = np.select([~tr.before & tr.after, tr.before & ~tr.after, tr.before & tr.after],
-                           ["corrected", "broken", "unchanged_pass"], "unchanged_fail")
-    counts = tr.groupby(["model", "kind"]).size().unstack(fill_value=0)
-    counts = counts.reindex(columns=["corrected", "broken", "unchanged_pass", "unchanged_fail"], fill_value=0)
-    counts.loc["pooled"] = counts.sum()
-    runs = tr.groupby(["model", "task", "repeat"]).agg(before=("before", "all"), after=("after", "all")).reset_index()
-    per = runs.groupby(["model", "task"]).agg(before=("before", "mean"), after=("after", "mean"))
-    rate = per.groupby("model").mean() * 100
-    rate.loc["pooled"] = per.mean() * 100
-    diff = (per.after - per.before).unstack(0)[models()]
-    rng = np.random.default_rng(seed); n = len(diff)
+    b, g = arm_task_means(B), arm_task_means(G)
+    rng = np.random.default_rng(seed); n = len(b)
     draws = rng.integers(0, n, (resamples, n))
-    pooled = diff.mean(axis=1).to_numpy()
-    bs = pooled[draws].mean(axis=1)
-    out = counts.join(rate.rename(columns={"before": "pass_before", "after": "pass_after"}))
-    out["delta_pp"] = out.pass_after - out.pass_before
-    out = out.reindex(models() + ["pooled"])
-    return {"table": out, "delta_pp": 100 * pooled.mean(),
-            "lo_pp": 100 * np.percentile(bs, 2.5), "hi_pp": 100 * np.percentile(bs, 97.5),
-            "turns": len(tr), "runs": len(runs),
-            "by_domain": tr.groupby(["domain", "kind"]).size().unstack(fill_value=0)}
+    rows = []
+    for m in models() + ["pooled"]:
+        d = (b[m] - g[m]).to_numpy(); bs = d[draws].mean(axis=1)
+        rows.append(dict(model=m, B=100 * b[m].mean(), G=100 * g[m].mean(), delta_pp=100 * d.mean(),
+                         lo_pp=100 * np.percentile(bs, 2.5), hi_pp=100 * np.percentile(bs, 97.5)))
+    out = pd.DataFrame(rows).set_index("model")
+    out.loc["pooled", "backbones_positive"] = int((out.drop("pooled").delta_pp > 0).sum())
+    return out
 
 
-def before_minus_single(seed: int = 20260929, resamples: int = 10_000) -> dict:
-    """MetaSEQ before its verifier against the single agent: mean paired task-level difference
-    with its 95% percentile interval over task resamples, and the per-backbone differences."""
-    import json
+def pair_contrast(treatment: str, control: str, seed: int = 20260929, resamples: int = 10_000) -> tuple[float, float, float]:
+    """Pooled mean paired difference of per-task pass rates between two arms (pp) with its 95%
+    percentile interval over task resamples, the study's estimator."""
     import numpy as np
 
-    o = outcomes(); o["ok"] = o.passed.astype(float)
-    a = o[o.arm == A].groupby(["model", "task"]).ok.mean().unstack(0)
-    rows = []
-    for f in (PHASE3 / "results").glob(f"*/*/*/{D_BEFORE}/*/r*/programmatic_verification.json"):
-        c = json.loads(f.read_text())
-        rows.append(dict(model=f.parts[-3], task=f.parts[-5],
-                         ok=float(all(t["success"] for cv in c["conversations"] for t in cv["turns"]))))
-    b = pd.DataFrame(rows).groupby(["model", "task"]).ok.mean().unstack(0)
-    ms = models(); tasks = a.index
-    diff = (b.loc[tasks, ms] - a.loc[tasks, ms])
-    pooled = diff.mean(axis=1).to_numpy()
-    rng = np.random.default_rng(seed); n = len(pooled)
-    bs = pooled[rng.integers(0, n, (resamples, n))].mean(axis=1)
-    return {"delta_pp": 100 * pooled.mean(), "lo_pp": 100 * np.percentile(bs, 2.5),
-            "hi_pp": 100 * np.percentile(bs, 97.5), "per_backbone": 100 * diff.mean()}
+    d = (arm_task_means(treatment)["pooled"] - arm_task_means(control)["pooled"]).to_numpy()
+    rng = np.random.default_rng(seed); n = len(d)
+    bs = d[rng.integers(0, n, (resamples, n))].mean(axis=1)
+    return 100 * d.mean(), 100 * np.percentile(bs, 2.5), 100 * np.percentile(bs, 97.5)
+
+
+def bayes_factorial() -> pd.DataFrame:
+    """The registered primary model (bambi/PyMC, `analysis/bayes.py` of the study repository)
+    fitted on the four core arms of all backbones: posterior mean and 95% interval on the
+    probability scale (pp) of verification, decomposition, the interaction and the four
+    contrasts, read from the pooled section of `study_bayes.md`."""
+    import re
+
+    text = (REPORT / "study_bayes.md").read_text()
+    sec = text.split("## pooled over backbones", 1)[1].split("\n## ", 1)[0]
+    rows = {}
+    for line in sec.splitlines():
+        m = re.match(r"\|\s*([^|]+?)\s*\|\s*([+-]?[\d.]+)\s*\|\s*\[([+-]?[\d.]+),\s*([+-]?[\d.]+)\]\s*\|", line)
+        if m:
+            label = m.group(1)
+            key = next((k for k in ("verification", "decomposition", "interaction") if label.startswith(k)), None)
+            key = key or {"H1": "H1", "H2:": "H2", "H2a": "H2a", "H2b": "H2b", "H2c": "H2c"}.get(label.split()[0], label)
+            rows[key] = dict(pp=float(m.group(2)), lo=float(m.group(3)), hi=float(m.group(4)))
+    assert {"verification", "decomposition", "interaction"} <= set(rows), rows.keys()
+    return pd.DataFrame(rows).T
