@@ -120,7 +120,7 @@ def main() -> None:
     try:
         bf = replication_tables.bayes_factorial()
         bayes = ("fitted as registered (bambi/PyMC, four chains of 2,000 draws, seed 20260929) on the "
-                 + f"{len(runs6[runs6.arm.isin(replication_tables.CORE)]):,} runs of the four core arms, it gives, on the probability scale, "
+                 + f"{len(runs6[runs6.arm.isin(replication_tables.CORE)]):,} runs of the four core arms, gives, on the probability scale, "
                  + f"verification {bf.loc['verification', 'pp']:+.1f} points (95\\% interval {bf.loc['verification', 'lo']:+.1f} to {bf.loc['verification', 'hi']:+.1f}), "
                  + f"decomposition {bf.loc['decomposition', 'pp']:+.1f} ({bf.loc['decomposition', 'lo']:+.1f} to {bf.loc['decomposition', 'hi']:+.1f}) "
                  + f"and an interaction of {bf.loc['interaction', 'pp']:+.1f} ({bf.loc['interaction', 'lo']:+.1f} to {bf.loc['interaction', 'hi']:+.1f}), "
