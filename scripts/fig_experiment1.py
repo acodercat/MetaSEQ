@@ -91,8 +91,11 @@ def outcomes(ax):
         ax.barh(0, k, left=left, height=.5, color=colour, edgecolor="white", lw=.6)
         if k / total > .06:
             ax.text(left + k / 2, 0, str(k), ha="center", va="center", fontsize=6.3, color=tc)
+        else:   # too narrow for a label inside: lead it out above the bar
+            ax.annotate(str(k), (left + k / 2, .25), (left + k / 2, .7), ha="center", va="bottom", fontsize=6.3,
+                        color=INK, arrowprops=dict(arrowstyle="-", lw=.5, color=INK, shrinkA=0, shrinkB=0))
         left += k
-    ax.set(xlim=(0, total), ylim=(-1.4, .6)); ax.axis("off")
+    ax.set(xlim=(0, total), ylim=(-1.4, 1.15)); ax.axis("off")
     ax.legend(handles=[Patch(color=c, label=f"{nm} ({100 * k / total:.0f}%)") for nm, k, c, _ in segs],
               loc="upper center", bbox_to_anchor=(.5, .25), ncol=4, columnspacing=1.2, handlelength=1.1, fontsize=6.3)
 

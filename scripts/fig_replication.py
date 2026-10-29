@@ -138,8 +138,10 @@ def reasoning_panel(ax):
             ax.plot(xs, vs, marker="o", ms=4, mfc=fill, color=colour, lw=.9, ls=ls)
             for x, v in zip(xs, vs):
                 on_a = off == "A" and x == xs[1]
-                ax.annotate(f"{v:.1f}", (x, v), xytext=(6, -2) if on_a else (0, 5 if off == "D" else -9),
-                            textcoords="offset points", ha="left" if on_a else "center", fontsize=6)
+                off_d = off == "D" and x == xs[0]
+                ax.annotate(f"{v:.1f}", (x, v), xytext=(6, -2) if on_a else (-5, 0) if off_d else (0, 5 if off == "D" else -9),
+                            textcoords="offset points", ha="left" if on_a else "right" if off_d else "center",
+                            va="center" if (on_a or off_d) else "baseline", fontsize=6)
         ax.text(float(xs.mean()), 102.5, rt.LABELS[model], ha="center", va="top", fontsize=6.3)
     ax.set(xlim=(-.5, 4.7), ylim=(50, 103), xticks=[0, 1, 3.2, 4.2], xticklabels=["Off", "On", "Off", "On"],
            yticks=[50, 75, 100], xlabel="Reasoning mode", ylabel="Task pass rate (%)")

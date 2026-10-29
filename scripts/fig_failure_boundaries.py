@@ -100,7 +100,7 @@ def failures(counts, representative, states, cases):
     ax.tick_params(which="minor", length=0)
     for x in (5.5, 11.5, 13.5):
         ax.axvline(x, color="white", lw=3)
-    names = ["27B", "27B\nreasoning", "Flash", "Flash", "Flash\nreasoning", "Pro", "GPT-6\nLuna", "Sonnet\n5.5"]
+    names = ["27B", "27B\nreasoning", "3.8-Flash", "V4-Flash", "V4-Flash\nreasoning", "Pro", "GPT-6\nLuna", "Sonnet\n5.5"]
     for j, name in enumerate(names):
         ax.text((j + .5) / 8, 1.05, name, transform=ax.transAxes, ha="center", va="bottom",
                 fontsize=6.1, color=INK, linespacing=1.1)
