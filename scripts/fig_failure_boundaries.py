@@ -74,7 +74,27 @@ def failures(counts, representative, states, cases):
               loc="lower left", bbox_to_anchor=(-.01, 1.03), ncol=2,
               handlelength=1.1, columnspacing=1.0, fontsize=6.5, borderaxespad=0)
 
-    # ---- b: shared wrong outputs across model families ------------------------------------
+    # ---- d: the two main effects by how well the single agent did on the task ---------------
+    panel(fig, "d", .605, .755, "Effects by single-agent accuracy")
+    ax = fig.add_axes([.69, .585, .285, .14])
+    bb = rt.effects_by_baseline()
+    bins = [b for b in bb.index if b != "all"]
+    x = np.arange(len(bins))
+    for offset, effect, color, label in ((-.13, "verification", MULTI, "Verification"), (.13, "decomposition", VOTE, "Decomposition")):
+        est = bb.loc[bins, f"{effect}_pp"].to_numpy()
+        lo, hi = bb.loc[bins, f"{effect}_lo"].to_numpy(), bb.loc[bins, f"{effect}_hi"].to_numpy()
+        ax.errorbar(x + offset, est, yerr=[est - lo, hi - est], fmt="o", color=color, ms=3.4, lw=.9, capsize=0, zorder=3, label=label)
+        for xx, v in zip(x + offset, est):
+            ax.text(xx + (.1 if offset > 0 else -.1), v, f"{v:+.1f}", fontsize=5.6, color=color, va="center",
+                    ha="left" if offset > 0 else "right", zorder=4)
+    ax.axhline(0, color=MUTED, lw=.6, ls=(0, (3, 2)))
+    ax.set(xlim=(-.55, len(bins) - .45), xticks=x, ylim=(-5, 15), yticks=[-5, 0, 5, 10, 15], ylabel="Effect (points)")
+    ax.set_xticklabels([f"{b.replace('<=', '≤').replace('-', '–')}\n(n = {int(bb.loc[b, 'tasks'])})" for b in bins], fontsize=6.3)
+    ax.set_xlabel("Single agents passing the task on repeat 1", labelpad=2)
+    clean_axis(ax, grid="y", left=True)
+    ax.legend(loc="upper right", ncol=1, handlelength=1.1, fontsize=6.3, borderaxespad=.2, handletextpad=.4, frameon=False)
+
+    # ---- c: shared wrong outputs across model families ------------------------------------
     panel(fig, "c", .025, .528, "Shared wrong outputs across model families")
     ax = fig.add_axes([.305, .10, .665, .338])
     # each cell holds the three repeats side by side: passed, failed otherwise, shared wrong value

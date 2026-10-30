@@ -696,3 +696,348 @@ def bayes_factorial() -> pd.DataFrame:
             rows[key] = dict(pp=float(m.group(2)), lo=float(m.group(3)), hi=float(m.group(4)))
     assert {"verification", "decomposition", "interaction"} <= set(rows), rows.keys()
     return pd.DataFrame(rows).T
+
+
+# --------------------------------------------------------------------------- where the gain comes from
+# Exploratory subgroup and per-output analyses of experiment 2 (Fig. 5d; Supplementary Tables
+# 27-31). All use the study's estimator: per-task means, 10,000 task resamples, seed 20260929.
+
+def task_meta() -> pd.DataFrame:
+    """One row per task of the suite: category, difficulty, case type, city, number of turns and
+    the required outputs of each turn (a list of lists), from the released task files."""
+    rows = []
+    for p in sorted((PHASE3 / "suites" / "air_quality" / "tasks").glob("*/*.json")):
+        j = json.loads(p.read_text())
+        turns = [t for c in j["conversations"] for t in c["turns"]]
+        rows.append(dict(task=j["name"], category=j["category"], difficulty=j["difficulty"], case_type=j["case_type"],
+                         domain=j["domain"], turns=len(turns), stores=[t["stores"] for t in turns]))
+    return pd.DataFrame(rows).set_index("task")
+
+
+def _effect_row(per: pd.DataFrame, rng, resamples: int) -> dict:
+    """Arm accuracies, the two main effects, D - B and D - A on per-task means (rows tasks,
+    columns the four core arms), each with its percentile interval over task resamples."""
+    import numpy as np
+
+    a, b, c, d = (per[x] for x in CORE)
+    eff = {"A": a, "B": b, "C": c, "D": d, "verification": ((b - a) + (d - c)) / 2,
+           "decomposition": ((c - a) + (d - b)) / 2, "D_minus_B": d - b, "D_minus_A": d - a}
+    n = len(per); draws = rng.integers(0, n, (resamples, n))
+    row = {"tasks": n}
+    for k, v in eff.items():
+        x = v.to_numpy(); bs = x[draws].mean(axis=1)
+        row[f"{k}_pp"], row[f"{k}_lo"], row[f"{k}_hi"] = 100 * x.mean(), 100 * np.percentile(bs, 2.5), 100 * np.percentile(bs, 97.5)
+    return row
+
+
+def _core_task_means(repeats=None) -> pd.DataFrame:
+    """Per-task pass rate of the four core arms, pooled over backbones (and over the given
+    repeats, default all three)."""
+    o = study_outcomes(); core = o[o.arm.isin(CORE)]
+    if repeats is not None:
+        core = core[core.repeat.isin(repeats)]
+    return core.groupby(["task", "arm"]).ok.mean().unstack("arm")[CORE]
+
+
+def effects_by_group(groups: pd.Series, repeats=None, seed: int = 20260929, resamples: int = 10_000) -> pd.DataFrame:
+    """The factorial within each group of tasks (`groups`: task -> label). Rows: group labels in
+    first-seen order, then "all"."""
+    import numpy as np
+
+    per = _core_task_means(repeats)
+    rng = np.random.default_rng(seed)
+    rows = {}
+    for label in dict.fromkeys(groups):
+        rows[label] = _effect_row(per[groups.loc[per.index] == label], rng, resamples)
+    rows["all"] = _effect_row(per, rng, resamples)
+    return pd.DataFrame(rows).T
+
+
+# Single-agent pass rate on repeat 1, pooled over the eight backbones, is a multiple of 1/8: the
+# bins are "5 or fewer of the eight passed", "6 or 7" and "all eight".
+BASELINE_BINS = [(0.0, 0.70, "<=5 of 8"), (0.70, 0.92, "6-7 of 8"), (0.92, 1.01, "8 of 8")]
+
+
+def effects_by_baseline(seed: int = 20260929, resamples: int = 10_000) -> pd.DataFrame:
+    """The factorial by how well the single agent did on the task. Tasks are binned by how many
+    of the eight single agents passed them on repeat 1 (five or fewer, six or seven, all eight)
+    and the effects are estimated on repeats 2 and 3 only, so the binning variable and the
+    outcome never share a run. Rows: the three bins and
+    "all" (repeats 2-3). The frame's `attrs["spearman"]` holds the task-level Spearman rho and p
+    of each main effect against single-agent accuracy over all repeats (descriptive)."""
+    from scipy.stats import spearmanr
+
+    first = _core_task_means([1])[A]
+    label = pd.Series({t: next(l for lo, hi, l in BASELINE_BINS if lo <= v < hi or (v >= 1 and hi > 1)) for t, v in first.items()})
+    label = label.loc[sorted(label.index, key=lambda t: [l for _, _, l in BASELINE_BINS].index(label[t]))]
+    out = effects_by_group(label, repeats=[2, 3], seed=seed, resamples=resamples)
+    out["first_repeat_A_pp"] = [100 * first[label == l].mean() if l != "all" else 100 * first.mean() for l in out.index]
+    per = _core_task_means()
+    ver = ((per[B] - per[A]) + (per[D] - per[C])) / 2; dec = ((per[C] - per[A]) + (per[D] - per[B])) / 2
+    out.attrs["spearman"] = {"verification": tuple(spearmanr(per[A], ver)), "decomposition": tuple(spearmanr(per[A], dec))}
+    return out
+
+
+def effects_by_turns(seed: int = 20260929, resamples: int = 10_000) -> pd.DataFrame:
+    """The factorial on single-turn and on multi-turn tasks (all repeats)."""
+    meta = task_meta()
+    groups = pd.Series({t: "single-turn" if n == 1 else "multi-turn" for t, n in meta.turns.items()})
+    groups = groups.sort_values(ascending=False)   # single-turn first
+    return effects_by_group(groups, seed=seed, resamples=resamples)
+
+
+def effects_by_category(seed: int = 20260929, resamples: int = 10_000) -> pd.DataFrame:
+    """The factorial within each of the suite's eleven expert-defined categories (all repeats),
+    rows in alphabetical order then "all"."""
+    meta = task_meta()
+    return effects_by_group(meta.category.sort_values(), seed=seed, resamples=resamples)
+
+
+def effects_by_kind(seed: int = 20260929, resamples: int = 10_000) -> pd.DataFrame:
+    """The factorial within each kind of knowledge (scripts/knowledge_kinds.py, a post hoc
+    grouping), plus a row "regulatory minus others": the difference in each effect between the
+    regulatory tasks and all other tasks, with an interval from independent resampling of the
+    two groups."""
+    import numpy as np
+    from knowledge_kinds import KIND_OF, KIND_ORDER
+
+    groups = pd.Series(KIND_OF)
+    groups = groups.loc[sorted(groups.index, key=lambda t: KIND_ORDER.index(groups[t]))]
+    out = effects_by_group(groups, seed=seed, resamples=resamples)
+    per = _core_task_means()
+    reg, rest = per[groups.loc[per.index] == "regulatory"], per[groups.loc[per.index] != "regulatory"]
+    rng = np.random.default_rng(seed)
+    row = {"tasks": len(reg)}
+    for k, f in (("verification", lambda p: ((p[B] - p[A]) + (p[D] - p[C])) / 2),
+                 ("decomposition", lambda p: ((p[C] - p[A]) + (p[D] - p[B])) / 2)):
+        r, s = f(reg).to_numpy(), f(rest).to_numpy()
+        bs = (r[rng.integers(0, len(r), (resamples, len(r)))].mean(axis=1)
+              - s[rng.integers(0, len(s), (resamples, len(s)))].mean(axis=1))
+        row[f"{k}_pp"], row[f"{k}_lo"], row[f"{k}_hi"] = 100 * (r.mean() - s.mean()), 100 * np.percentile(bs, 2.5), 100 * np.percentile(bs, 97.5)
+    out.loc["regulatory minus others"] = pd.Series(row)
+    return out
+
+
+def repeat_consistency_all(seed: int = 20260929, resamples: int = 10_000) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """For each of the six arms: the share of the 888 backbone x task cells passed in all three
+    repeats, in none, and in one or two ("mixed"); and, for the contrasts B - A, D - C, C - A and
+    D - B, the difference in the all-three share with its task-resampled interval (cells of a
+    task resampled together)."""
+    import numpy as np
+
+    o = study_outcomes(); o = o[o.arm.isin(ARMS6)]
+    per = o.groupby(["arm", "task", "model"]).ok.sum().unstack("arm")
+    shares = pd.DataFrame({"all_three": 100 * (per == 3).mean(), "none": 100 * (per == 0).mean(),
+                           "mixed": 100 * per.isin([1, 2]).mean()}).loc[ARMS6]
+    all3 = (per == 3).astype(float).groupby("task").mean()   # per task, averaged over backbones
+    rng = np.random.default_rng(seed); n = len(all3); draws = rng.integers(0, n, (resamples, n))
+    rows = {}
+    for name, (t, c) in {"B-A": (B, A), "D-C": (D, C), "C-A": (C, A), "D-B": (D, B)}.items():
+        d = (all3[t] - all3[c]).to_numpy(); bs = d[draws].mean(axis=1)
+        rows[name] = dict(delta_pp=100 * d.mean(), lo_pp=100 * np.percentile(bs, 2.5), hi_pp=100 * np.percentile(bs, 97.5))
+    return shares, pd.DataFrame(rows).T
+
+
+MAGNITUDE_BINS = ["order of magnitude", ">=50%", "10-50%", "1-10%", "<1%"]
+
+
+def _magnitude(got: str, expected: str):
+    """Bin a numeric mismatch by its size: a ratio of 10 or more either way, else by relative
+    error. None when either side is not a finite number or the reference is zero."""
+    try:
+        g, e = float(got), float(expected)
+    except (TypeError, ValueError):
+        return None
+    if e == 0 or not (abs(g) < float("inf") and abs(e) < float("inf")):
+        return None
+    if g / e >= 10 or abs(g / e) <= 0.1 or g / e < 0 and abs(g / e) >= 10:
+        return MAGNITUDE_BINS[0]
+    rel = abs(g - e) / abs(e)
+    return MAGNITUDE_BINS[1] if rel >= .5 else MAGNITUDE_BINS[2] if rel >= .1 else MAGNITUDE_BINS[3] if rel >= .01 else MAGNITUDE_BINS[4]
+
+
+def _variables(card: dict, stores: list[list[str]]) -> dict:
+    """For every required output of every turn of a card: ("ok", None, None), or the parse of the
+    validator message ("unset"/"mismatch", got, expected). Keys (turn, variable)."""
+    from error_messages import parse_variables
+
+    out = {}
+    for c in card["conversations"]:
+        for t in c["turns"]:
+            wrong = {} if t.get("success") else parse_variables(t.get("message") or "")
+            for v in stores[t["turn"] - 1]:
+                out[(t["turn"], v)] = wrong.get(v, ("ok", None, None))
+    return out
+
+
+def verifier_transitions() -> dict:
+    """Every required output of every D turn, before and after the verifier (the stored
+    pre-verifier and final cards): kept (right before and after), fixed (wrong or missing before,
+    right after), broke (right before, wrong after) and survived (wrong before and after).
+    Returns {"totals": Series, "by_type": frame (numeric / string / boolean, from the expected
+    value), "by_magnitude": frame (numeric mismatches before the verifier, by size), "by_category":
+    frame}, each with fixed, survived, broke, kept counts and the fix rate (fixed over fixed +
+    survived) in per cent."""
+    meta = task_meta(); stores = meta.stores.to_dict()
+    rows, expected = [], {}
+    for final_path in (PHASE3 / "results").glob(f"*/*/*/{D}/*/r*/programmatic_verification.json"):
+        before_path = Path(str(final_path).replace(f"/{D}/", f"/{D_BEFORE}/"))
+        task, category = final_path.parts[-5], final_path.parts[-6]
+        final_card = json.loads(final_path.read_text())
+        fin = _variables(final_card, stores[task])
+        bef = _variables(json.loads(before_path.read_text()), stores[task])
+        for c in final_card["conversations"]:      # the expected value of an output: a passing turn's stored value
+            for t in c["turns"]:
+                if t.get("success"):
+                    for var, val in (t.get("runtime_variables") or {}).items():
+                        if val is not None:
+                            expected.setdefault((task, var), str(val))
+        for key, (kb, gb, eb) in bef.items():
+            ka = fin[key][0]
+            trans = ("kept" if kb == "ok" and ka == "ok" else "fixed" if kb != "ok" and ka == "ok"
+                     else "broke" if kb == "ok" else "survived")
+            exp = eb if eb is not None else fin[key][2]
+            if exp is not None:                    # or a mismatch message's reference
+                expected.setdefault((task, key[1]), exp)
+            rows.append(dict(task=task, category=category, var=key[1], kind_before=kb, trans=trans,
+                             magnitude=_magnitude(gb, eb) if kb == "mismatch" else None))
+    tr = pd.DataFrame(rows)
+    tr["expected"] = [expected.get((t, v)) for t, v in zip(tr.task, tr["var"])]
+
+    def vtype(e):
+        if e is None:
+            return "unknown"
+        if str(e).lower() in ("true", "false"):
+            return "boolean"
+        return "numeric" if _is_number(e) else "string"
+    tr["vtype"] = tr.expected.map(vtype)
+
+    def summarise(by):
+        t = tr.groupby([by, "trans"]).size().unstack(fill_value=0).reindex(columns=["fixed", "survived", "broke", "kept"], fill_value=0)
+        t["fix_rate"] = 100 * t.fixed / (t.fixed + t.survived)
+        return t
+    totals = tr.trans.value_counts().reindex(["fixed", "survived", "broke", "kept"], fill_value=0)
+    return {"totals": totals, "by_type": summarise("vtype"),
+            "by_magnitude": summarise("magnitude").reindex(MAGNITUDE_BINS),
+            "by_category": summarise("category"), "frame": tr}
+
+
+def shared_judgements(min_backbones: int = 3, min_families: int = 2) -> pd.DataFrame:
+    """Boolean outputs on which the same wrong value was returned by at least `min_backbones`
+    backbones from `min_families` model families, counted over the A and D cards: runs, backbones,
+    families, and the A and D counts. Exploratory; coincidence does not establish a mechanism."""
+    meta = task_meta(); stores = meta.stores.to_dict()
+    rows = []
+    for arm in (A, D):
+        for path in (PHASE3 / "results").glob(f"*/*/*/{arm}/*/r*/programmatic_verification.json"):
+            task, model = path.parts[-5], path.parts[-3]
+            for (turn, var), (kind, got, exp) in _variables(json.loads(path.read_text()), stores[task]).items():
+                if kind == "mismatch" and str(got).lower() in ("true", "false"):
+                    rows.append(dict(task=task, var=var, got=str(got).capitalize(), expected=str(exp).capitalize(), arm=ARM_LABELS[arm], model=model))
+    f = pd.DataFrame(rows); f["family"] = f.model.map(FAMILY)
+    g = f.groupby(["task", "var", "got", "expected"]).agg(runs=("model", "size"), backbones=("model", "nunique"), families=("family", "nunique"),
+                                                        A=("arm", lambda s: int((s == "A").sum())), D=("arm", lambda s: int((s == "D").sum()))).reset_index()
+    return g[(g.backbones >= min_backbones) & (g.families >= min_families)].sort_values("runs", ascending=False).reset_index(drop=True)
+
+
+def _in_prose(text: str, expected) -> bool:
+    """Whether an expected value appears in an answer's text: a number within 0.5% (or within
+    0.05 below 100 in magnitude, 0.5 above), or a string as a substring. Booleans never match."""
+    import re
+
+    if expected is None or str(expected).lower() in ("true", "false"):
+        return False
+    try:
+        r = float(expected)
+    except ValueError:
+        return str(expected).strip("'\"") in text
+    tol = max(abs(r) * 0.005, 0.051 if abs(r) < 100 else 0.51)
+    return any(abs(float(x.replace(",", "")) - r) <= tol for x in re.findall(r"-?\d+(?:,\d{3})*(?:\.\d+)?", text))
+
+
+def _is_number(x) -> bool:
+    try:
+        float(x); return x is not None
+    except (TypeError, ValueError):
+        return False
+
+
+def prose_credit(seed: int = 20260929, resamples: int = 10_000) -> dict:
+    """How much of D - A is output delivery rather than wrong values. A single-agent run that
+    failed only because required outputs were not set, and whose text answer states the expected
+    value of every unset output (numeric within 0.5%, strings as substrings; booleans never
+    credited), is credited as passed. Returns {"pooled": Series (A, A_credited, D, D_minus_A,
+    D_minus_A_credited, credit_pp, each with lo/hi), "by_model": frame, "hit_rate": Series (share
+    of unset numeric outputs whose value appears in the text, pooled and per backbone),
+    "unset_numeric": int}. Reads the A cards and run records; the expected value of an unset
+    output comes from any mismatch message naming it or from a passing run's stored value."""
+    import numpy as np
+    from error_messages import parse_variables
+
+    meta = task_meta(); stores = meta.stores.to_dict()
+    cards, responses, expected = {}, {}, {}
+    for arm in (A, D):
+        for path in (PHASE3 / "results").glob(f"*/*/*/{arm}/*/r*/programmatic_verification.json"):
+            task, model, rep = path.parts[-5], path.parts[-3], int(path.parts[-2][1:])
+            card = json.loads(path.read_text())
+            vars_ = _variables(card, stores[task])
+            for (turn, var), (kind, got, exp) in vars_.items():
+                if kind == "mismatch" and exp is not None:
+                    expected.setdefault((task, var), exp)
+            for c in card["conversations"]:
+                for t in c["turns"]:
+                    if t.get("success"):
+                        for var, val in (t.get("runtime_variables") or {}).items():
+                            if val is not None and (task, var) not in expected:
+                                expected[(task, var)] = str(val)
+            if arm == A:
+                # per failing turn: the parsed message, or None when nothing could be parsed
+                cards[(task, model, rep)] = {t["turn"]: (parse_variables(t.get("message") or "") or None)
+                                             for c in card["conversations"] for t in c["turns"] if not t.get("success")}
+                run = json.loads((path.parent / "run.json").read_text())
+                responses[(task, model, rep)] = {t["turn"]: t.get("response") or "" for c in run["conversations"] for t in c["turns"]}
+    o = study_outcomes(); a = o[o.arm == A].copy()
+    credited, hits = [], []
+    for r in a.itertuples():
+        key = (r.task, r.model, int(r.repeat))
+        if r.ok:
+            credited.append(1.0); continue
+        turns = cards[key]
+        if any(w is None or any(k == "mismatch" for k, _, _ in w.values()) for w in turns.values()):
+            credited.append(0.0); continue   # a wrong value, or a failure the message does not itemise
+        ok = True
+        for turn, wrong in turns.items():
+            for var in wrong:
+                exp = expected.get((r.task, var)); hit = _in_prose(responses[key].get(turn, ""), exp)
+                if _is_number(exp):
+                    hits.append(dict(model=r.model, hit=hit))
+                ok &= hit
+        credited.append(float(ok))
+    a["ok_credit"] = credited
+    d = o[o.arm == D]
+    per = pd.DataFrame({"A": a.groupby("task").ok.mean(), "A_credit": a.groupby("task").ok_credit.mean(), "D": d.groupby("task").ok.mean()})
+    rng = np.random.default_rng(seed); n = len(per); draws = rng.integers(0, n, (resamples, n))
+
+    def summary(p):
+        row = {}
+        for k, v in (("A", p.A), ("A_credited", p.A_credit), ("D", p.D), ("D_minus_A", p.D - p.A),
+                     ("D_minus_A_credited", p.D - p.A_credit), ("credit", p.A_credit - p.A)):
+            x = v.to_numpy(); bs = x[draws].mean(axis=1)
+            row[f"{k}_pp"], row[f"{k}_lo"], row[f"{k}_hi"] = 100 * x.mean(), 100 * np.percentile(bs, 2.5), 100 * np.percentile(bs, 97.5)
+        return pd.Series(row)
+    by_model = {}
+    for m in models():
+        pm = pd.DataFrame({"A": a[a.model == m].groupby("task").ok.mean(), "A_credit": a[a.model == m].groupby("task").ok_credit.mean(),
+                           "D": d[d.model == m].groupby("task").ok.mean()})
+        by_model[m] = summary(pm)
+    h = pd.DataFrame(hits)
+    hit_rate = (100 * h.groupby("model").hit.mean()).reindex(models()); hit_rate["pooled"] = 100 * h.hit.mean()
+    return {"pooled": summary(per), "by_model": pd.DataFrame(by_model).T, "hit_rate": hit_rate, "unset_numeric": int(len(h)),
+            "credited_runs": int(sum(1 for c, k in zip(credited, a.ok) if c and not k)), "failed_runs": int((a.ok == 0).sum())}
+
+
+def per_model_category() -> pd.DataFrame:
+    """Task pass rate (%) of every backbone in each category under A and B, rows (model, arm)."""
+    o = study_outcomes(); o = o[o.arm.isin([A, B])]
+    t = o.groupby(["model", "arm", "category"]).ok.mean().unstack("category") * 100
+    return t.rename(index=ARM_LABELS, level="arm")

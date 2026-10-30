@@ -23,3 +23,23 @@ def error_class(message):
                   for _, got, expected in pairs)
     return ("gross >=50%" if maximum >= .5 else
             "mid 2-50%" if maximum >= .02 else "near miss <2%")
+
+
+MISMATCH = re.compile(r"(\w+)=(.+?), expected ~?\+?(.+?)(?:;|$)")
+
+
+def parse_variables(message):
+    """Every required output a validator message names, with how it failed: a dict from the
+    variable name to (kind, got, expected), where kind is "unset" (named in a "not set" list,
+    got and expected None) or "mismatch" (a `var=got, expected ref` pair; got and expected are
+    the strings as written, numeric or not, with any unit after the reference dropped).
+    Variables the message does not name are not in the dict. Descriptive only."""
+    out = {}
+    m = re.search(r"^(.*?) not set", message or "")
+    if m:
+        for v in re.split(r",\s*", m.group(1)):
+            if v.strip():
+                out[v.strip()] = ("unset", None, None)
+    for var, got, expected in MISMATCH.findall(message or ""):
+        out[var] = ("mismatch", got.strip(), expected.strip().split(" ")[0])
+    return out

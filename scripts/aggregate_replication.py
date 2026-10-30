@@ -53,7 +53,28 @@ QUOTED = {
     "cases_turn1": {"hk_ozone_peak_season_aqo": (0, 9)},
     "repeats": {"higher": 21, "equal": 2, "lower": 1},   # backbone-repeat comparisons, D vs A runs passed
     # ---- the six-arm study (study_*.csv): the registered 2 x 2, G, and the exploratory delegation arms
-    "runs6": 15984, "vote_cells": 888,
+    "runs6": 15984, "vote_cells": 888, "configurations6": 48,
+    # --- where the gain comes from (exploratory; Fig. 5d, Supplementary Tables 27-31) ---
+    "by_baseline": {"<=5 of 8": dict(n=34, verification=(9.7, 6.2, 13.6), decomposition=(3.3, -0.3, 7.0)),
+                    "6-7 of 8": dict(n=39, verification=(4.7, 2.2, 7.3), decomposition=(-0.6, -3.4, 2.2)),
+                    "8 of 8": dict(n=38, verification=(1.4, -0.6, 3.2), decomposition=(0.9, -0.7, 2.5)),
+                    "spearman": {"verification": -0.53, "decomposition": -0.33}},   # task-level rho against A
+    "by_turns": {"single-turn": dict(n=61, verification=(4.2, 2.4, 6.0), decomposition=(2.0, 0.1, 3.9)),
+                 "multi-turn": dict(n=50, verification=(7.0, 4.5, 9.8), decomposition=(1.0, -1.5, 3.5), D_minus_B=(-1.3, -3.4, 0.6))},
+    "by_category": {"regulatory_standards": dict(A=67.2, verification=(7.6, 2.6, 12.6)),
+                    "spatial_analysis": dict(decomposition=(-2.9, -5.0, -0.8)),
+                    "decomposition_excluding_zero": ["spatial_analysis"]},   # the only category whose decomposition interval excludes zero
+    "by_kind": {"regulatory": dict(n=23, A=67.2, verification=(9.4, 5.4, 13.4)), "regulatory_minus_others": (5.0, 0.7, 9.4)},
+    "consistency_all": {"all_three": {"A": 62.6, "B": 73.1, "C": 67.5, "D": 71.5}, "none": {"A": 10.9, "B": 7.1},
+                        "B-A": (10.5, 7.0, 14.1), "D-C": (4.1, 1.1, 7.1), "D-B": (-1.6, -4.1, 0.9)},
+    "transitions": {"fixed": 695, "survived": 576, "broke": 231, "kept": 10810,   # outputs of D, before -> after the verifier
+                    "fix_rate": {"order of magnitude": 33, "1-10%": 58}},
+    "shared_judgements": {("beijing_fire_detection_bias", "fires_shown_not_to_matter"): (20, 5, 2),   # runs, backbones, families
+                          ("hk_cloud_enhancement_extreme", "above_constant_is_error"): (14, 4, 2),
+                          ("hk_weekend_ozone_ox_conservation", "line_can_be_written"): (7, 4, 2)},
+    "prose_credit": {"hit_rate": 66, "unset_numeric": 180, "credited_runs": 46, "failed_runs": 610,
+                     "D_minus_A": (7.0, 4.7, 9.6), "D_minus_A_credited": (5.3, 3.0, 7.9), "credit": (1.7, 1.1, 2.4)},
+    "per_model_category": {"gpt-6-luna": {"regulatory_standards": (51, 67)}, "claude-sonnet-5-5": {"regulatory_standards": (78, 100)}},   # A, B   # arm x backbone cells with their own runs (six arms, eight backbones)
     "arms6": {"A": 77.1, "B": 84.2, "C": 80.3, "D": 84.1, "F": 78.5, "FV": 84.8, "G": 81.1},   # pooled accuracy (%)
     "factorial": {"verification": (5.4, 3.9, 7.1), "decomposition": (1.6, 0.1, 3.2),
                   "interaction": (-3.2, -6.1, -0.6), "H2": (3.9, 2.0, 5.9)},      # pp, 95% interval
@@ -67,6 +88,11 @@ QUOTED = {
     "cost_D_minus_B_k": (169, 147, 192),       # tokens per correct task, thousands (H4)
     "verifier_turns": {"B": (427, 149), "D": (342, 122), "FV": (383, 134), "verified": 4080},   # fixed, broken
     "verifier_turns_D_range": {"claude-sonnet-5-5": (6, 0), "deepseek-v4-pro-0813": (45, 27)},   # fewest and most broken
+    "verifier_changed_pct": {"B": 14.1, "D": 11.4},        # share of the 4,080 turns whose verdict the verifier changed
+    "claude_C_D": (98.5, 97.9),                            # Claude Sonnet 5.5, C against D: a net verifier gain within runs, a lower arm
+    "p_values": {"verification": 0.0, "decomposition": 0.044, "interaction": 0.013, "H2c": 0.98,   # bootstrap p at zero;
+                 "H1_holm": 0.0, "H2a_holm": 0.0},                                                  # 0.0 is quoted as p < 1e-4
+    "D_minus_B_uncapped": {"claude-sonnet-5-5": -1.2, "gpt-6-luna": -0.6, "deepseek-v4-pro-0813": 1.5, "max_D_cap_turns": 11},
     "turn_accuracy": {"A": 83.1, "B": 89.1, "C": 85.9, "D": 89.0},   # per cent of 4,080 turns per arm
     "elapsed_s": {"A": 69, "B": 155, "C": 187, "D": 261},            # mean seconds per run
     "verification_range": (0.8, 9.6),                                  # per-backbone verification effect, min and max
@@ -98,6 +124,7 @@ def check_study() -> None:
     so = rt.study_outcomes()
     check("study runs", int((so.arm != rt.G).sum()), QUOTED["runs6"], tol=0)
     check("vote cells", int((so.arm == rt.G).sum()), QUOTED["vote_cells"], tol=0)
+    check("study configurations", int(so[so.arm != rt.G].groupby(["arm", "model"]).ngroups), QUOTED["configurations6"], tol=0)
     key = {"A": rt.A, "B": rt.B, "C": rt.C, "D": rt.D, "F": rt.F, "FV": rt.FV, "G": rt.G}
     acc = rt.arm_accuracy().loc["pooled"]
     for k, q in QUOTED["arms6"].items():
@@ -157,6 +184,21 @@ def check_study() -> None:
     for m, q in QUOTED["verifier_turns_D_range"].items():
         check(f"verifier turns D {m}", (vtb.loc[m, (rt.D, "fixed")], vtb.loc[m, (rt.D, "broken")]), q, tol=0)
     assert vtb[(rt.D, "broken")].idxmin() == "claude-sonnet-5-5" and vtb[(rt.D, "broken")].idxmax() == "deepseek-v4-pro-0813", vtb[rt.D]
+    pv = QUOTED["p_values"]; fxp = rt.factorial(); ccp = rt.core_contrasts()
+    for k in ("verification", "decomposition", "interaction"):
+        check(f"p {k}", fxp.loc[k, "p"], pv[k], tol=0.00051)
+    check("p H2c", ccp.loc["H2c", "p"], pv["H2c"], tol=0.0051)
+    check("Holm p H1, H2a", (ccp.loc["H1", "holm_p"], ccp.loc["H2a", "holm_p"]), (pv["H1_holm"], pv["H2a_holm"]), tol=0.00051)
+    for k, q in QUOTED["verifier_changed_pct"].items():
+        fixed, broken = QUOTED["verifier_turns"][k]
+        check(f"verifier changed share {k}", 100 * (fixed + broken) / QUOTED["verifier_turns"]["verified"], q)
+    acc = rt.arm_accuracy()
+    check("Claude C, D", (acc.loc["claude-sonnet-5-5", rt.C], acc.loc["claude-sonnet-5-5", rt.D]), QUOTED["claude_C_D"])
+    qu = QUOTED["D_minus_B_uncapped"]
+    for m in ("claude-sonnet-5-5", "gpt-6-luna", "deepseek-v4-pro-0813"):
+        check(f"D - B {m}", acc.loc[m, rt.D] - acc.loc[m, rt.B], qu[m])
+        assert sc.loc[m, rt.D] <= qu["max_D_cap_turns"], (m, sc.loc[m, rt.D])
+    assert max(sc.loc[m, rt.D] for m in ("claude-sonnet-5-5", "gpt-6-luna", "deepseek-v4-pro-0813")) == qu["max_D_cap_turns"]
     ta = rt.turn_accuracy(); el = rt.elapsed_per_run()
     for k, q in QUOTED["turn_accuracy"].items():
         check(f"turn accuracy {k}", ta[key[k]], q)
@@ -182,9 +224,73 @@ def check_study() -> None:
         bf = rt.bayes_factorial()
         for e, qv in QUOTED["bayes"].items():
             check(f"bayes {e}", (bf.loc[e, "pp"], bf.loc[e, "lo"], bf.loc[e, "hi"]), qv)
+    check_gain_sources()
     print("six-arm study: pooled accuracy", acc[[key[k] for k in "ABCDF"] + [rt.FV, rt.G]].round(1).to_dict())
     print("factorial:\n" + fx.round(1).to_string())
     print("core contrasts:\n" + cc[["delta_pp", "lo_pp", "hi_pp", "p", "holm_p"]].round(3).to_string())
+
+
+def check_gain_sources() -> None:
+    """The exploratory subgroup and per-output analyses (Fig. 5d; Supplementary Tables 27-31)."""
+    def check_effects(frame, quoted, label):
+        for group, q in quoted.items():
+            if not isinstance(q, dict) or group == "spearman":
+                continue
+            r = frame.loc[group]
+            if "n" in q:
+                check(f"{label} {group} tasks", r.tasks, q["n"], tol=0)
+            if "A" in q:
+                check(f"{label} {group} A", r.A_pp, q["A"])
+            for e in ("verification", "decomposition", "D_minus_B"):
+                if e in q:
+                    check(f"{label} {group} {e}", (r[f"{e}_pp"], r[f"{e}_lo"], r[f"{e}_hi"]), q[e])
+    bb = rt.effects_by_baseline()
+    check_effects(bb, QUOTED["by_baseline"], "baseline")
+    for e, q in QUOTED["by_baseline"]["spearman"].items():
+        check(f"baseline spearman {e}", bb.attrs["spearman"][e][0], q, tol=0.006)
+    assert bb.attrs["spearman"]["verification"][1] < 1e-6 and bb.attrs["spearman"]["decomposition"][1] < 0.001
+    check_effects(rt.effects_by_turns(), QUOTED["by_turns"], "turns")
+    bc = rt.effects_by_category()
+    check_effects(bc, QUOTED["by_category"], "category")
+    excl = sorted(bc.drop("all").index[(bc.drop("all").decomposition_lo > 0) | (bc.drop("all").decomposition_hi < 0)])
+    assert excl == QUOTED["by_category"]["decomposition_excluding_zero"], excl
+    assert bc.drop("all").A_pp.idxmin() == "regulatory_standards", bc.A_pp.idxmin()
+    bk = rt.effects_by_kind()
+    check_effects(bk, QUOTED["by_kind"], "kind")
+    r = bk.loc["regulatory minus others"]
+    check("regulatory minus others verification", (r.verification_pp, r.verification_lo, r.verification_hi), QUOTED["by_kind"]["regulatory_minus_others"])
+    shares, contrasts = rt.repeat_consistency_all(); qc = QUOTED["consistency_all"]
+    key = {"A": rt.A, "B": rt.B, "C": rt.C, "D": rt.D}
+    for k, q in qc["all_three"].items():
+        check(f"consistency all three {k}", shares.loc[key[k], "all_three"], q)
+    for k, q in qc["none"].items():
+        check(f"consistency none {k}", shares.loc[key[k], "none"], q)
+    for k in ("B-A", "D-C", "D-B"):
+        check(f"consistency {k}", (contrasts.loc[k, "delta_pp"], contrasts.loc[k, "lo_pp"], contrasts.loc[k, "hi_pp"]), qc[k])
+    check("consistency A, D as before", (shares.loc[rt.A, "all_three"], shares.loc[rt.D, "all_three"]), QUOTED["consistency"]["all_three"])
+    tr = rt.verifier_transitions(); qt = QUOTED["transitions"]
+    for k in ("fixed", "survived", "broke", "kept"):
+        check(f"transitions {k}", tr["totals"][k], qt[k], tol=0)
+    for k, q in qt["fix_rate"].items():
+        check(f"fix rate {k}", tr["by_magnitude"].loc[k, "fix_rate"], q, tol=0.51)
+    fr = tr["by_magnitude"].fix_rate
+    assert fr["order of magnitude"] < fr[">=50%"] < fr["10-50%"] < fr["1-10%"], fr   # the gradient the text describes
+    sj = rt.shared_judgements().set_index(["task", "var"])
+    for (task, var), q in QUOTED["shared_judgements"].items():
+        r = sj.loc[(task, var)]
+        check(f"shared judgement {var}", (r.runs, r.backbones, r.families), q, tol=0)
+    assert sj.loc[("hk_weekend_ozone_ox_conservation", "line_can_be_written"), "A"] == 0
+    pc = rt.prose_credit(); qp = QUOTED["prose_credit"]; r = pc["pooled"]
+    check("prose hit rate", pc["hit_rate"]["pooled"], qp["hit_rate"], tol=0.51)
+    check("prose unset numeric", pc["unset_numeric"], qp["unset_numeric"], tol=0)
+    check("prose credited runs", (pc["credited_runs"], pc["failed_runs"]), (qp["credited_runs"], qp["failed_runs"]), tol=0)
+    check("prose D - A", (r.D_minus_A_pp, r.D_minus_A_lo, r.D_minus_A_hi), qp["D_minus_A"])
+    check("prose D - A credited", (r.D_minus_A_credited_pp, r.D_minus_A_credited_lo, r.D_minus_A_credited_hi), qp["D_minus_A_credited"])
+    check("prose credit", (r.credit_pp, r.credit_lo, r.credit_hi), qp["credit"])
+    pmc = rt.per_model_category()
+    for m, q in QUOTED["per_model_category"].items():
+        for cat, (a, b) in q.items():
+            check(f"{m} {cat} A, B", (pmc.loc[(m, "A"), cat], pmc.loc[(m, "B"), cat]), (a, b), tol=0.51)
 
 
 def main() -> None:

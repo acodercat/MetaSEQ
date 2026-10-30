@@ -5,6 +5,7 @@
 si_multiturn.pdf   Experiment 2: turn pass rate after a failed and after a passed turn, and third turns.
 si_categories.pdf  Experiment 1: gain by task category (descriptive).
 si_headroom.pdf    Both experiments: gain D - A against single-agent accuracy, 15 comparisons.
+si_fixrate.pdf     Experiment 2: share of wrong numeric outputs the verifier corrected, by size of the error.
 """
 import csv
 from pathlib import Path
@@ -85,5 +86,23 @@ def headroom():
     return rho, p
 
 
+def fixrate():
+    """Of D's numeric outputs that held a wrong value before the verifier, the share corrected, by
+    the size of the error (Supplementary Table 29)."""
+    tr = rt.verifier_transitions()["by_magnitude"]
+    labels = {"order of magnitude": "Ratio ≥10\nor ≤0.1", ">=50%": "≥50%", "10-50%": "10–50%", "1-10%": "1–10%", "<1%": "<1%"}
+    fig, ax = plt.subplots(figsize=(110 * MM, 52 * MM))
+    xs = range(len(rt.MAGNITUDE_BINS))
+    rates = [tr.loc[k, "fix_rate"] for k in rt.MAGNITUDE_BINS]
+    ax.bar(list(xs), rates, width=.62, color=MULTI, zorder=2)
+    for x, k, v in zip(xs, rt.MAGNITUDE_BINS, rates):
+        ax.text(x, v + 1.5, f"{int(tr.loc[k, 'fixed'])}/{int(tr.loc[k, 'fixed'] + tr.loc[k, 'survived'])}", ha="center", va="bottom", fontsize=6.3, color=MUTED)
+    ax.set_xticks(list(xs)); ax.set_xticklabels([labels[k] for k in rt.MAGNITUDE_BINS], fontsize=6.5)
+    ax.set(ylim=(0, 75), yticks=[0, 25, 50, 75], ylabel="Outputs corrected (%)", xlabel="Size of the error before the verifier")
+    clean_axis(ax, grid="y", left=True)
+    fig.tight_layout(pad=.4)
+    save(fig, FIG / "si_fixrate.pdf")
+
+
 if __name__ == "__main__":
-    multiturn(); categories(); print("headroom rho, p:", headroom())
+    multiturn(); categories(); fixrate(); print("headroom rho, p:", headroom())

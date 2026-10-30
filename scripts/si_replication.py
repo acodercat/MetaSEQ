@@ -107,6 +107,12 @@ def pct(x) -> str:
     return f"{100 * float(x):.1f}"
 
 
+def ci(r, k: str) -> str:
+    """An effect with its interval, from a row of the effects frames: "+5.4 [+3.9, +7.1]"."""
+    v = 0.0 if abs(r[f"{k}_pp"]) < .05 else r[f"{k}_pp"]
+    return f"{v:+.1f} [{r[f'{k}_lo']:+.1f}, {r[f'{k}_hi']:+.1f}]"
+
+
 def pfmt(p) -> str:
     return "$<10^{-4}$" if float(p) == 0 else f"{float(p):.2g}"
 
@@ -146,12 +152,13 @@ Experiment 2 reports four core arms, the voting baseline and two exploratory arm
 """)
 
     # ---------------- Note 3: task list ------------------------------------------------------
+    from knowledge_kinds import KIND_LABELS, KIND_OF
     rows = []
     for p in sorted((PHASE3 / "suites" / "air_quality" / "tasks").glob("*/*.json")):
         j = json.loads(p.read_text())
         turns = sum(len(c["turns"]) for c in j["conversations"])
         rows.append([tex(j["name"]), "HK" if j["name"].startswith("hk_") else "Beijing",
-                     tex(j["category"].replace("_", " ")), str(turns)])
+                     tex(j["category"].replace("_", " ")), str(turns), KIND_LABELS[KIND_OF[j["name"]]].lower()])
     body = " \\\\\n".join(" & ".join(r) for r in rows)
     # ---------------- Note 4: three cases ------------------------------------------------------
     cases = replication_tables.case_counts()
@@ -208,12 +215,12 @@ The judgement turns on a conservation argument that the single agent carried fro
     # ---------------- Note 5: task list --------------------------------------------------------
     parts.append(r"""\section*{Supplementary Note 4: The 111 tasks of experiment 2}
 
-One row per task: identifier (as released), city, category and number of turns. The task text, variable definitions and validators are in the code release.
+One row per task: identifier (as released), city, category, number of turns, and the kind of knowledge the task turns on. The categories were assigned by the task authors. The kind is a post hoc grouping of the tasks into seven kinds (regulatory conventions, causal attribution, atmospheric physics, atmospheric chemistry, statistical inference, data provenance, geospatial exposure), made from the task text for Supplementary Table~30 after the per-category pass rates of A and D had been seen; it is exploratory. The task text, variable definitions and validators are in the code release.
 
 {\scriptsize
-\begin{longtable}{@{}p{6.4cm}lp{4.2cm}c@{}}
+\begin{longtable}{@{}p{5.4cm}lp{3.4cm}cp{2.9cm}@{}}
 \toprule
-task & city & category & turns \\
+task & city & category & turns & kind \\
 \midrule
 \endhead
 """ + body + r""" \\
@@ -287,14 +294,13 @@ task & city & category & turns \\
     parts.append(table(t, "Error class of the failing arm in the discordant cells of experiment 2. Fixed: cells the single agent failed and MetaSEQ passed, classed by the single agent's first failed turn; broken: cells MetaSEQ failed and the single agent passed, classed by MetaSEQ's. Classes from the validator message: a required output missing; the largest relative numeric error explicitly reported in the message at least 50\\%, between 2 and 50\\%, or below 2\\%; or other/unparsed mismatches (including Boolean, label, timestamp, type and nonfinite-value errors). A missing required output takes precedence; zero-reference comparisons remain unclassified. These descriptive bins do not identify causes or establish correctness of unreported outputs.",
                        ["error class of the failing arm", "fixed (A wrong, D right)", "broken (A right, D wrong)"], rows, "@{}lrr@{}"))
     t += 1
-    rows = []
-    for cat in sorted(runs.category.unique()):
-        sel = runs[runs.category == cat]
-        a = sel[sel.arm == ARM_NAMES["A"]].groupby("task").passed.mean().mean()
-        d = sel[sel.arm == ARM_NAMES["D"]].groupby("task").passed.mean().mean()
-        rows.append([tex(cat.replace("_", " ")), str(sel.task.nunique()), pct(a), pct(d), f"{100 * (d - a):+.1f}"])
-    parts.append(table(t, "Task pass rate (\\%) by category for A and D, all backbones (descriptive; several categories hold few tasks and no per-category inference is made).",
-                       ["category", "tasks", "A", "D", "D $-$ A"], rows, "@{}lrrrr@{}"))
+    bc = replication_tables.effects_by_category()
+    rows = [[(tex(cat.replace("_", " ")) if cat != "all" else r"\textbf{All tasks}"), str(int(r.tasks))]
+            + [f"{r[f'{a}_pp']:.1f}" for a in "ABCD"]
+            + [ci(r, k) for k in ("verification", "decomposition", "D_minus_B")] for cat, r in bc.iterrows()]
+    parts.append(table(t, "The factorial within each of the suite's eleven categories: task pass rate (\\%) of the four core arms pooled over the eight backbones, and the verification and decomposition main effects and D $-$ B in percentage points with 95\\% percentile intervals over 10,000 task resamples within the category (seed 20260929). The categories were assigned by the task authors before any run. Exploratory: several categories hold four to nine tasks, the intervals are pointwise and no multiplicity correction is applied.",
+                       ["category", "tasks", "A", "B", "C", "D", "verification (pp)", "decomposition (pp)", "D $-$ B (pp)"], rows,
+                       r"@{}p{.2\textwidth}rrrrrlll@{}"))
     t += 1
     prompts = PHASE3 / "agents" / "prompts" / "fixed_roles" / "stripped"
     files = [("Coordinator", prompts / "coordinator.md"),
@@ -406,6 +412,83 @@ task & city & category & turns \\
     kinds.write_text(table(26, "The turns MetaSEQ's verifier fixed and broke (Supplementary Table~20), by the kind of error in the failing snapshot: a stored value that the validator rejected (wrong value) or a required output that was not set (missing). A fixed turn is classed by its pre-verifier validator message, a broken turn by its final one.",
                            ["backbone", "fixed: wrong value", "fixed: missing", "broken: wrong value", "broken: missing"], rows, r"@{}p{.28\textwidth}rrrr@{}"))
     print("written", kinds, "table 26")
+
+    # Supplementary Table 27: the factorial by single-agent accuracy on repeat 1 and by task length.
+    bb = replication_tables.effects_by_baseline(); bt = replication_tables.effects_by_turns()
+    labels = {"<=5 of 8": "5 or fewer of the eight single agents passed on repeat 1", "6-7 of 8": "6 or 7 passed", "8 of 8": "all 8 passed",
+              "all": r"\textbf{All tasks}", "single-turn": "Single-turn tasks", "multi-turn": "Multi-turn tasks"}
+    rows = []
+    for frame, note in ((bb, " (repeats 2 and 3)"), (bt, " (all repeats)")):
+        for g, r in frame.iterrows():
+            rows.append([labels[g] + (note if g == "all" else ""), str(int(r.tasks))] + [f"{r[f'{a}_pp']:.1f}" for a in "ABCD"]
+                        + [ci(r, k) for k in ("verification", "decomposition", "D_minus_B")])
+    sp = bb.attrs["spearman"]
+    base = ROOT / "manuscript" / "tex" / "table_by_baseline.tex"
+    base.write_text(table(27, "The factorial by how well the single agent did on the task, and by task length. Upper block: tasks are binned by how many of the eight single agents passed them on repeat 1, and every figure is estimated on repeats 2 and 3 only, so the binning variable and the outcome never share a run (the pooled single-agent pass rate on repeat 1 is a multiple of one eighth; the three bins are five or fewer, six or seven, and all eight). Lower block: single-turn against multi-turn tasks, all repeats. Task pass rate (\\%) of the four core arms pooled over backbones; effects in percentage points with 95\\% percentile intervals over 10,000 task resamples within the group (seed 20260929). Over all tasks and repeats, the task-level Spearman correlation of each main effect with single-agent accuracy is "
+                          + f"{sp['verification'][0]:.2f} for verification and {sp['decomposition'][0]:.2f} for decomposition (descriptive). Exploratory; intervals are pointwise.",
+                          ["tasks by group", "tasks", "A", "B", "C", "D", "verification (pp)", "decomposition (pp)", "D $-$ B (pp)"], rows,
+                          r"@{}p{.3\textwidth}rrrrrlll@{}"))
+    print("written", base, "table 27")
+
+    # Supplementary Table 28: repeat consistency of every arm.
+    shares, con = replication_tables.repeat_consistency_all()
+    rows = [[a, f"{shares.loc[ARM_NAMES[a], 'all_three']:.1f}", f"{shares.loc[ARM_NAMES[a], 'none']:.1f}", f"{shares.loc[ARM_NAMES[a], 'mixed']:.1f}"] for a in ARMS]
+    for k in ("B-A", "D-C", "C-A", "D-B"):
+        r = con.loc[k]
+        rows.append([k.replace("-", " $-$ ") + ", all three", f"{r.delta_pp:+.1f} [{r.lo_pp:+.1f}, {r.hi_pp:+.1f}]", "---", "---"])
+    cons = ROOT / "manuscript" / "tex" / "table_consistency.tex"
+    cons.write_text(table(28, "Repeat consistency of the six arms: the share (\\%) of the 888 backbone $\\times$ task cells that an arm passed in all three repeats, in none, and in one or two (mixed). The last four rows give the difference between two arms in the all-three share, in percentage points with its 95\\% percentile interval over 10,000 task resamples (the eight cells of a task resampled together; seed 20260929). Exploratory.",
+                          ["arm", "all three repeats (\\%)", "no repeat (\\%)", "one or two (\\%)"], rows, r"@{}p{.3\textwidth}lrr@{}"))
+    print("written", cons, "table 28")
+
+    # Supplementary Table 29: the verifier's effect per required output in D.
+    tr = replication_tables.verifier_transitions()
+    def trow(label, r, kept=True):
+        fixed, survived = int(r.fixed), int(r.survived)
+        return [label, str(fixed), str(survived), str(int(r.broke)) if kept else "---", str(int(r.kept)) if kept else "---",
+                f"{r.fix_rate:.0f}" if fixed + survived else "---"]
+    rows = [[r"\textit{By the size of the error before the verifier (numeric outputs)}", "", "", "", "", ""]]
+    size_labels = {"order of magnitude": "ratio to the reference $\\geq 10$ or $\\leq 0.1$", ">=50%": "relative error $\\geq 50\\%$",
+                   "10-50%": "10--50\\%", "1-10%": "1--10\\%", "<1%": "$<1\\%$"}
+    rows += [trow(size_labels[k], tr["by_magnitude"].loc[k], kept=False) for k in replication_tables.MAGNITUDE_BINS]
+    rows.append([r"\textit{By type of output}", "", "", "", "", ""])
+    rows += [trow(k.capitalize(), tr["by_type"].loc[k]) for k in ("numeric", "string", "boolean") if k in tr["by_type"].index]
+    rows.append([r"\textit{By category}", "", "", "", "", ""])
+    rows += [trow(tex(k.replace("_", " ")), tr["by_category"].loc[k]) for k in sorted(tr["by_category"].index)]
+    tot = tr["totals"]
+    rows.append([r"\textbf{All outputs}", str(int(tot.fixed)), str(int(tot.survived)), str(int(tot.broke)), str(int(tot.kept)), f"{100 * tot.fixed / (tot.fixed + tot.survived):.0f}"])
+    trans = ROOT / "manuscript" / "tex" / "table_transitions.tex"
+    trans.write_text(table(29, "What the verifier did to each required output of MetaSEQ's 4,080 turns (" + f"{int(tot.sum()):,}" + " outputs), comparing the validator's verdict on the output before and after the verifier: fixed (wrong or missing before, right after), survived (wrong or missing before and after), broke (right before, wrong after) and kept (right before and after). The fix rate is fixed over fixed plus survived, in per cent. The size of an error is the stored value against the validator's reference before the verifier, for numeric mismatches only; outputs that were missing before the verifier have no size. Output types are read from the reference value. Descriptive; the validator message names the outputs it rejected and the rest are taken as accepted.",
+                           ["outputs", "fixed", "survived", "broke", "kept", "fix rate (\\%)"], rows, r"@{}p{.42\textwidth}rrrrr@{}"))
+    print("written", trans, "table 29")
+
+    # Supplementary Table 30: the factorial by kind of knowledge (post hoc).
+    from knowledge_kinds import KIND_LABELS
+    bk = replication_tables.effects_by_kind()
+    rows = []
+    for g, r in bk.iterrows():
+        label = KIND_LABELS.get(g, r"\textbf{All tasks}" if g == "all" else "Regulatory minus all others")
+        rows.append([label, str(int(r.tasks))] + ([f"{r[f'{a}_pp']:.1f}" for a in "ABCD"] if g != "regulatory minus others" else ["---"] * 4)
+                    + [ci(r, k) for k in ("verification", "decomposition")] + ([ci(r, "D_minus_B")] if g != "regulatory minus others" else ["---"]))
+    kind = ROOT / "manuscript" / "tex" / "table_kinds.tex"
+    kind.write_text(table(30, "The factorial by the kind of knowledge a task turns on (the kind column of Supplementary Note~4): task pass rate (\\%) of the four core arms pooled over backbones, and the two main effects and D $-$ B in percentage points with 95\\% percentile intervals over 10,000 task resamples within the kind (seed 20260929). The last row is the difference between the regulatory tasks and all other tasks in each main effect, with an interval from resampling the two groups independently. The grouping is post hoc and exploratory (Methods).",
+                          ["kind of knowledge", "tasks", "A", "B", "C", "D", "verification (pp)", "decomposition (pp)", "D $-$ B (pp)"], rows,
+                          r"@{}p{.2\textwidth}rrrrrlll@{}"))
+    print("written", kind, "table 30")
+
+    # Supplementary Table 31: delivery against correctness, crediting the single agent's prose.
+    pc = replication_tables.prose_credit()
+    rows = []
+    for m in MODELS + ["pooled"]:
+        r = pc["by_model"].loc[m] if m != "pooled" else pc["pooled"]
+        rows.append([MODEL_LABELS.get(m, r"\textbf{Pooled}"), f"{r.A_pp:.1f}", f"{r.A_credited_pp:.1f}", f"{r.D_pp:.1f}",
+                     ci(r, "D_minus_A"), ci(r, "D_minus_A_credited"), ci(r, "credit"), f"{pc['hit_rate'][m]:.0f}"])
+    prose = ROOT / "manuscript" / "tex" / "table_prose_credit.tex"
+    prose.write_text(table(31, "How much of MetaSEQ's gain over the single agent is the delivery of outputs rather than their correctness. A single-agent run that failed only because required outputs were not set, and whose text answer states the validator's expected value for every unset output, is credited as passed (numbers within 0.5\\% of the reference, or within 0.05 below 100 in magnitude and 0.5 above; strings as substrings; booleans are never credited; a run with any wrong value, or whose validator message does not itemise the outputs, is never credited). Columns: task pass rate (\\%) of A as scored, of A with those runs credited, and of D; D $-$ A as scored and after crediting; the credit itself; and the share of the single agent's unset numeric outputs whose expected value appears in its text ("
+                           + f"{pc['unset_numeric']} outputs; {pc['credited_runs']} of {pc['failed_runs']} failed single-agent runs were credited). Intervals are 95\\% percentile intervals over 10,000 task resamples (seed 20260929). Exploratory.",
+                           ["backbone", "A", "A credited", "D", "D $-$ A (pp)", "D $-$ A credited (pp)", "credit (pp)", "in text (\\%)"], rows,
+                           r"@{}p{.2\textwidth}rrrlllr@{}"))
+    print("written", prose, "table 31")
 
 
 if __name__ == "__main__":
