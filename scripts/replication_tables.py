@@ -15,6 +15,7 @@ error analyses, the cases and Fig. 5 read. `study_*.csv` are the six-arm study r
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 
 import pandas as pd
@@ -864,9 +865,14 @@ def _variables(card: dict, stores: list[list[str]]) -> dict:
     out = {}
     for c in card["conversations"]:
         for t in c["turns"]:
-            wrong = {} if t.get("success") else parse_variables(t.get("message") or "")
+            if t.get("success"):
+                wrong, default = {}, ("ok", None, None)
+            else:
+                wrong = parse_variables(t.get("message") or "")
+                # a failed turn whose message names no output: nothing can be said of any of them
+                default = ("ok", None, None) if wrong else ("undetermined", None, None)
             for v in stores[t["turn"] - 1]:
-                out[(t["turn"], v)] = wrong.get(v, ("ok", None, None))
+                out[(t["turn"], v)] = wrong.get(v, default)
     return out
 
 
@@ -877,9 +883,11 @@ def verifier_transitions() -> dict:
     Returns {"totals": Series, "by_type": frame (numeric / string / boolean, from the expected
     value), "by_magnitude": frame (numeric mismatches before the verifier, by size), "by_category":
     frame}, each with fixed, survived, broke, kept counts and the fix rate (fixed over fixed +
-    survived) in per cent."""
+    survived) in per cent, and "undetermined": the outputs left out because the validator message
+    of a failed turn, before or after the verifier, names no output. A validator that stops at its
+    first failed check leaves the remaining outputs unnamed, so "kept" is an upper bound."""
     meta = task_meta(); stores = meta.stores.to_dict()
-    rows, expected = [], {}
+    rows, expected, undetermined = [], {}, {"before": 0, "after": 0}
     for final_path in (PHASE3 / "results").glob(f"*/*/*/{D}/*/r*/programmatic_verification.json"):
         before_path = Path(str(final_path).replace(f"/{D}/", f"/{D_BEFORE}/"))
         task, category = final_path.parts[-5], final_path.parts[-6]
@@ -894,6 +902,9 @@ def verifier_transitions() -> dict:
                             expected.setdefault((task, var), str(val))
         for key, (kb, gb, eb) in bef.items():
             ka = fin[key][0]
+            if kb == "undetermined" or ka == "undetermined":
+                undetermined["before" if kb == "undetermined" else "after"] += 1
+                continue
             trans = ("kept" if kb == "ok" and ka == "ok" else "fixed" if kb != "ok" and ka == "ok"
                      else "broke" if kb == "ok" else "survived")
             exp = eb if eb is not None else fin[key][2]
@@ -917,7 +928,7 @@ def verifier_transitions() -> dict:
         t["fix_rate"] = 100 * t.fixed / (t.fixed + t.survived)
         return t
     totals = tr.trans.value_counts().reindex(["fixed", "survived", "broke", "kept"], fill_value=0)
-    return {"totals": totals, "by_type": summarise("vtype"),
+    return {"totals": totals, "undetermined": undetermined, "by_type": summarise("vtype"),
             "by_magnitude": summarise("magnitude").reindex(MAGNITUDE_BINS),
             "by_category": summarise("category"), "frame": tr}
 
@@ -940,19 +951,28 @@ def shared_judgements(min_backbones: int = 3, min_families: int = 2) -> pd.DataF
     return g[(g.backbones >= min_backbones) & (g.families >= min_families)].sort_values("runs", ascending=False).reset_index(drop=True)
 
 
-def _in_prose(text: str, expected) -> bool:
-    """Whether an expected value appears in an answer's text: a number within 0.5% (or within
-    0.05 below 100 in magnitude, 0.5 above), or a string as a substring. Booleans never match."""
-    import re
+_NUMBER_IN_TEXT = re.compile(r"(?<![\w.])-?\d+(?:,\d{3})*(?:\.\d+)?(?![\w.])")
+_LABEL_BEFORE = re.compile(r"(?:Table|Tables|Fig\.?|Figure|Figures|Note|Notes|Step|Steps|Supplementary|Section|No\.)\s*$")
 
+
+def _in_prose(text: str, expected) -> bool:
+    """Whether an expected value appears in an answer's text as a free-standing number within
+    0.1% of it (or within 0.005), or a string as a substring. A number that is part of a larger
+    token (a year, an identifier, a scientific-notation mantissa) or that follows a label such
+    as "Table" or "Fig." does not count. Booleans never match."""
     if expected is None or str(expected).lower() in ("true", "false"):
         return False
     try:
         r = float(expected)
     except ValueError:
         return str(expected).strip("'\"") in text
-    tol = max(abs(r) * 0.005, 0.051 if abs(r) < 100 else 0.51)
-    return any(abs(float(x.replace(",", "")) - r) <= tol for x in re.findall(r"-?\d+(?:,\d{3})*(?:\.\d+)?", text))
+    tol = max(abs(r) * 0.001, 0.005)
+    for m in _NUMBER_IN_TEXT.finditer(text):
+        if _LABEL_BEFORE.search(text[max(0, m.start() - 16):m.start()]):
+            continue
+        if abs(float(m.group().replace(",", "")) - r) <= tol:
+            return True
+    return False
 
 
 def _is_number(x) -> bool:
@@ -1003,7 +1023,7 @@ def prose_credit(seed: int = 20260929, resamples: int = 10_000) -> dict:
         if r.ok:
             credited.append(1.0); continue
         turns = cards[key]
-        if any(w is None or any(k == "mismatch" for k, _, _ in w.values()) for w in turns.values()):
+        if any(w is None or any(k != "unset" for k, _, _ in w.values()) for w in turns.values()):
             credited.append(0.0); continue   # a wrong value, or a failure the message does not itemise
         ok = True
         for turn, wrong in turns.items():

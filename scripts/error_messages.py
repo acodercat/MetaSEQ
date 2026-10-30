@@ -26,20 +26,34 @@ def error_class(message):
 
 
 MISMATCH = re.compile(r"(\w+)=(.+?), expected ~?\+?(.+?)(?:;|$)")
+NOT_SET = re.compile(r"^\s*(\[.*?\]|[\w, ]+?)\s+not set")
+STORED_TYPE = re.compile(r"stored \[(.*?)\] as a type JSON cannot hold")
+NOT_NUMBER = re.compile(r"(\w+)=(\S+) is not a number")
+
+
+def _names(text):
+    return [v.strip(" '\"") for v in text.strip("[] ").split(",") if v.strip(" '\"")]
 
 
 def parse_variables(message):
     """Every required output a validator message names, with how it failed: a dict from the
-    variable name to (kind, got, expected), where kind is "unset" (named in a "not set" list,
-    got and expected None) or "mismatch" (a `var=got, expected ref` pair; got and expected are
-    the strings as written, numeric or not, with any unit after the reference dropped).
-    Variables the message does not name are not in the dict. Descriptive only."""
+    variable name to (kind, got, expected). kind is "unset" (a "not set" list, written either
+    as `a, b not set` or `['a', 'b'] not set`), "type" (`stored ['a'] as a type JSON cannot
+    hold`), or "mismatch" (`var=got, expected ref`, or `var=nan is not a number`); got and
+    expected are the strings as written, with any unit after the reference dropped. A message
+    that names no output (for instance `incorrect channel peak(s)`) gives an empty dict, and
+    the caller treats the turn's outputs as undetermined. Descriptive only."""
     out = {}
-    m = re.search(r"^(.*?) not set", message or "")
+    message = message or ""
+    m = NOT_SET.search(message)
     if m:
-        for v in re.split(r",\s*", m.group(1)):
-            if v.strip():
-                out[v.strip()] = ("unset", None, None)
-    for var, got, expected in MISMATCH.findall(message or ""):
+        for v in _names(m.group(1)):
+            out[v] = ("unset", None, None)
+    for m in STORED_TYPE.finditer(message):
+        for v in _names(m.group(1)):
+            out[v] = ("type", None, None)
+    for var, got in NOT_NUMBER.findall(message):
+        out[var] = ("mismatch", got, None)
+    for var, got, expected in MISMATCH.findall(message):
         out[var] = ("mismatch", got.strip(), expected.strip().split(" ")[0])
     return out

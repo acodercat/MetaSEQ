@@ -67,13 +67,14 @@ QUOTED = {
     "by_kind": {"regulatory": dict(n=23, A=67.2, verification=(9.4, 5.4, 13.4)), "regulatory_minus_others": (5.0, 0.7, 9.4)},
     "consistency_all": {"all_three": {"A": 62.6, "B": 73.1, "C": 67.5, "D": 71.5}, "none": {"A": 10.9, "B": 7.1},
                         "B-A": (10.5, 7.0, 14.1), "D-C": (4.1, 1.1, 7.1), "D-B": (-1.6, -4.1, 0.9)},
-    "transitions": {"fixed": 695, "survived": 576, "broke": 231, "kept": 10810,   # outputs of D, before -> after the verifier
+    "transitions": {"fixed": 696, "survived": 596, "broke": 229, "kept": 10787, "undetermined": 4,   # outputs of D, before -> after the verifier
                     "fix_rate": {"order of magnitude": 33, "1-10%": 58}},
     "shared_judgements": {("beijing_fire_detection_bias", "fires_shown_not_to_matter"): (20, 5, 2),   # runs, backbones, families
                           ("hk_cloud_enhancement_extreme", "above_constant_is_error"): (14, 4, 2),
                           ("hk_weekend_ozone_ox_conservation", "line_can_be_written"): (7, 4, 2)},
-    "prose_credit": {"hit_rate": 66, "unset_numeric": 180, "credited_runs": 46, "failed_runs": 610,
-                     "D_minus_A": (7.0, 4.7, 9.6), "D_minus_A_credited": (5.3, 3.0, 7.9), "credit": (1.7, 1.1, 2.4)},
+    "prose_credit": {"hit_rate": 60, "unset_numeric": 181, "credited_runs": 44, "failed_runs": 610,
+                     "D_minus_A": (7.0, 4.7, 9.6), "D_minus_A_credited": (5.4, 3.0, 8.0), "credit": (1.7, 1.1, 2.3)},
+    "exp1_pooled_resampled": (10.6, 5.1, 16.0),   # experiment 1, D - A pooled, 95% interval from 10,000 task resamples (Supplementary Table 32)
     "per_model_category": {"gpt-6-luna": {"regulatory_standards": (51, 67)}, "claude-sonnet-5-5": {"regulatory_standards": (78, 100)}},   # A, B   # arm x backbone cells with their own runs (six arms, eight backbones)
     "arms6": {"A": 77.1, "B": 84.2, "C": 80.3, "D": 84.1, "F": 78.5, "FV": 84.8, "G": 81.1},   # pooled accuracy (%)
     "factorial": {"verification": (5.4, 3.9, 7.1), "decomposition": (1.6, 0.1, 3.2),
@@ -271,6 +272,7 @@ def check_gain_sources() -> None:
     tr = rt.verifier_transitions(); qt = QUOTED["transitions"]
     for k in ("fixed", "survived", "broke", "kept"):
         check(f"transitions {k}", tr["totals"][k], qt[k], tol=0)
+    check("transitions undetermined", tr["undetermined"]["before"] + tr["undetermined"]["after"], qt["undetermined"], tol=0)
     for k, q in qt["fix_rate"].items():
         check(f"fix rate {k}", tr["by_magnitude"].loc[k, "fix_rate"], q, tol=0.51)
     fr = tr["by_magnitude"].fix_rate
@@ -287,6 +289,10 @@ def check_gain_sources() -> None:
     check("prose D - A", (r.D_minus_A_pp, r.D_minus_A_lo, r.D_minus_A_hi), qp["D_minus_A"])
     check("prose D - A credited", (r.D_minus_A_credited_pp, r.D_minus_A_credited_lo, r.D_minus_A_credited_hi), qp["D_minus_A_credited"])
     check("prose credit", (r.credit_pp, r.credit_lo, r.credit_hi), qp["credit"])
+    import table_results
+    lo, hi = table_results.exp1_intervals()["Pooled"]
+    pooled = next(r for r in table_results.exp1_rows() if "Pooled" in r[0])
+    check("experiment 1 pooled gain, task-resampled", (float(pooled[3].replace("+", "")), lo, hi), QUOTED["exp1_pooled_resampled"])
     pmc = rt.per_model_category()
     for m, q in QUOTED["per_model_category"].items():
         for cat, (a, b) in q.items():

@@ -10,7 +10,8 @@ repository scores anything.
 - `study_arms.csv`, `study_contrasts.csv`, `study_factorial.csv`, `study_cost.csv`,
   `study_outcomes.csv`, `study_bayes.md`: the six-arm study report, all eight backbones, copied
   on 2026-10-27 from the study repository's `results/report/all_backbones/` (written 2026-10-20
-  by its `analysis/study.py`; the Bayesian fit by `analysis/bayes.py`). Arms: A, B
+  by its `analysis/study.py`; the Bayesian fit by `analysis/bayes.py`; both scripts are included
+  under `analysis/` here, the former as run there, with a header on the layout it reads). Arms: A, B
   `single_agent_verified`, C `multi_agent_fixed_roles`, D, F `multi_agent_delegation_planned`,
   F+V `multi_agent_delegation_verified`, and G `single_agent_bare_vote` (derived from A).
   The aggregate scope is labelled `pooled over backbones`. `study_outcomes.csv` has one row
