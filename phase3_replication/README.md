@@ -68,8 +68,7 @@ agents/            the system under test
   prompts/fixed_roles/  the role prompts: stripped/ (used), published/ (deployed, for reference)
 evaluation/        runner, protocol fingerprint, scoring, result store, experiment loop
 analysis/          outcomes, failure causes, the pre-specified estimator, report, vote.py (baseline G),
-                   before_verifier.py (the verifier audit), study.py (the six-arm study analysis)
-                   and bayes.py (the registered primary model)
+                   before_verifier.py (the verifier audit), bayes.py (the registered primary model)
 tasks/             task model, suite loading, porting (`metaseq port`)
 domains/           hk (database engine, files, tools), beijing (files, MDA8 helper)
 llm/               models.toml registry, transport settings, the tool gateway (OpenAI-compatible,
