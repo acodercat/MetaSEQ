@@ -1,4 +1,4 @@
-"""Write manuscript/tex/table_results.tex: the paper's Table 1, single agent against MetaSEQ
+"""Write manuscript/tex/table_results.tex: Supplementary Table 32, single agent against MetaSEQ
 on every backbone of both controlled experiments, from the same derived tables the text and
 figures read (phase2 summary CSV; phase3 report through replication_tables).
 
@@ -85,11 +85,14 @@ def main() -> None:
     body.append(r"\multicolumn{6}{@{}l}{\textbf{Experiment 2} | 111 tasks; three repeats; analysis rules removed; 50 steps} \\")
     body.append(r"\addlinespace[3pt]")
     body += [" & ".join(r) + r" \\" for r in exp2_rows()]
-    tex = r"""\begin{table}[!ht]
-\centering
-\fontsize{8.5}{11}\selectfont
-\caption{\textbf{Single agent and MetaSEQ on every backbone of both experiments.} Validated accuracy, per cent. Gain: experiment 1, difference of single runs on 50 tasks; experiment 2, mean paired difference over three repeats; 95\% intervals from 10,000 task resamples in both (tests in Supplementary Table~7). Tokens: MetaSEQ's mean tokens per task as a multiple of the single agent's. Experiment 1 runs the deployed prompts, which carry the analysis rules, with a verifier that checks staged intermediates; experiment 2 runs the prompts with the rules removed and a verifier that recomputes every output (Table~\ref{tab:experiments}).}
+    # Supplementary Table 32: the main text shows the same accuracies in Fig. 3a and Table 1.
+    tex = r"""\begin{table}[H]
+{\fontsize{9}{11}\selectfont\sffamily\raggedright
+\noindent\textbf{Supplementary Table~32.} Single agent and MetaSEQ on every backbone of both experiments. Validated accuracy, per cent. Gain: experiment 1, difference of single runs on 50 tasks; experiment 2, mean paired difference over three repeats; 95\% intervals from 10,000 task resamples in both (tests in Supplementary Table~7). Tokens: MetaSEQ's mean tokens per task as a multiple of the single agent's. Experiment 1 runs the deployed prompts, which carry the analysis rules, with a verifier that checks staged intermediates; experiment 2 runs the prompts with the rules removed and a verifier that recomputes every output (Table~2 of the main text). Fig.~3a and Table~1 of the main text show the same accuracies.\par}
 \label{tab:results}
+\vspace{5pt}
+\centering
+\fontsize{8.5}{10.5}\selectfont
 \setlength{\tabcolsep}{4pt}\renewcommand{\arraystretch}{1.12}
 \begin{tabular*}{\textwidth}{@{\extracolsep{\fill}}lrrrrr@{}}
 \toprule
