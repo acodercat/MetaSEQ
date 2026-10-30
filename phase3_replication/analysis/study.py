@@ -1,14 +1,8 @@
-"""The six-arm study analysis, as run in the study repository that produced results/report/study_*.csv.
+"""The six-arm study analysis that wrote results/report/study_*.csv.
 
-This file is the script that wrote `study_outcomes.csv`, `study_arms.csv`, `study_factorial.csv`,
-`study_contrasts.csv` and `study_cost.csv` (copied here unchanged on 2026-10-30 for inspection and
-re-use). It ran in the study repository's layout, where the arms carry their working names
-(`neuroair` is `multi_agent_fixed_roles_verified` here, `neuroair_no_verification` is
-`multi_agent_fixed_roles`; `results/protocol_aliases.json` records the protocol fingerprints of the
-two layouts) and the run records sit under `results/reliability_tool/`. On the deposited run
-records, point `settings.results_dir` at their root and map the arm names before running it.
-`analysis/bayes.py`, the registered primary model, imports nothing from the study and runs on
-`study_outcomes.csv` directly.
+It ran in the study repository's layout (run records under results/reliability_tool/, arms under
+their working names); on the deposited records, set `settings.results_dir` and the arm names
+accordingly. `analysis/bayes.py`, the registered primary model, reads study_outcomes.csv directly.
 
 Original docstring follows.
 """

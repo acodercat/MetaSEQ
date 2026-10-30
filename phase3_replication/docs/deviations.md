@@ -28,11 +28,9 @@ unchanged hypothesis, estimator and scoring rule, and reported.
   regression over the four core arms (`correct ~ decomposition * verification`, task, backbone
   and task × backbone random intercepts, bambi/PyMC), is fitted as registered on all eight
   backbones (`analysis/bayes.py`, four chains of 2,000 draws, seed 20260929) and reported in
-  Supplementary Note 2 beside the bootstrap estimates. (Superseded on 2026-10-30: an earlier
-  version of the paper compared A and D only and fitted a two-arm variational model instead.)
+  Supplementary Note 2 beside the bootstrap estimates.
 - **Holm correction.** The protocol's Holm correction is applied over the four registered
   contrasts D − A, B − A, C − A and D − B within each scope, as reported (Supplementary Note 2).
-  (Superseded on 2026-10-30: an earlier version of the paper reported D − A alone, uncorrected.)
 - **Verifier audit (post hoc, 2026-10-17).** The protocol lists the turns fixed and broken by the
   verifier as a secondary outcome (§4 (iii)); the task-level pass rate before the verifier, its
   comparison with A and the interpretation are post hoc. Every D turn's record stores the
