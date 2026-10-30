@@ -67,8 +67,8 @@ QUOTED = {
     "by_kind": {"regulatory": dict(n=23, A=67.2, verification=(9.4, 5.4, 13.4)), "regulatory_minus_others": (5.0, 0.7, 9.4)},
     "consistency_all": {"all_three": {"A": 62.6, "B": 73.1, "C": 67.5, "D": 71.5}, "none": {"A": 10.9, "B": 7.1},
                         "B-A": (10.5, 7.0, 14.1), "D-C": (4.1, 1.1, 7.1), "D-B": (-1.6, -4.1, 0.9)},
-    "transitions": {"fixed": 696, "survived": 596, "broke": 229, "kept": 10787, "undetermined": 4,   # outputs of D, before -> after the verifier
-                    "fix_rate": {"order of magnitude": 33, "1-10%": 58}},
+    "transitions": {"fixed": 616, "survived": 596, "broke": 204, "kept": 9496, "undetermined": 1400,   # outputs of D, before -> after the verifier
+                    "fix_rate": {"order of magnitude": 27, "1-10%": 54}},
     "shared_judgements": {("beijing_fire_detection_bias", "fires_shown_not_to_matter"): (20, 5, 2),   # runs, backbones, families
                           ("hk_cloud_enhancement_extreme", "above_constant_is_error"): (14, 4, 2),
                           ("hk_weekend_ozone_ox_conservation", "line_can_be_written"): (7, 4, 2)},

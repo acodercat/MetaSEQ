@@ -858,8 +858,9 @@ def _magnitude(got: str, expected: str):
 
 
 def _variables(card: dict, stores: list[list[str]]) -> dict:
-    """For every required output of every turn of a card: ("ok", None, None), or the parse of the
-    validator message ("unset"/"mismatch", got, expected). Keys (turn, variable)."""
+    """For every required output of every turn of a card: ("ok", None, None) in a passed turn; in
+    a failed turn the parse of the validator message ("unset"/"type"/"mismatch", got, expected)
+    for the outputs it names and ("undetermined", None, None) for the rest. Keys (turn, variable)."""
     from error_messages import parse_variables
 
     out = {}
@@ -868,9 +869,9 @@ def _variables(card: dict, stores: list[list[str]]) -> dict:
             if t.get("success"):
                 wrong, default = {}, ("ok", None, None)
             else:
-                wrong = parse_variables(t.get("message") or "")
-                # a failed turn whose message names no output: nothing can be said of any of them
-                default = ("ok", None, None) if wrong else ("undetermined", None, None)
+                # a failed turn: only the outputs its message names are known to be wrong; a
+                # validator may stop at its first failed check, so the rest are undetermined
+                wrong, default = parse_variables(t.get("message") or ""), ("undetermined", None, None)
             for v in stores[t["turn"] - 1]:
                 out[(t["turn"], v)] = wrong.get(v, default)
     return out
@@ -883,9 +884,9 @@ def verifier_transitions() -> dict:
     Returns {"totals": Series, "by_type": frame (numeric / string / boolean, from the expected
     value), "by_magnitude": frame (numeric mismatches before the verifier, by size), "by_category":
     frame}, each with fixed, survived, broke, kept counts and the fix rate (fixed over fixed +
-    survived) in per cent, and "undetermined": the outputs left out because the validator message
-    of a failed turn, before or after the verifier, names no output. A validator that stops at its
-    first failed check leaves the remaining outputs unnamed, so "kept" is an upper bound."""
+    survived) in per cent, and "undetermined": the outputs left out because a failed turn's
+    validator message, before or after the verifier, does not name them (a validator may stop at
+    its first failed check)."""
     meta = task_meta(); stores = meta.stores.to_dict()
     rows, expected, undetermined = [], {}, {"before": 0, "after": 0}
     for final_path in (PHASE3 / "results").glob(f"*/*/*/{D}/*/r*/programmatic_verification.json"):
@@ -952,7 +953,7 @@ def shared_judgements(min_backbones: int = 3, min_families: int = 2) -> pd.DataF
 
 
 _NUMBER_IN_TEXT = re.compile(r"(?<![\w.])-?\d+(?:,\d{3})*(?:\.\d+)?(?![\w.])")
-_LABEL_BEFORE = re.compile(r"(?:Table|Tables|Fig\.?|Figure|Figures|Note|Notes|Step|Steps|Supplementary|Section|No\.)\s*$")
+_LABEL_BEFORE = re.compile(r"(?:table|tables|fig\.?|figure|figures|note|notes|step|steps|supplementary|section|no\.|station|stations|site|sites|turn|repeat|version|option|case)\s*$", re.I)
 
 
 def _in_prose(text: str, expected) -> bool:

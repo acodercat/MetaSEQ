@@ -30,7 +30,7 @@ import pymc
 
 # (decomposition, verification)
 ARMS = {"single_agent_bare": (0, 0), "single_agent_verified": (0, 1),
-        "neuroair_no_verification": (1, 0), "neuroair": (1, 1)}
+        "multi_agent_fixed_roles": (1, 0), "multi_agent_fixed_roles_verified": (1, 1)}
 SEED = 20260929
 # Above bambi's default 0.8: with few backbones the backbone variance sits near zero, where
 # smaller steps avoid the divergences the default produces.
@@ -76,6 +76,8 @@ def fit(outcomes: pd.DataFrame) -> list[tuple[str, dict[str, np.ndarray], dict]]
     """The pooled model over every backbone (the primary analysis) and, as the
     pre-registration's stratification by backbone, each backbone on its own."""
     data = outcomes[outcomes.arm.isin(list(ARMS)) & (outcomes.status == "scored")].copy()
+    counts = data.arm.value_counts()
+    assert set(counts.index) == set(ARMS) and counts.nunique() == 1, counts.to_dict()
     data["correct"] = data.passed.astype(str).str.lower().eq("true").astype(int)
     data["decomposition"] = data.arm.map(lambda arm: ARMS[arm][0])
     data["verification"] = data.arm.map(lambda arm: ARMS[arm][1])
